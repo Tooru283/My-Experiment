@@ -1,161 +1,272 @@
-# Open-Nav: Exploring Zero-Shot Vision-and-Language Navigation in Continuous Environment with Open-Source LLMs
+# Controlled Navigation Harness for Open-Nav
 
-> **International Conference on Robotics and Automation (ICRA) 2025**  
-> **Authors:** Yanyuan Qiao, Wenqi Lyu, Hui Wang, Zixu Wang, Zerui Li, Yuan Zhang, Mingkui Tan, Qi Wu
+本仓库记录一个基于 Open-Nav 的 VLN-CE 实验项目。当前重点不是复现原论文主页，而是把 Open-Nav 的 LLM-centered navigation pipeline 改造成可诊断、可消融、可回放的 controlled navigation harness。
 
-## 🧠 Abstract
+原始 Open-Nav 作为 waypoint-based baseline 保留。本项目在其外层逐步加入显式状态、视觉证据、STOP 验证、selector context、fallback 排序和结构化 trace，用来分析零样本连续环境导航中的失败来源。
 
-Vision-and-Language Navigation (VLN) tasks require an agent to follow textual instructions to navigate through 3D environments. Traditional approaches use supervised learning methods, relying heavily on domain-specific datasets to train VLN models. Recent methods try to utilize closedsource large language models (LLMs) like GPT-4 to solve VLN tasks in zero-shot manners, but face challenges related to expensive token costs and potential data breaches in realworld applications. In this work, we introduce Open-Nav, a novel study that explores open-source LLMs for zero-shot VLN in the continuous environment. Open-Nav employs a spatial-temporal chain-of-thought (CoT) reasoning approach to break down tasks into instruction comprehension, progress estimation, and decision-making. It enhances scene perceptions with fine-grained object and spatial knowledge to improve LLM’s reasoning in navigation. Our extensive experiments in both simulated and real-world environments demonstrate that Open-Nav achieves competitive performance compared to using closed-source LLMs.
+## 当前状态
 
-## 📄 Project Website & Paper
+更新时间: 2026-06-15
 
-- **Website**: [https://sites.google.com/view/opennav](https://sites.google.com/view/opennav)
-- **ArXiv**: [https://arxiv.org/pdf/2409.18794](https://arxiv.org/pdf/2409.18794)
+当前主线: V 系列多模态视觉证据 + V2/V4 decision-effect 修正。
 
+核心判断:
 
-## ✅ Project Status
+- V1 visual evidence schema 问题已经修复，裸数组输出会被规范化为 `{"candidates": [...]}`。
+- V4 selector context 和 visual ranked fallback 已经能消费候选级视觉证据。
+- 小样本中 V2/V4 有正向信号，但 100 episode 结果还不能作为稳定改进结论。
+- 当前主要风险从“视觉证据未被消费”转为 “V2 STOP allow 过宽”，尤其是泛化目标词和 `completion_gate` 来源的 STOP。
+- 下一步应先跑 10 到 12 episode 小样本验证 STOP 修复，不应直接跑 100 episode。
 
-☑️ Release **OpenNav_R2R-CE_100** for quick and cost-effective testing in simulated environments.  
-☑️ Full implementation of **Open-Nav** available for both training and inference
+## 实验目标
 
-## ⚙️ Prerequisites
-### Installation
+本项目要回答的问题是:
 
-We recommend using **Python 3.8** with a conda environment:
+> 能否将 Open-Nav 中由 LLM 耦合承担的导航职责，重构为一个受控 navigation harness，使进度、候选、记忆、验证和恢复都成为显式状态与工具接口，从而提高 VLN-CE 零样本导航的可诊断性、可消融性，并为后续受限恢复机制提供可靠触发依据？
 
-```bash
-conda create -n opennav python=3.8
-conda activate opennav
+当前不做:
+
+- 不训练或微调新 policy。
+- 不切换到 waypoint-free 主链。
+- 不做自由工具调用式 LLM Agent。
+- 不引入在线多 sub-agent 协作。
+- 不把模型升级和模块收益混在同一组实验里。
+
+## 阶段划分
+
+| 阶段 | 名称 | 是否改变导航行为 | 当前状态 |
+|------|------|------------------|----------|
+| A0 | Open-Nav original baseline | 否 | 保留为原始对照 |
+| A1 | Instrumented / harnessed baseline | 否 | 已有初版，仍需 A0/A1 指标对齐复核 |
+| B1 | Evidence logging | 否 | V1 visual evidence 已实现 |
+| B2 | Selector context injection | 是 | V4 已进入 decision-effect |
+| C1 | Visual evidence memory | 主要为 log-only | V3 已实现初版 |
+| E | STOP verifier | 是 | V2 已进入 decision-effect，正在收紧 allow |
+| F | Fallback ranking | 是 | visual ranked fallback 已接入并需继续复测 |
+| G | Runtime / resource policy | 是 | compact JSON、JPEG 质量、token cap 已接入 |
+
+## V 系列模块
+
+| 模块 | 代码入口 | 当前作用 |
+|------|----------|----------|
+| V1 VisualEvidenceLogger | `vlnce_baselines/common/opennav_ext/visual_evidence.py` | 对候选 RGB 视角抽取结构化视觉证据 |
+| V2 VisualTargetVerifier | `vlnce_baselines/common/opennav_ext/visual_target_verifier.py` | 验证 STOP proposal，拦截或放行 STOP |
+| V3 VisualEvidenceMemory | `vlnce_baselines/common/opennav_ext/visual_evidence_memory.py` | 聚合 episode 内视觉证据 |
+| V4 MultimodalSelectorContext | `vlnce_baselines/common/opennav_ext/multimodal_selector_context.py` | 将候选级视觉摘要注入 selector 输入 |
+| Visual fallback | `vlnce_baselines/common/opennav_ext/visual_fallback.py` | selector 空预测时用视觉证据排序候选 |
+| Schema tools | `vlnce_baselines/common/opennav_ext/visual_evidence_schema.py` | 统一兼容 dict/list 形式的 V1 输出 |
+
+## 已观察结果
+
+### V2/V4 decision-effect 小样本
+
+记录文件:
+
+```text
+logs/navigation_records/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.jsonl
 ```
 
-#### Install Habitat and Dependencies
-This project builds upon [Discrete-Continuous-VLN](https://github.com/YicongHong/Discrete-Continuous-VLN). Please follow the steps below:
+10 episode 结果:
 
-1. You could follow the [Discrete-Continuous-VLN](https://github.com/YicongHong/Discrete-Continuous-VLN) to install [`habitat-lab`](https://github.com/facebookresearch/habitat-lab) and [`habitat-sim`](https://github.com/facebookresearch/habitat-sim) by following the official Habitat installation guide.
-2. We use Habitat [`v0.1.7`](https://github.com/facebookresearch/habitat-lab/releases/tag/v0.1.7) in our experiments, the same version used in [VLN-CE](https://github.com/jacobkrantz/VLN-CE) to ensure compatibility.
-3. You may refer to **requirements.txt** or **environment.yml** in this repository for the exact package versions used.
+| 指标 | 数值 |
+|------|------|
+| success | 3/10 |
+| oracle_success | 6/10 |
+| SPL mean | 0.2863 |
+| nDTW mean | 0.6699 |
+| distance_to_goal mean | 4.2091 |
+| visual_evidence parse_error | 0/57 |
+| visual_stop_rejected | 28 |
 
-ℹ️ Note: Our installation instructions are adapted from Discrete-Continuous-VLN.
+结论: V2 拦截提前 STOP 有效，V4 context 已真实进入 selector。
 
-### Dataset
+### R2/R3: V2-first STOP gate + visual ranked fallback
 
-**OpenNav_R2R-CE_100**: [Download Here](https://drive.google.com/file/d/1SfrPWqCIiivwduCYPMe-Za1wOt4eU6G9/view?usp=sharing)
+记录文件:
 
-
-Please place the downloaded files under: 
-
-> data/datasets/R2R_VLNCE_v1-2_preprocessed/val_unseen/
-
-
-### Scenes: Matterport3D
-
-We use **Matterport3D (MP3D)** scene reconstructions in this project.
-
-You can obtain the dataset by following the instructions on the [official Matterport3D project page](https://niessner.github.io/Matterport/). The download script `download_mp.py` is required to fetch the scenes.
-
-To download the scenes:
-
-> ⚠️ Requires **Python 2.7**.
-
-```bash
-python download_mp.py --task habitat -o data/scene_datasets/mp3d/
+```text
+logs/navigation_records/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.jsonl
 ```
 
-Expected directory structure:
+同 10 episode 对比 V2/V4-current:
+
+| 指标 | V2/V4-current | R2/R3 |
+|------|---------------|-------|
+| success | 3/10 | 5/10 |
+| oracle_success | 6/10 | 7/10 |
+| SPL mean | 0.2863 | 0.4863 |
+| nDTW mean | 0.6699 | 0.7105 |
+| distance_to_goal mean | 4.2091 | 3.4895 |
+
+结论: visual ranked fallback 是正向信号。6 次空预测 fallback 中，3 次改变旧 first-candidate fallback，且这些动作均为正 distance gain。
+
+### 100 episode 运行复盘
+
+记录文件:
+
+```text
+logs/navigation_records/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.jsonl
 ```
-- data/
-  - scene_datasets/
-    - mp3d/
-      - {scene_id}/
-        - {scene_id}.glb
-        - {scene_id}_semantic.ply
-        - {scene_id}.house
-        - {scene_id}.navmesh
+
+100 episode 结果:
+
+| 指标 | 数值 |
+|------|------|
+| success | 19/100 |
+| oracle_success | 24/100 |
+| SPL | 0.1708 |
+| nDTW | 0.4797 |
+| mean distance_to_goal | 7.42 |
+
+结论: Runtime Reduce 有效降低耗时，但该 100 episode 结果不能作为当前最优。主要问题是 compact V1 输出发生 schema 漂移，导致 V4/fallback 没有真实消费候选级视觉证据。
+
+### Schema 修复后小样本
+
+记录文件:
+
+```text
+logs/navigation_records/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.jsonl
 ```
 
-### Trained Network Weights
+11 episode 结果:
 
-We provide several pre-trained models to support waypoint prediction and visual encoding in the Open-Nav framework.
+| 指标 | 修复前 | 修复后 |
+|------|--------|--------|
+| success | 1/11 | 4/11 |
+| SPL | 0.0693 | 0.3416 |
+| nDTW | 0.4777 | 0.5844 |
+| distance_to_goal | 6.9756 | 5.7791 |
 
-#### 📍 Candidate Waypoint Predictor
+修复确认:
 
-Path: 
-> waypoint_prediction/checkpoints/check_val_best_avg_wayscore
+- `visual_evidence.parsed_root_type=dict`: 60/60。
+- V4 `candidate_evidence_count=0`: 0。
+- fallback 触发 7 次，候选证据数量均大于 0。
+- fallback 7 次中 3 次改变原首候选，5 次带来正向距离增益。
 
-- [RGB-D (FoV 90) weights used in our paper](https://drive.google.com/file/d/16Vk3ummmyLvpQr16TzBL-iwZNlrELOdk/view?usp=sharing)
-- [Depth-only (FoV 90, R2R-CE)](https://drive.google.com/file/d/1goXbgLP2om9LsEQZ5XvB0UpGK4A5SGJC/view?usp=sharing)
+剩余问题:
 
-These models are used to predict candidate waypoints in the environment from visual input.
+- 2 次 `visual_stop_allowed` 都是失败终止。
+- 已修复 `completion_gate` 上泛化 final landmarks 的 STOP allow 过宽问题。
+- 需要下一轮小样本验证该修复是否真正降低误停。
 
+## 下一步
 
-#### 🧠 Visual Encoder (ResNet-50 for Depth)
+优先级从高到低:
 
-Path:
-> data/pretrained_models/ddppo-models/gibson-2plus-resnet50.pth
+1. 跑 10 到 12 episode 小样本，验证 `completion_gate` 来源的泛化 STOP 不再被 V2 误放行。
+2. 检查 `visual_stop_allowed` case study，确认 allow 必须有更强的 final target / arrival evidence。
+3. 统计 `selector_empty_prediction_fallback.changed` 和 fallback 后的 distance gain。
+4. 补充 schema warning: 合法 JSON 但非预期结构时，日志必须区分 parse error、schema error、empty evidence。
+5. 在 V2/V4 稳定后，再恢复 R4 adaptive candidate sampling。
+6. 最后再重跑 100 episode，不把小样本正向信号直接写成最终结论。
 
-- Download link: [ResNet-50 pretrained on Gibson for DD-PPO](https://zenodo.org/record/6634113/files/gibson-2plus-resnet50.pth)
+下一轮必须检查的日志字段:
 
-This ResNet-50 depth encoder is trained for PointGoal navigation on the Gibson dataset and used to extract visual features from depth images.
+```text
+visual_evidence.parsed_root_type
+multimodal_selector_context.candidate_evidence_count
+selector_empty_prediction_fallback.candidate_evidence_count
+selector_empty_prediction_fallback.changed
+visual_target_verifier.visual_evidence_candidate_count
+visual_stop_allowed
+visual_stop_rejected
+visual_stop_uncertain
+```
 
-#### 🤖 External VLM Models
+## 运行方式
 
-Some external models are required for Scene Perception:
-
-- [**SpatialBot**](https://github.com/BAAI-DCAI/SpatialBot)
-- [**RAM (Recognize Anything Model)**](https://github.com/xinyu1205/recognize-anything)
-
-Please refer to their respective repositories for model download and setup instructions. These models are used to get spatial visual information to support the reasoning process of open-source LLMs.
-
-Clone or place them under the root directory:
-
-Path: 
-> recognize_anything/
-
-> SpatialBot3B/
-
-
-## 🚀 Inference
-
-To run inference with Open-Nav, use the provided script:
+基础运行:
 
 ```bash
 bash run_OpenNav.bash
 ```
 
-### 🔧 Choosing the Language Model
-You can specify which LLM to use via the --llm argument in the script. Supported options include:
+当前默认配置在:
 
-	• gpt4o (default): Uses GPT-4o via OpenAI API
-	• Qwen2, Llama3.1, Gemma, Phi3, etc.: Open-source LLMs (require local deployment)
-
-⚠️ Open-source LLMs must be deployed separately and configured before use.
-
-
-### 📐 Modifying Evaluation Episodes
-To change the number of evaluation episodes, edit the following field in:
-```
+```text
+run_OpenNav.yaml
 habitat_extensions/config/vlnce_task.yaml
 ```
-Locate this section and modify EPISODES_TO_LOAD:
+
+当前关键配置:
 
 ```yaml
-DATASET:
-  TYPE: VLN-CE-v1
-  SPLIT: val_unseen
-  DATA_PATH: data/datasets/R2R_VLNCE_v1-2_preprocessed/{split}/OpenNav_R2R-CE_100_bertidx.json.gz
-  SCENES_DIR: data/scene_datasets/
-  EPISODES_TO_LOAD: 1  # Change this to run more episodes
+OPENNAV_HARNESS:
+  ENABLED: true
+  ENABLE_HARNESS_LOGGING: true
+  ENABLE_DECISION_EFFECT: true
+
+  VISUAL_EVIDENCE:
+    ENABLED: true
+    LOG_ONLY: true
+    MAX_CANDIDATES: 4
+    MAX_TOKENS: 768
+    IMAGE_JPEG_QUALITY: 70
+    COMPACT_JSON: true
+
+  VISUAL_TARGET_VERIFIER:
+    ENABLED: true
+    LOG_ONLY: false
+    CONFIDENCE_THRESHOLD: 0.9
+    REQUIRE_ARRIVAL_EVIDENCE: true
+    REQUIRE_FULL_COVERAGE_FOR_ALLOW: true
+    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: true
+
+  VISUAL_EVIDENCE_MEMORY:
+    ENABLED: true
+    LOG_ONLY: true
+
+  MULTIMODAL_SELECTOR_CONTEXT:
+    ENABLED: true
+    LOG_ONLY: false
 ```
 
+## 文档索引
 
-## 🙏 Acknowledgements
+| 文档 | 用途 |
+|------|------|
+| `Controlled-Navigation-Harness/项目总控.md` | 项目边界、阶段定义和文档入口 |
+| `Controlled-Navigation-Harness/实验方案.md` | 完整实验方案和 harness 设计 |
+| `Controlled-Navigation-Harness/V系列多模态视觉证据初步实现后调整方案.md` | V0-V4 初步实现后的问题复盘和下一轮矩阵 |
+| `Controlled-Navigation-Harness/V系列多模态视觉证据实验记录-封存-20260613.md` | V 系列初步实现过程记录 |
+| `Controlled-Navigation-Harness/docs/experiment_record_20260610.md` | 本地 Qwen / SigLIP A0 smoke、A1 logging 接入 |
+| `Controlled-Navigation-Harness/docs/experiment_record_20260612.md` | STOP 控制链路、Thought Fusion、V0/V1/V2 前置验证 |
+| `Controlled-Navigation-Harness/docs/experiment_record_20260614.md` | 100 episode / 小样本复盘、schema 修复和 STOP allow 修复 |
+| `Controlled-Navigation-Harness/docs/code_review_issues.md` | 当前代码风险、fallback 和 schema 待修问题 |
 
-We acknowledge that some parts of our code are adapted from existing open-source projects. Specifically, we reference the following repositories: **[DiscussNav](https://github.com/LYX0501/DiscussNav)**, **[Discrete-Continuous-VLN](https://github.com/YicongHong/Discrete-Continuous-VLN)**, **[SpatialBot](https://github.com/BAAI-DCAI/SpatialBot)**, **[RAM](https://github.com/xinyu1205/recognize-anything)**
+## 依赖和大文件
 
+本仓库没有提交本地大模型权重、Matterport3D 场景数据和运行日志。它们需要按路径自行准备:
 
-## 📚 Citation
+```text
+data/scene_datasets/mp3d/
+waypoint_prediction/checkpoints/check_val_best_avg_wayscore
+data/pretrained_models/ddppo-models/gibson-2plus-resnet50.pth
+recognize_anything/pretrained/ram_swin_large_14m.pth
+SpatialBot3B/model-00001-of-00002.safetensors
+SpatialBot3B/model-00002-of-00002.safetensors
+```
 
-If you find this work useful, please cite our paper:
+当前 `.gitignore` 已排除:
+
+- `logs/`
+- `cache_files/`
+- `__pycache__/`
+- `data/scene_datasets/mp3d/`
+- `*.safetensors`
+- `*.pth`
+- `waypoint_prediction/checkpoints/`
+
+## 原 Open-Nav 信息
+
+本项目基于 Open-Nav:
+
+- Project website: <https://sites.google.com/view/opennav>
+- Paper: <https://arxiv.org/pdf/2409.18794>
+- Original repository remote in this workspace: `https://github.com/YanyuanQiao/Open-Nav`
+
+原 Open-Nav 论文:
 
 ```bibtex
 @inproceedings{qiao2025opennav,
@@ -165,3 +276,7 @@ If you find this work useful, please cite our paper:
   year      = {2025}
 }
 ```
+
+## Acknowledgements
+
+This repository builds on Open-Nav and includes or references components from DiscussNav, Discrete-Continuous-VLN, Habitat-Lab, SpatialBot, and Recognize Anything Model. Third-party licenses and original source references should be preserved when using or redistributing this code.
