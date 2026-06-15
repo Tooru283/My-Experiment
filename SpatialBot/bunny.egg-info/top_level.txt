@@ -1,0 +1,4 @@
+SpatialQA_depthmap_instruction
+bunny
+eval
+script

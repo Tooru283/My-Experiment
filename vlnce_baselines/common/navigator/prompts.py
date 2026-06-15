@@ -54,23 +54,23 @@ NAVIGATOR = {
             You are encouraged to move to new viewpoints to explore environment while avoid revisiting accessed viewpoints in non-essential situations. \
             If you feel struggling to find the landmark or execute the action, you can try to execute the subsequent action and find the subsequent landmark. \
             Your answer includes two parts: \"Thought\" and \"Prediction\". In the \"Thought\", you should think as detailed as possible following procedures: \
-            (1) The viewpoint ID you predicted must be one of the Direction Viewpoint ID in Candidate Viewpoint IDs List. The Candidate Viewpoint IDs List show the Direction Viewpoint ID that you should go. This means that there should be only a number after \"Prediction\" without any other words or characters . \
+            (1) The viewpoint ID you predicted must be one of the Direction Viewpoint ID in Candidate Viewpoint IDs List, or STOP when the instruction has been completed. The Candidate Viewpoint IDs List show the Direction Viewpoint ID that you should go. This means that there should be only a number or STOP after \"Prediction\" without any other words or characters . \
             (2) Check whether the latest executed action has been completed by comparing current environment and landmark in the latest executed action. \
             (3) Determine the action you should execute and landmark you should reach now. If the latest executed action have not been completed, \
             you should continue to execute it. Otherwise, you should execute the next action in the given instruction. \
             (4) Analyze which direction in the current environment is most suitable to execute the action you decide and explain your reason. \
-            (5) Predict moving to which direction viewpoint based on your thought process. \
+            (5) Predict moving to which direction viewpoint based on your thought process, or predict STOP if the current position already satisfies the final stop/wait requirement. \
             (6) The \"Thought\" you predicted should be a single paragraph. \
-            (7) If you believe you have completed the instruction, you must still strictly follow the requirements to predict the next viewpoint in the \"Prediction\". \
+            (7) If you believe you have completed the instruction, predict STOP in the \"Prediction\". \
             (8) If you want to make a left turn, you usually need to select a viewpoint ID between 1 and 5. If you want to make a right turn, you usually need to select a viewpoint ID between 7 and 11. However, the viewpoint ID you predict must be within the Current Environment.\
-            (9) Your output after \"Prediction\" must be one of the number in Candidate Viewpoint IDs List without any other words. \
+            (9) Your output after \"Prediction\" must be one of the numbers in Candidate Viewpoint IDs List or STOP without any other words. \
             Then, please make decision on the next viewpoint in the \"Prediction\". \
             Your decision is very important, must make it very carefully. \
-            You need to double check the output in \"Prediction:\". The output must be in the Candidate Viewpoint IDs without any other words. \
+            You need to double check the output in \"Prediction:\". The output must be in the Candidate Viewpoint IDs or STOP without any other words. \
             You also need to double check the output in \"Thought\". The output must be a single paragraph",
     'user': "Candidate Viewpoint IDs List: [{}] Step {} Instruction: {} ({}) Landmarks: {} Navigation History: {} \
             Estimation of Executed Actions: {} Current Environment: {} -> Thought: ... Prediction: ... \
-            Your output after \"Prediction\" must be one of the number in Candidate Viewpoint IDs List without any other words. \
+            Your output after \"Prediction\" must be one of the numbers in Candidate Viewpoint IDs List or STOP without any other words. \
             Your output after \"Thought\" must be a single paragraph about why you choose this viewpoint id. "
 }
 
@@ -84,7 +84,7 @@ THOUGHT_FUSION = {
 # Test Decision
 DECISION_TEST = {
     'system': "You are a decision testing expert. Your task is to evaluate the feasibility of each movement \
-                        prediction based on thought process and environment. Then, you will make a final decision about direction viewpoint ID without other words. \
-                            The answer should only be a number and within the candidate list.",
+                        prediction based on thought process and environment. Then, you will make a final decision about direction viewpoint ID or STOP without other words. \
+                            The answer should only be a number within the candidate list, or STOP.",
     'user': "The candidate list: {}. Can you help me make a final decision? The Observation: {}, Navigation Instruction: {}, {}, Final Decision: "
 }

@@ -1,0 +1,31 @@
+# Python/runtime artifacts
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Local OS/editor files
+.DS_Store
+
+# Experiment outputs and local caches
+logs/
+cache_files/
+image_show/
+navigator_log.log
+
+# Datasets and local simulator assets
+data/scene_datasets/mp3d/
+data/pretrained_models/ddppo-models/
+
+# Large model/checkpoint weights
+*.safetensors
+*.pth
+*.pt
+*.ckpt
+waypoint_prediction/checkpoints/
+recognize_anything/pretrained/
+
+# Nested third-party repository metadata
+SpatialBot/.git/
+SpatialBot3B/.git/
+recognize_anything/.git/
+external/habitat-lab-v0.1.7/.git/

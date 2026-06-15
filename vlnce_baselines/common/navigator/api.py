@@ -26,6 +26,9 @@ from recognize_anything.ram import inference_ram
 from recognize_anything.ram import get_transform
 
 
+DEFAULT_LOCAL_QWEN_BASE_URL = "http://127.0.0.1:23333/v1"
+DEFAULT_LOCAL_QWEN_MODEL = "/root/models/Qwen3.5-4B"
+
 
 class llmClient:
     def __init__(self, model_type = '', api_key=None, base_url=None):
@@ -41,14 +44,23 @@ class llmClient:
             self.model = model_type
             self.client = OpenAI(api_key=api_key)
             
-        elif model_type == "Qwen/Qwen2-72B":
-            self.model = model_type
+        elif model_type.startswith("Qwen/"):
+            self.requested_model = model_type
+            self.model = os.environ.get("OPENNAV_LLM_MODEL", DEFAULT_LOCAL_QWEN_MODEL)
+            local_base_url = (
+                base_url
+                or os.environ.get("OPENNAV_LLM_BASE_URL")
+                or DEFAULT_LOCAL_QWEN_BASE_URL
+            )
             self.client = OpenAI(
-                api_key="not-needed",  # This value doesn't matter for local deployment
-                base_url="http://0.0.0.0:23333/v1"
+                api_key=api_key or "not-needed",
+                base_url=local_base_url,
             )
         else:
-            raise ValueError(f"Unknown model type: {model_type}. Use 'gpt' or 'opensource'.")
+            raise ValueError(
+                f"Unknown model type: {model_type}. "
+                "Use 'gpt-4o-2024-08-06' or a local OpenAI-compatible 'Qwen/...' model."
+            )
         
         print(f"Initialized LLM client with model: {self.model}")
 
@@ -59,7 +71,7 @@ class llmClient:
     def _completion_with_backoff(self, **kwargs):
         return self.client.chat.completions.create(**kwargs)
 
-    def gpt_infer(self, system_prompt, user_prompt, num_output=1):
+    def gpt_infer(self, system_prompt, user_prompt, num_output=1, max_tokens=None):
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
@@ -70,6 +82,8 @@ class llmClient:
             "messages": messages,
             "temperature": 0
         }
+        if max_tokens is not None and int(max_tokens) > 0:
+            request_params["max_tokens"] = int(max_tokens)
         
         if num_output == 1:
             chat_response = self._completion_with_backoff(**request_params)

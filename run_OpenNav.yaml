@@ -12,7 +12,7 @@ RESULTS_DIR: logs/eval_results/
 EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: val_unseen
-  EPISODE_COUNT: -1
+  EPISODE_COUNT: -100
 
 MODEL:
   policy_name: PolicyViewSelectionCMA
@@ -33,3 +33,78 @@ MODEL:
     embedding_size: 256
     hidden_size: 256
 
+# -----------------------------------------------------------------------------
+# Open-Nav Harness / V-series multimodal visual evidence switches
+# -----------------------------------------------------------------------------
+# Default here enables the full V-series with V2/V4 decision-effect:
+#   - V1 extracts visual evidence from candidate images.
+#   - V2 verifies STOP proposals with visual evidence and can reject unsupported
+#     STOP when VISUAL_TARGET_VERIFIER.LOG_ONLY is false.
+#   - V3 aggregates visual evidence into episode memory.
+#   - V4 builds multimodal selector context and feeds it to selector when
+#     MULTIMODAL_SELECTOR_CONTEXT.LOG_ONLY is false.
+#
+# Note: run_OpenNav.bash does not override OPENNAV_HARNESS by default, so this
+# yaml is the single source of truth for V-series switches. Extra command-line
+# overrides passed after the script command still take precedence.
+OPENNAV_HARNESS:
+  ENABLED: True
+  ENABLE_HARNESS_LOGGING: True
+  ENABLE_DECISION_EFFECT: True
+  TRACE_DIR: logs/harness_traces/v2_v4_decision_effect
+  TRACE_FORMAT: jsonl
+  LOG_IMAGES: False
+  FAIL_OPEN: True
+
+  # V1: send candidate RGB views to local Qwen-VL service and log structured
+  # visual evidence. Required by V3 and V4.
+  VISUAL_EVIDENCE:
+    ENABLED: True
+    LOG_ONLY: True
+    BASE_URL: http://127.0.0.1:23333/v1
+    MODEL: /root/models/Qwen3.5-4B
+    MAX_CANDIDATES: 4
+    MAX_IMAGE_EDGE: 384
+    MAX_TOKENS: 768
+    TIMEOUT_SECONDS: 60.0
+    IMAGE_JPEG_QUALITY: 70
+    METADATA_OBSERVATION_CHARS: 300
+    COMPACT_JSON: True
+
+  # V2: visual verification for STOP proposals. With LOG_ONLY false and global
+  # ENABLE_DECISION_EFFECT true, STOP is allowed only when verdict=allow. The
+  # allow path is intentionally conservative after R2/R3 showed one early false
+  # STOP on generic archway/floor evidence.
+  VISUAL_TARGET_VERIFIER:
+    ENABLED: True
+    LOG_ONLY: false
+    CONFIDENCE_THRESHOLD: 0.9
+    REQUIRE_ARRIVAL_EVIDENCE: True
+    REJECT_ON_MISSING_FINAL_LANDMARKS: True
+    REJECT_ON_UNCERTAIN: True
+    MIN_STEPS_BEFORE_ALLOW: 3
+    REQUIRE_FULL_COVERAGE_FOR_ALLOW: True
+    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: True
+
+  # V3: aggregate V1 visual evidence across the current episode.
+  VISUAL_EVIDENCE_MEMORY:
+    ENABLED: True
+    LOG_ONLY: true
+    MAX_HISTORY: 64
+    MAX_NOTES_CHARS: 240
+
+  # V4: build compressed visual evidence context for selector candidates.
+  # With LOG_ONLY false and global ENABLE_DECISION_EFFECT true, the augmented
+  # context is fed into move_to_next_vp/test_decisions.
+  MULTIMODAL_SELECTOR_CONTEXT:
+    ENABLED: True
+    LOG_ONLY: false
+    MAX_SUMMARY_CHARS: 200
+
+  # Low-risk runtime reduction: cap verbose text LLM outputs while keeping the
+  # same decision flow and candidate set. Set a value <=0 to disable a cap.
+  LLM_RUNTIME:
+    COMPLETION_MAX_TOKENS: 384
+    NAVIGATOR_MAX_TOKENS: 768
+    THOUGHT_FUSION_MAX_TOKENS: 256
+    DECISION_MAX_TOKENS: 64

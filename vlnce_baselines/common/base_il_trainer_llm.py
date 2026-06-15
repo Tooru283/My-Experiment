@@ -5,6 +5,7 @@ import os
 import time
 import warnings
 from collections import defaultdict
+from datetime import datetime
 from typing import Dict, List
 from PIL import Image
 import requests
@@ -12,6 +13,28 @@ from openai import OpenAI
 
 # for navigator      
 from vlnce_baselines.common.navigator.spatialNavigator import *
+from vlnce_baselines.common.opennav_ext import (
+    ContextBuilder,
+    GeometryQueryLogger,
+    GrounderDiagnostic,
+    MetricsLogger,
+    MultimodalSelectorContext,
+    VisualEvidenceFallbackRanker,
+    VisualEvidenceMemory,
+    VisualEvidenceLogger,
+    VisualTargetVerifier,
+    VisualGraphMemoryDiagnostic,
+    build_candidate_records,
+    decision_effect_enabled,
+    fail_open_enabled,
+    get_trace_dir,
+    harness_logging_enabled,
+    module_enabled,
+    module_log_only,
+    selected_distance_gain,
+    summarize_step_outputs,
+    validate_a1_harness_config,
+)
 import torch
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -338,9 +361,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         )
         start_time = time.time()
 
-        # set up the logger
-        log_file = "./navigator_log.log"
-        if os.path.exists(log_file): os.remove(log_file)
+        # set up the navigation record logger
+        nav_record_dir = os.path.join("logs", "navigation_records")
+        os.makedirs(nav_record_dir, exist_ok=True)
+        run_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        exp_name = os.path.splitext(os.path.basename(config.LOG_FILE))[0]
+        nav_record_prefix = f"{exp_name}_navigation_{run_stamp}"
+        log_file = os.path.join(nav_record_dir, f"{nav_record_prefix}.log")
+        nav_jsonl_file = os.path.join(nav_record_dir, f"{nav_record_prefix}.jsonl")
         import logging
         logging.basicConfig(
             format='%(asctime)s - %(filename)s/%(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
@@ -350,7 +378,249 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             filemode="a"
         )
         nav_logger = logging.getLogger("vln_logger")
-        nav_logger.addHandler(logging.FileHandler(filename=log_file))
+        nav_logger.setLevel(os.environ.get("LOGLEVEL", "INFO").upper())
+        nav_logger.propagate = False
+        for handler in list(nav_logger.handlers):
+            if getattr(handler, "_opennav_navigation_record", False):
+                nav_logger.removeHandler(handler)
+                handler.close()
+        nav_file_handler = logging.FileHandler(filename=log_file, encoding="utf-8")
+        nav_file_handler._opennav_navigation_record = True
+        nav_file_handler.setFormatter(
+            logging.Formatter(
+                fmt='%(asctime)s - %(filename)s/%(funcName)s[line:%(lineno)d] - %(levelname)s: %(message)s',
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
+        nav_logger.addHandler(nav_file_handler)
+        nav_logger.info(f"Navigation text log: {log_file}")
+        nav_logger.info(f"Navigation JSONL record: {nav_jsonl_file}")
+
+        validate_a1_harness_config(config)
+        harness_enabled = harness_logging_enabled(config)
+        harness_logger = None
+        geometry_query = None
+        grounder_diagnostic = None
+        visual_evidence = None
+        visual_fallback_ranker = None
+        visual_target_verifier = None
+        visual_target_verifier_decision_effect = False
+        visual_target_verifier_reject_on_uncertain = True
+        visual_evidence_memory = None
+        multimodal_selector_context = None
+        multimodal_selector_context_decision_effect = False
+        memory_diagnostic = None
+        context_builder = None
+        oracle_metrics_enabled = False
+        completion_max_tokens = 0
+        navigator_max_tokens = 0
+        thought_fusion_max_tokens = 0
+        decision_max_tokens = 0
+        active_harness_episode_id = None
+        active_navigation_episode_id = None
+        split = config.TASK_CONFIG.DATASET.SPLIT
+        if harness_enabled:
+            run_id = "{}_seed{}_r{}_w{}".format(
+                "{}_{}".format(exp_name, split),
+                config.TASK_CONFIG.SEED,
+                self.local_rank,
+                self.world_size,
+            )
+            run_id = "{}_{}".format(run_id, run_stamp)
+            harness_logger = MetricsLogger(
+                trace_dir=get_trace_dir(config),
+                run_id=run_id,
+                rank=self.local_rank,
+                fail_open=fail_open_enabled(config),
+                logger=nav_logger,
+            )
+            if module_enabled(config, "GEOMETRY_QUERY"):
+                geometry_query = GeometryQueryLogger()
+            if module_enabled(config, "GROUNDER_DIAGNOSTIC"):
+                grounder_diagnostic = GrounderDiagnostic()
+            if module_enabled(config, "VISUAL_EVIDENCE"):
+                visual_evidence_config = config.OPENNAV_HARNESS.VISUAL_EVIDENCE
+                visual_evidence = VisualEvidenceLogger(
+                    base_url=visual_evidence_config.BASE_URL,
+                    model=visual_evidence_config.MODEL,
+                    max_candidates=visual_evidence_config.MAX_CANDIDATES,
+                    max_image_edge=visual_evidence_config.MAX_IMAGE_EDGE,
+                    max_tokens=visual_evidence_config.MAX_TOKENS,
+                    timeout_seconds=visual_evidence_config.TIMEOUT_SECONDS,
+                    image_jpeg_quality=getattr(
+                        visual_evidence_config, "IMAGE_JPEG_QUALITY", 80
+                    ),
+                    metadata_observation_chars=getattr(
+                        visual_evidence_config,
+                        "METADATA_OBSERVATION_CHARS",
+                        700,
+                    ),
+                    compact_json=getattr(
+                        visual_evidence_config, "COMPACT_JSON", False
+                    ),
+                )
+                visual_fallback_ranker = VisualEvidenceFallbackRanker()
+            if module_enabled(config, "VISUAL_TARGET_VERIFIER"):
+                verifier_config = config.OPENNAV_HARNESS.VISUAL_TARGET_VERIFIER
+                visual_target_verifier = VisualTargetVerifier(
+                    confidence_threshold=verifier_config.CONFIDENCE_THRESHOLD,
+                    require_arrival_evidence=(
+                        verifier_config.REQUIRE_ARRIVAL_EVIDENCE
+                    ),
+                    reject_on_missing_final_landmarks=(
+                        verifier_config.REJECT_ON_MISSING_FINAL_LANDMARKS
+                    ),
+                    min_steps_before_allow=getattr(
+                        verifier_config, "MIN_STEPS_BEFORE_ALLOW", 0
+                    ),
+                    require_full_coverage_for_allow=getattr(
+                        verifier_config,
+                        "REQUIRE_FULL_COVERAGE_FOR_ALLOW",
+                        False,
+                    ),
+                    block_generic_final_terms_for_allow=getattr(
+                        verifier_config,
+                        "BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW",
+                        False,
+                    ),
+                )
+                visual_target_verifier_decision_effect = (
+                    decision_effect_enabled(config)
+                    and not module_log_only(config, "VISUAL_TARGET_VERIFIER")
+                )
+                visual_target_verifier_reject_on_uncertain = bool(
+                    getattr(verifier_config, "REJECT_ON_UNCERTAIN", True)
+                )
+            if module_enabled(config, "VISUAL_EVIDENCE_MEMORY"):
+                visual_memory_config = config.OPENNAV_HARNESS.VISUAL_EVIDENCE_MEMORY
+                visual_evidence_memory = VisualEvidenceMemory(
+                    max_history=visual_memory_config.MAX_HISTORY,
+                    max_notes_chars=visual_memory_config.MAX_NOTES_CHARS,
+                )
+            if module_enabled(config, "MULTIMODAL_SELECTOR_CONTEXT"):
+                vsc_config = config.OPENNAV_HARNESS.MULTIMODAL_SELECTOR_CONTEXT
+                multimodal_selector_context = MultimodalSelectorContext(
+                    max_summary_chars=vsc_config.MAX_SUMMARY_CHARS,
+                )
+                multimodal_selector_context_decision_effect = (
+                    decision_effect_enabled(config)
+                    and not module_log_only(config, "MULTIMODAL_SELECTOR_CONTEXT")
+                )
+            if module_enabled(config, "MEMORY_DIAGNOSTIC"):
+                memory_diagnostic = VisualGraphMemoryDiagnostic()
+            if module_enabled(config, "CONTEXT_BUILDER"):
+                context_builder = ContextBuilder()
+            oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
+            llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
+            if llm_runtime_config is not None:
+                completion_max_tokens = getattr(
+                    llm_runtime_config, "COMPLETION_MAX_TOKENS", 0
+                )
+                navigator_max_tokens = getattr(
+                    llm_runtime_config, "NAVIGATOR_MAX_TOKENS", 0
+                )
+                thought_fusion_max_tokens = getattr(
+                    llm_runtime_config, "THOUGHT_FUSION_MAX_TOKENS", 0
+                )
+                decision_max_tokens = getattr(
+                    llm_runtime_config, "DECISION_MAX_TOKENS", 0
+                )
+
+        def run_harness_tool(tool_name, step_id, fallback, func, *args, **kwargs):
+            if not harness_enabled or func is None:
+                return fallback
+            start_time = time.perf_counter()
+            try:
+                result = func(*args, **kwargs)
+                return result
+            except Exception as exc:
+                if harness_logger is not None:
+                    harness_logger.log_tool_failure(tool_name, step_id, exc)
+                if isinstance(fallback, dict):
+                    failure_payload = dict(fallback)
+                    failure_payload.update(
+                        {
+                            "skipped": True,
+                            "reason": "tool_failure",
+                            "tool_name": tool_name,
+                            "error_type": type(exc).__name__,
+                            "error": repr(exc),
+                        }
+                    )
+                    return failure_payload
+                return fallback
+            finally:
+                record_runtime_latency(
+                    tool_name,
+                    active_navigation_episode_id,
+                    step_id,
+                    time.perf_counter() - start_time,
+                    category="harness_tool",
+                )
+
+        def to_jsonable(value):
+            if torch.is_tensor(value):
+                return value.detach().cpu().tolist()
+            if isinstance(value, np.ndarray):
+                return value.tolist()
+            if isinstance(value, np.generic):
+                return value.item()
+            if isinstance(value, dict):
+                return {str(key): to_jsonable(item) for key, item in value.items()}
+            if isinstance(value, (list, tuple)):
+                return [to_jsonable(item) for item in value]
+            return value
+
+        def write_navigation_record(event, episode_id=None, step=None, **payload):
+            record = {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "event": event,
+                "episode_id": str(episode_id) if episode_id is not None else None,
+                "step": step,
+                "payload": to_jsonable(payload),
+            }
+            try:
+                with open(nav_jsonl_file, "a", encoding="utf-8") as record_file:
+                    record_file.write(json.dumps(record, ensure_ascii=False) + "\n")
+            except Exception as exc:
+                nav_logger.info(f"Navigation JSONL record failed: {exc}")
+
+        def record_runtime_latency(
+            operation,
+            episode_id,
+            step,
+            elapsed_seconds,
+            **payload,
+        ):
+            if not harness_enabled:
+                return
+            latency_payload = {
+                "operation": operation,
+                "elapsed_seconds": round(float(elapsed_seconds), 4),
+            }
+            latency_payload.update(payload)
+            write_navigation_record(
+                "runtime_latency",
+                episode_id=episode_id,
+                step=step,
+                **latency_payload,
+            )
+            if harness_logger is not None:
+                try:
+                    harness_logger.log_event(
+                        "runtime_latency",
+                        step,
+                        latency_payload,
+                    )
+                except Exception as exc:
+                    nav_logger.info(f"Runtime latency trace log failed: {exc}")
+
+        def positive_token_cap(value):
+            try:
+                value = int(value)
+            except (TypeError, ValueError):
+                return None
+            return value if value > 0 else None
         
         dataset_name = "R2R"
         if not os.path.exists(f"cache_files/{dataset_name}"):
@@ -375,6 +645,39 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "get_agent_info", {})
                 positions.append(agent_state_i['position'])
                 headings.append(agent_state_i['heading'])
+            current_episode_id = str(current_episodes[0].episode_id)
+            if (
+                harness_enabled
+                and harness_logger is not None
+                and active_harness_episode_id != current_episode_id
+            ):
+                active_harness_episode_id = current_episode_id
+                harness_logger.start_episode(
+                    current_episode_id,
+                    split,
+                    instruction,
+                    metadata={
+                        "exp_name": exp_name,
+                        "llm": config.LLM,
+                        "trace_dir": get_trace_dir(config),
+                        "positions": positions,
+                        "headings": headings,
+                    },
+                )
+                if memory_diagnostic is not None:
+                    run_harness_tool(
+                        "memory_reset",
+                        0,
+                        None,
+                        memory_diagnostic.reset_episode,
+                    )
+                if visual_evidence_memory is not None:
+                    run_harness_tool(
+                        "visual_evidence_memory_reset",
+                        0,
+                        None,
+                        visual_evidence_memory.reset_episode,
+                    )
             # ==========Navigator start==========
             nav_logger.info(f"==================== The current episode id is {current_episodes[0].episode_id} ====================")
             nav_logger.info("Instruction: "+instruction)
@@ -390,12 +693,55 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 landmarks = actions_cache[instruction]["landmarks"]
             nav_logger.info("Actions: "+actions)
             nav_logger.info("Landmarks: " + landmarks)
+            if active_navigation_episode_id != current_episode_id:
+                active_navigation_episode_id = current_episode_id
+                write_navigation_record(
+                    "episode_start",
+                    episode_id=current_episode_id,
+                    step=0,
+                    instruction=instruction,
+                    actions=actions,
+                    landmarks=landmarks,
+                    positions=positions,
+                    headings=headings,
+                )
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_event(
+                        "episode_metadata",
+                        0,
+                        {
+                            "episode_id": current_episode_id,
+                            "actions": actions,
+                            "landmarks": landmarks,
+                            "positions": positions,
+                            "headings": headings,
+                        },
+                    )
             
             step_length = 6 if len(actions.split("\n")) <= 6 else 8 
 
             stop_flag = False
+            stop_reason = ""
             current_step += 1
             nav_logger.info(f"-------------------- Step {current_step} --------------------")
+            write_navigation_record(
+                "step_start",
+                episode_id=current_episode_id,
+                step=current_step,
+                positions=positions,
+                headings=headings,
+            )
+            if harness_enabled and harness_logger is not None:
+                harness_logger.log_event(
+                    "step_start",
+                    current_step,
+                    {
+                        "episode_id": current_episode_id,
+                        "instruction": instruction,
+                        "positions": positions,
+                        "headings": headings,
+                    },
+                )
             with torch.no_grad():
                 # candidate waypoints prediction
                 cand_rgb, cand_depth, \
@@ -408,46 +754,917 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 )
             
             images_dict, radius_dict, distance_dict = self.construct_image_dicts(batch_distances[-1], batch_angles, images_list)
+            candidates = []
+            geometry_results = []
+            grounding_results = []
+            visual_evidence_results = {}
+            visual_evidence_memory_results = {}
+            memory_results = {}
+            if harness_enabled and harness_logger is not None:
+                candidates = build_candidate_records(
+                    radius_dict,
+                    distance_dict,
+                    images_dict,
+                )
+                harness_logger.log_event(
+                    "waypoint_candidates",
+                    current_step,
+                    {
+                        "candidates": candidates,
+                        "candidate_count": len(candidates),
+                        "candidate_lengths": candidate_lengths,
+                        "candidate_mask": cand_mask,
+                        "candidate_direction": cand_direction,
+                    },
+                )
             nav_logger.info("========== Get Observation ==========")
             observation, observe_dict = navigator.observe_environment(nav_logger, current_step, images_dict)
+            selector_observation = observation
+            selector_observe_dict = observe_dict
+            multimodal_selector_context_results = {}
+            write_navigation_record(
+                "observation",
+                episode_id=current_episode_id,
+                step=current_step,
+                observation=observation,
+                observe_dict=observe_dict,
+                radius_dict=radius_dict,
+                distance_dict=distance_dict,
+            )
+            if harness_enabled and harness_logger is not None:
+                harness_logger.log_event(
+                    "observation",
+                    current_step,
+                    {
+                        "observation": observation,
+                        "observe_dict": observe_dict,
+                    },
+                )
+                geometry_results = run_harness_tool(
+                    "geometry_query",
+                    current_step,
+                    [],
+                    geometry_query.run if geometry_query is not None else None,
+                    candidates,
+                    positions[0] if positions else None,
+                    headings[0] if headings else None,
+                    images_dict,
+                )
+                if geometry_query is not None:
+                    harness_logger.log_event(
+                        "geometry_query",
+                        current_step,
+                        {"results": geometry_results},
+                    )
+                grounding_results = run_harness_tool(
+                    "grounder_diagnostic",
+                    current_step,
+                    [],
+                    grounder_diagnostic.run
+                    if grounder_diagnostic is not None
+                    else None,
+                    instruction,
+                    actions,
+                    landmarks,
+                    observe_dict,
+                    candidates,
+                )
+                if grounder_diagnostic is not None:
+                    harness_logger.log_event(
+                        "grounder_diagnostic",
+                        current_step,
+                        {"results": grounding_results},
+                    )
+                visual_evidence_results = run_harness_tool(
+                    "visual_evidence",
+                    current_step,
+                    {},
+                    visual_evidence.run if visual_evidence is not None else None,
+                    instruction,
+                    actions,
+                    landmarks,
+                    candidates,
+                    images_dict,
+                    observe_dict,
+                )
+                if visual_evidence is not None:
+                    write_navigation_record(
+                        "visual_evidence",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **visual_evidence_results,
+                    )
+                    harness_logger.log_event(
+                        "visual_evidence",
+                        current_step,
+                        visual_evidence_results,
+                    )
+                    sampling_payload = {
+                        "total_candidate_ids": visual_evidence_results.get(
+                            "total_candidate_ids"
+                        ),
+                        "requested_candidate_ids": visual_evidence_results.get(
+                            "requested_candidate_ids"
+                        ),
+                        "selection_reason_by_candidate": (
+                            visual_evidence_results.get(
+                                "selection_reason_by_candidate"
+                            )
+                        ),
+                        "sampled_all": visual_evidence_results.get("sampled_all"),
+                        "sampled_candidate_count": visual_evidence_results.get(
+                            "sampled_candidate_count"
+                        ),
+                        "total_candidate_count": visual_evidence_results.get(
+                            "total_candidate_count"
+                        ),
+                    }
+                    write_navigation_record(
+                        "visual_evidence_sampling",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **sampling_payload,
+                    )
+                    harness_logger.log_event(
+                        "visual_evidence_sampling",
+                        current_step,
+                        sampling_payload,
+                    )
+                visual_evidence_memory_results = run_harness_tool(
+                    "visual_evidence_memory",
+                    current_step,
+                    {},
+                    visual_evidence_memory.update
+                    if visual_evidence_memory is not None
+                    else None,
+                    current_step,
+                    positions[0] if positions else None,
+                    headings[0] if headings else None,
+                    visual_evidence_results,
+                    landmarks,
+                )
+                if visual_evidence_memory is not None:
+                    write_navigation_record(
+                        "visual_evidence_memory",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **visual_evidence_memory_results,
+                    )
+                    harness_logger.log_event(
+                        "visual_evidence_memory",
+                        current_step,
+                        visual_evidence_memory_results,
+                    )
+                multimodal_selector_context_results = run_harness_tool(
+                    "multimodal_selector_context",
+                    current_step,
+                    {
+                        "augmented_observe_dict": observe_dict,
+                        "augmented_observation": observation,
+                    },
+                    multimodal_selector_context.build
+                    if multimodal_selector_context is not None
+                    else None,
+                    observe_dict,
+                    visual_evidence_results,
+                    visual_evidence_memory_results,
+                )
+                if multimodal_selector_context is not None:
+                    selector_context_applied = (
+                        multimodal_selector_context_decision_effect
+                        and isinstance(multimodal_selector_context_results, dict)
+                        and not multimodal_selector_context_results.get("skipped")
+                        and isinstance(
+                            multimodal_selector_context_results.get(
+                                "augmented_observe_dict"
+                            ),
+                            dict,
+                        )
+                    )
+                    multimodal_selector_context_results[
+                        "decision_effect_enabled"
+                    ] = multimodal_selector_context_decision_effect
+                    multimodal_selector_context_results[
+                        "applied"
+                    ] = selector_context_applied
+                    if selector_context_applied:
+                        selector_observe_dict = multimodal_selector_context_results[
+                            "augmented_observe_dict"
+                        ]
+                        selector_observation = (
+                            multimodal_selector_context_results.get(
+                                "augmented_observation"
+                            )
+                            or list(selector_observe_dict.values())
+                        )
+                    write_navigation_record(
+                        "multimodal_selector_context",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **multimodal_selector_context_results,
+                    )
+                    harness_logger.log_event(
+                        "multimodal_selector_context",
+                        current_step,
+                        multimodal_selector_context_results,
+                    )
+                memory_results = run_harness_tool(
+                    "memory_diagnostic",
+                    current_step,
+                    {},
+                    memory_diagnostic.update
+                    if memory_diagnostic is not None
+                    else None,
+                    current_step,
+                    positions[0] if positions else None,
+                    headings[0] if headings else None,
+                    candidates,
+                )
+                if memory_diagnostic is not None:
+                    harness_logger.log_event(
+                        "memory_diagnostic",
+                        current_step,
+                        memory_results,
+                    )
+                diagnostic_context = run_harness_tool(
+                    "context_builder",
+                    current_step,
+                    {},
+                    context_builder.build_diagnostic
+                    if context_builder is not None
+                    else None,
+                    candidates,
+                    geometry_results,
+                    grounding_results,
+                    memory_results,
+                    None,
+                )
+                if context_builder is not None:
+                    harness_logger.log_event(
+                        "diagnostic_context",
+                        current_step,
+                        diagnostic_context,
+                    )
             
             nav_logger.info("========== Review History ==========")
             history_traj = navigator.review_history(nav_logger, nav_history) if len(nav_history) > 0 else "Step 0 start position. "
+            write_navigation_record(
+                "history_review",
+                episode_id=current_episode_id,
+                step=current_step,
+                history=history_traj,
+            )
 
             if not stop_flag:
                 nav_logger.info("========== Estimate Completion Progress ==========")
-                estimation = navigator.estimate_completion(nav_logger, actions, landmarks, history_traj)
-                
-                nav_logger.info("========== Next Action Prediction ==========")
-                predictions, thoughts, break_flag = navigator.move_to_next_vp(nav_logger, current_step, instruction, actions, landmarks, history_traj, estimation, observation, observe_dict)
+                completion_start_time = time.perf_counter()
+                estimation = navigator.estimate_completion(
+                    nav_logger,
+                    actions,
+                    landmarks,
+                    history_traj,
+                    max_tokens=positive_token_cap(completion_max_tokens),
+                )
+                record_runtime_latency(
+                    "completion_estimation",
+                    current_episode_id,
+                    current_step,
+                    time.perf_counter() - completion_start_time,
+                    category="text_llm",
+                    max_tokens=positive_token_cap(completion_max_tokens),
+                )
+                write_navigation_record(
+                    "completion_estimation",
+                    episode_id=current_episode_id,
+                    step=current_step,
+                    estimation=estimation,
+                )
 
-                nav_logger.info("========== Thought ==========")
-                fused_pred_thought = navigator.thought_fusion(nav_logger, predictions, thoughts)
-                
-                nav_logger.info("========== Test Decision ==========")
-                next_vp, thought, error_number = navigator.test_decisions(nav_logger, fused_pred_thought, observation, instruction, error_number, observe_dict)
+                def record_visual_target_verifier(
+                    source,
+                    stop_proposal,
+                    reason,
+                    selected_candidate=None,
+                ):
+                    verifier_results = run_harness_tool(
+                        "visual_target_verifier",
+                        current_step,
+                        {},
+                        visual_target_verifier.verify
+                        if visual_target_verifier is not None
+                        else None,
+                        source,
+                        instruction,
+                        actions,
+                        landmarks,
+                        estimation,
+                        history_traj,
+                        observation,
+                        visual_evidence_results,
+                        stop_proposal,
+                        reason,
+                        selected_candidate,
+                        current_step,
+                    )
+                    if visual_target_verifier is not None:
+                        write_navigation_record(
+                            "visual_target_verifier",
+                            episode_id=current_episode_id,
+                            step=current_step,
+                            **verifier_results,
+                        )
+                        harness_logger.log_event(
+                            "visual_target_verifier",
+                            current_step,
+                            verifier_results,
+                        )
+                    return verifier_results
+
+                def visual_target_verifier_rejects_stop(verifier_results):
+                    if not visual_target_verifier_decision_effect:
+                        return False
+                    if not isinstance(verifier_results, dict):
+                        return False
+                    if verifier_results.get("skipped"):
+                        return False
+                    verdict = verifier_results.get("verdict")
+                    if verdict == "allow":
+                        return False
+                    if verdict == "reject":
+                        return True
+                    if verdict == "uncertain":
+                        return visual_target_verifier_reject_on_uncertain
+                    return False
+
+                def visual_target_verifier_allows_stop(verifier_results):
+                    return (
+                        visual_target_verifier_decision_effect
+                        and isinstance(verifier_results, dict)
+                        and not verifier_results.get("skipped")
+                        and verifier_results.get("verdict") == "allow"
+                    )
+
+                def log_visual_stop_allowed(
+                    source,
+                    original_stop_reason,
+                    verifier_results,
+                ):
+                    allowed_payload = {
+                        "source": source,
+                        "original_stop_reason": original_stop_reason,
+                        "verdict": verifier_results.get("verdict"),
+                        "verifier_reason": verifier_results.get("reason"),
+                        "supporting_candidate_id": verifier_results.get(
+                            "supporting_candidate_id"
+                        ),
+                        "stop_relevant_candidate_id": verifier_results.get(
+                            "stop_relevant_candidate_id"
+                        ),
+                        "candidate_alignment": verifier_results.get(
+                            "candidate_alignment"
+                        ),
+                        "final_target_visible": verifier_results.get(
+                            "final_target_visible"
+                        ),
+                        "arrival_evidence": verifier_results.get(
+                            "arrival_evidence"
+                        ),
+                        "confidence": verifier_results.get("confidence"),
+                        "allow_blockers": verifier_results.get("allow_blockers"),
+                    }
+                    write_navigation_record(
+                        "visual_stop_allowed",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **allowed_payload,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "visual_stop_allowed",
+                            current_step,
+                            allowed_payload,
+                        )
+
+                def apply_visual_stop_gate(
+                    source,
+                    stop_proposal,
+                    reason,
+                    verifier_results,
+                ):
+                    if not stop_proposal or not visual_target_verifier_rejects_stop(
+                        verifier_results
+                    ):
+                        return stop_proposal, reason, False
+                    rejection_payload = {
+                        "source": source,
+                        "original_stop_reason": reason,
+                        "verdict": verifier_results.get("verdict"),
+                        "verifier_reason": verifier_results.get("reason"),
+                        "reject_on_uncertain": (
+                            visual_target_verifier_reject_on_uncertain
+                        ),
+                        "final_target_visible": verifier_results.get(
+                            "final_target_visible"
+                        ),
+                        "arrival_evidence": verifier_results.get(
+                            "arrival_evidence"
+                        ),
+                        "missing_final_landmarks": verifier_results.get(
+                            "missing_final_landmarks"
+                        ),
+                        "contradictions": verifier_results.get("contradictions"),
+                        "allow_blockers": verifier_results.get("allow_blockers"),
+                        "visual_evidence_parse_error": verifier_results.get(
+                            "visual_evidence_parse_error"
+                        ),
+                    }
+                    write_navigation_record(
+                        "visual_stop_rejected",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **rejection_payload,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "visual_stop_rejected",
+                            current_step,
+                            rejection_payload,
+                        )
+                    nav_logger.info(
+                        "Visual target verifier rejected STOP from {}: {}".format(
+                            source,
+                            verifier_results.get("reason"),
+                        )
+                    )
+                    return False, "", True
+
+                stop_flag, stop_reason = navigator.should_stop(nav_logger, actions, landmarks, estimation, history_traj, observation)
+                completion_verifier_results = record_visual_target_verifier(
+                    "completion_gate",
+                    stop_flag,
+                    stop_reason,
+                )
+                stop_flag, stop_reason, _ = apply_visual_stop_gate(
+                    "completion_gate",
+                    stop_flag,
+                    stop_reason,
+                    completion_verifier_results,
+                )
+                if stop_flag and visual_target_verifier_allows_stop(
+                    completion_verifier_results
+                ):
+                    log_visual_stop_allowed(
+                        "completion_gate",
+                        stop_reason,
+                        completion_verifier_results,
+                    )
+                if stop_flag:
+                    next_vp = STOP_CANDIDATE
+                    thought = stop_reason
+                    nav_logger.info(f"========== Stop Decision: {stop_reason} ==========")
+                    write_navigation_record(
+                        "stop_decision",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        reason=stop_reason,
+                        estimation=estimation,
+                    )
+                    write_navigation_record(
+                        "selector_final",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        selected_candidate=next_vp,
+                        thought=thought,
+                        error_number=error_number,
+                        selector_context_applied=(
+                            multimodal_selector_context_results.get(
+                                "applied", False
+                            )
+                            if isinstance(
+                                multimodal_selector_context_results, dict
+                            )
+                            else False
+                        ),
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "stop_decision",
+                            current_step,
+                            {
+                                "reason": stop_reason,
+                                "estimation": estimation,
+                            },
+                        )
+                        harness_logger.log_event(
+                            "selector_final",
+                            current_step,
+                            {
+                                "selected_candidate": next_vp,
+                                "thought": thought,
+                                "error_number": error_number,
+                                "selector_context_applied": (
+                                    multimodal_selector_context_results.get(
+                                        "applied", False
+                                    )
+                                    if isinstance(
+                                        multimodal_selector_context_results, dict
+                                    )
+                                    else False
+                                ),
+                            },
+                        )
+                else:
+                    nav_logger.info("========== Next Action Prediction ==========")
+                    selector_start_time = time.perf_counter()
+                    predictions, thoughts, break_flag = navigator.move_to_next_vp(
+                        nav_logger,
+                        current_step,
+                        instruction,
+                        actions,
+                        landmarks,
+                        history_traj,
+                        estimation,
+                        selector_observation,
+                        selector_observe_dict,
+                        max_tokens=positive_token_cap(navigator_max_tokens),
+                    )
+                    record_runtime_latency(
+                        "navigator_move_to_next_vp",
+                        current_episode_id,
+                        current_step,
+                        time.perf_counter() - selector_start_time,
+                        category="text_llm",
+                        max_tokens=positive_token_cap(navigator_max_tokens),
+                    )
+                    write_navigation_record(
+                        "selector_raw",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        predictions=predictions,
+                        thoughts=thoughts,
+                        break_flag=break_flag,
+                        selector_context_applied=(
+                            multimodal_selector_context_results.get(
+                                "applied", False
+                            )
+                            if isinstance(
+                                multimodal_selector_context_results, dict
+                            )
+                            else False
+                        ),
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "selector_raw",
+                            current_step,
+                            {
+                                "predictions": predictions,
+                                "thoughts": thoughts,
+                                "break_flag": break_flag,
+                                "estimation": estimation,
+                                "selector_context_applied": (
+                                    multimodal_selector_context_results.get(
+                                        "applied", False
+                                    )
+                                    if isinstance(
+                                        multimodal_selector_context_results, dict
+                                    )
+                                    else False
+                                ),
+                            },
+                        )
+                    if not predictions:
+                        fallback_results = run_harness_tool(
+                            "selector_empty_prediction_fallback",
+                            current_step,
+                            {},
+                            visual_fallback_ranker.rank
+                            if visual_fallback_ranker is not None
+                            else None,
+                            selector_observe_dict,
+                            visual_evidence_results,
+                            instruction,
+                            actions,
+                            landmarks,
+                        )
+                        selected_fallback = (
+                            fallback_results.get("selected_candidate")
+                            if isinstance(fallback_results, dict)
+                            else None
+                        )
+                        if selected_fallback in selector_observe_dict:
+                            predictions = [selected_fallback]
+                            thoughts = [selector_observe_dict[selected_fallback]]
+                        write_navigation_record(
+                            "selector_empty_prediction_fallback",
+                            episode_id=current_episode_id,
+                            step=current_step,
+                            previous_predictions=[],
+                            **(
+                                fallback_results
+                                if isinstance(fallback_results, dict)
+                                else {}
+                            ),
+                        )
+                        if harness_enabled and harness_logger is not None:
+                            harness_logger.log_event(
+                                "selector_empty_prediction_fallback",
+                                current_step,
+                                fallback_results,
+                            )
+
+                    nav_logger.info("========== Thought ==========")
+                    thought_fusion_start_time = time.perf_counter()
+                    fused_pred_thought = navigator.thought_fusion(
+                        nav_logger,
+                        predictions,
+                        thoughts,
+                        max_tokens=positive_token_cap(thought_fusion_max_tokens),
+                    )
+                    record_runtime_latency(
+                        "thought_fusion",
+                        current_episode_id,
+                        current_step,
+                        time.perf_counter() - thought_fusion_start_time,
+                        category="text_llm",
+                        max_tokens=positive_token_cap(thought_fusion_max_tokens),
+                        prediction_count=len(predictions),
+                    )
+                    write_navigation_record(
+                        "selector_fused",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        fused_predictions=fused_pred_thought,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "selector_fused",
+                            current_step,
+                            {"fused_predictions": fused_pred_thought},
+                        )
+
+                    nav_logger.info("========== Test Decision ==========")
+                    test_decision_start_time = time.perf_counter()
+                    next_vp, thought, error_number = navigator.test_decisions(
+                        nav_logger,
+                        fused_pred_thought,
+                        selector_observation,
+                        instruction,
+                        error_number,
+                        selector_observe_dict,
+                        max_tokens=positive_token_cap(decision_max_tokens),
+                    )
+                    record_runtime_latency(
+                        "test_decision",
+                        current_episode_id,
+                        current_step,
+                        time.perf_counter() - test_decision_start_time,
+                        category="text_llm",
+                        max_tokens=positive_token_cap(decision_max_tokens),
+                        fused_candidate_count=len(fused_pred_thought),
+                    )
+                    if next_vp == STOP_CANDIDATE:
+                        old_stop_flag, old_stop_reason = navigator.should_stop(nav_logger, actions, landmarks, estimation, history_traj, observation)
+                        stop_flag = old_stop_flag
+                        stop_reason = old_stop_reason
+                        selector_stop_rejection_reason = (
+                            "navigator_stop_failed_stop_gate"
+                        )
+                        selector_verifier_results = record_visual_target_verifier(
+                            "selector_stop_gate",
+                            True,
+                            old_stop_reason or "Navigator selected STOP.",
+                            selected_candidate=None,
+                        )
+                        if visual_target_verifier_allows_stop(
+                            selector_verifier_results
+                        ):
+                            stop_flag = True
+                            stop_reason = (
+                                "Navigator selected STOP and visual target "
+                                "verifier allowed STOP."
+                            )
+                            log_visual_stop_allowed(
+                                "selector_stop_gate",
+                                old_stop_reason
+                                or "Navigator selected STOP.",
+                                selector_verifier_results,
+                            )
+                        elif visual_target_verifier_rejects_stop(
+                            selector_verifier_results
+                        ):
+                            stop_flag, stop_reason, _ = apply_visual_stop_gate(
+                                "selector_stop_gate",
+                                True,
+                                old_stop_reason or "Navigator selected STOP.",
+                                selector_verifier_results,
+                            )
+                            selector_stop_rejection_reason = (
+                                "visual_target_verifier_rejected_stop"
+                            )
+                        if stop_flag:
+                            if not stop_reason:
+                                stop_reason = (
+                                    "Navigator selected STOP and stop gate passed."
+                                )
+                        else:
+                            nav_logger.info("Navigator selected STOP but stop gate failed; fallback to a movement candidate")
+                            filtered_fused_pred_thought = {
+                                key: value for key, value in fused_pred_thought.items()
+                                if key != STOP_CANDIDATE
+                            }
+                            stop_fallback_start_time = time.perf_counter()
+                            next_vp, thought, error_number = navigator.test_decisions(
+                                nav_logger,
+                                filtered_fused_pred_thought,
+                                selector_observation,
+                                instruction,
+                                error_number,
+                                selector_observe_dict,
+                                max_tokens=positive_token_cap(decision_max_tokens),
+                            )
+                            record_runtime_latency(
+                                "test_decision_after_stop_rejection",
+                                current_episode_id,
+                                current_step,
+                                time.perf_counter() - stop_fallback_start_time,
+                                category="text_llm",
+                                max_tokens=positive_token_cap(decision_max_tokens),
+                                fused_candidate_count=len(
+                                    filtered_fused_pred_thought
+                                ),
+                            )
+                            if next_vp == STOP_CANDIDATE:
+                                fallback_vp = next(iter(selector_observe_dict.keys()))
+                                nav_logger.info(f"Stop rejection fallback returned STOP; force movement candidate {fallback_vp}")
+                                write_navigation_record(
+                                    "stop_rejected_fallback",
+                                    episode_id=current_episode_id,
+                                    step=current_step,
+                                    invalid_candidate=next_vp,
+                                    fallback_candidate=fallback_vp,
+                                )
+                                next_vp = fallback_vp
+                                thought = selector_observe_dict[fallback_vp]
+                            write_navigation_record(
+                                "stop_rejected",
+                                episode_id=current_episode_id,
+                                step=current_step,
+                                reason=selector_stop_rejection_reason,
+                                fallback_candidate=next_vp,
+                            )
+                    write_navigation_record(
+                        "selector_final",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        selected_candidate=next_vp,
+                        thought=thought,
+                        error_number=error_number,
+                        selector_context_applied=(
+                            multimodal_selector_context_results.get(
+                                "applied", False
+                            )
+                            if isinstance(
+                                multimodal_selector_context_results, dict
+                            )
+                            else False
+                        ),
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        final_context = run_harness_tool(
+                            "context_builder_final",
+                            current_step,
+                            {},
+                            context_builder.build_diagnostic
+                            if context_builder is not None
+                            else None,
+                            candidates,
+                            geometry_results,
+                            grounding_results,
+                            memory_results,
+                            next_vp,
+                        )
+                        if context_builder is not None:
+                            harness_logger.log_event(
+                                "diagnostic_context_final",
+                                current_step,
+                                final_context,
+                            )
+                        harness_logger.log_event(
+                            "selector_final",
+                            current_step,
+                            {
+                                "selected_candidate": next_vp,
+                                "thought": thought,
+                                "error_number": error_number,
+                                "selector_context_applied": (
+                                    multimodal_selector_context_results.get(
+                                        "applied", False
+                                    )
+                                    if isinstance(
+                                        multimodal_selector_context_results, dict
+                                    )
+                                    else False
+                                ),
+                            },
+                        )
            
             try:
-                if not stop_flag:
-                    env_actions = []
+                termination_reasons = [None for _ in range(envs.num_envs)]
+                env_actions = []
+                if stop_flag:
+                    env_actions.append({"action": {"action": 0, "action_args": None}})
+                else:
+                    if next_vp not in radius_dict or next_vp not in distance_dict:
+                        fallback_vp = next(iter(radius_dict.keys()))
+                        nav_logger.info(f"Invalid selected candidate {next_vp}; fallback to {fallback_vp}")
+                        write_navigation_record(
+                            "selector_fallback",
+                            episode_id=current_episode_id,
+                            step=current_step,
+                            invalid_candidate=next_vp,
+                            fallback_candidate=fallback_vp,
+                        )
+                        next_vp = fallback_vp
                     env_actions.append({'action':
                         {'action': 4,
                         'action_args':{
                             'angle': radius_dict[next_vp],
                             'distance': distance_dict[next_vp],
                         }}})
-                    nav_logger.info(f"The final env action: {env_actions}")
-                    outputs = envs.step(env_actions)
-                    
+
+                nav_logger.info(f"The final env action: {env_actions}")
+                write_navigation_record(
+                    "action_pre_step",
+                    episode_id=current_episode_id,
+                    step=current_step,
+                    selected_candidate=next_vp,
+                    env_action=env_actions[0],
+                    stop_reason=stop_reason if stop_flag else None,
+                )
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_event(
+                        "action_pre_step",
+                        current_step,
+                        {
+                            "selected_candidate": next_vp,
+                            "env_action": env_actions[0],
+                            "stop_reason": stop_reason if stop_flag else None,
+                        },
+                    )
+                outputs = envs.step(env_actions)
+                step_output_summary = summarize_step_outputs(outputs)
+                write_navigation_record(
+                    "action_post_step",
+                    episode_id=current_episode_id,
+                    step=current_step,
+                    selected_candidate=next_vp,
+                    step_outputs=step_output_summary,
+                    stop_reason=stop_reason if stop_flag else None,
+                )
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_event(
+                        "action_post_step",
+                        current_step,
+                        {
+                            "selected_candidate": next_vp,
+                            "step_outputs": step_output_summary,
+                            "stop_reason": stop_reason if stop_flag else None,
+                        },
+                    )
+
+                if not stop_flag:
                     curr_observe = observe_dict[next_vp]
                     nav_logger.info("========== save history ==========")
                     nav_history = navigator.save_history(nav_logger, current_step, next_vp, thought, curr_observe, nav_history)
-                
-                    observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+                    write_navigation_record(
+                        "history_saved",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        selected_candidate=next_vp,
+                        thought=thought,
+                        current_observation=curr_observe,
+                        nav_history=nav_history,
+                    )
+
+                observations, _, dones, infos = [list(x) for x in zip(*outputs)]
+                termination_reasons = [
+                    "environment_done" if done else None for done in dones
+                ]
+                if stop_flag:
+                    termination_reasons = [
+                        "stop_requested" if done else None for done in dones
+                    ]
+                    if not dones[0]:
+                        termination_reasons[0] = "stop_requested"
+                        dones[0] = True
+                else:
                     instruction, images_list = self.generate_input(observations[-1])
                     error_number = 0 
                     # finish navigation
                     if current_step == step_length:
+                        if not dones[0]:
+                            termination_reasons[0] = "step_length_limit"
                         dones[0] = True 
                     else:
                         for j, ob in enumerate(observations):
@@ -456,8 +1673,6 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 {'new_path': ob.pop('positions'),
                                 'collisions': ob.pop('collisions')}
                             )
-                else:
-                    dones[0] = True
                 
                 not_done_masks = torch.tensor(
                     [[0] if done else [1] for done in dones],
@@ -468,6 +1683,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     if not dones[i]:
                         continue
                     
+                    episode_end_step = current_step
                     current_step = 0
                     nav_history = []
                     info = infos[i]
@@ -481,12 +1697,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         assert collisions_.shape[0] == positions_.shape[0] - 1
                     else:
                         positions_ = np.array(dis_to_con(np.array(info['position']['position']))).astype(float)
+                        collisions_ = np.zeros(max(positions_.shape[0] - 1, 0), dtype=float)
                     distance = np.array(info['position']['distance']).astype(float)
                     metric['distance_to_goal'] = distance[-1]
                     metric['success'] = 1. if distance[-1] <= 3. else 0.
                     metric['oracle_success'] = 1. if (distance <= 3.).any() else 0.
                     metric['path_length'] = np.linalg.norm(positions_[1:] - positions_[:-1],axis=1).sum()
-                    metric['collisions'] = collisions_.mean()
+                    metric['collisions'] = collisions_.mean() if collisions_.size > 0 else 0.0
                     gt_length = distance[0]
                     metric['spl'] = metric['success']*gt_length/max(gt_length,metric['path_length'])
 
@@ -497,6 +1714,48 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
 
                     metric['ndtw'] = nDTW
                     stats_episodes[current_episodes[i].episode_id] = metric 
+                    write_navigation_record(
+                        "episode_termination",
+                        episode_id=ep_id,
+                        step=episode_end_step,
+                        reason=termination_reasons[i],
+                        step_length=step_length,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "episode_termination",
+                            episode_end_step,
+                            {
+                                "episode_id": ep_id,
+                                "reason": termination_reasons[i],
+                                "step_length": step_length,
+                            },
+                        )
+                    write_navigation_record(
+                        "episode_end",
+                        episode_id=ep_id,
+                        step=episode_end_step,
+                        metrics=metric,
+                        termination_reason=termination_reasons[i],
+                        evaluated_episodes=len(stats_episodes),
+                        total_episodes=episodes_to_eval,
+                    )
+                    active_navigation_episode_id = None
+                    if harness_enabled and harness_logger is not None:
+                        if oracle_metrics_enabled:
+                            harness_logger.log_event(
+                                "oracle_metrics",
+                                episode_end_step,
+                                {
+                                    "distance_gain_selected": selected_distance_gain(info),
+                                },
+                            )
+                        harness_logger.end_episode(
+                            ep_id,
+                            metric,
+                            step_id=episode_end_step,
+                        )
+                        active_harness_episode_id = None
 
                     observations[i] = envs.reset_at(i)[0]
                     instruction, images_list = self.generate_input(observations[i])
@@ -543,6 +1802,18 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 headings = headings.tolist()
             except Exception as e:
                 nav_logger.info(f"Error in next action prediction: {e}")
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_tool_failure(
+                        "navigation_loop",
+                        locals().get("current_step", 0),
+                        e,
+                    )
+                write_navigation_record(
+                    "navigation_error",
+                    episode_id=locals().get("current_episode_id"),
+                    step=locals().get("current_step"),
+                    error=repr(e),
+                )
                 current_step -= 1
         envs.close()
         if config.use_pbar:
@@ -683,4 +1954,3 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             
         self.traj = self.collect_val_traj()
         self._eval_llm()
-

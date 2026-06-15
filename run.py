@@ -36,7 +36,7 @@ def main():
         "--llm",
         type=str,
         required=True,
-        help="The LLM model to be used (e.g., gpt-4o-2024-08-06, Qwen/Qwen2.5-1.5B)",
+        help="The LLM model to be used (e.g., gpt-4o-2024-08-06, Qwen/Qwen3.5-4B)",
     )
     parser.add_argument(
         "--api_key",
