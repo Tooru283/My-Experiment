@@ -18,6 +18,73 @@
 - 不引入在线多 sub-agent 协作。
 - 不把模型升级和模块收益混在同一组实验里。
 
+## 项目框架流程图
+
+下图按当前代码主链整理，重点展示 Open-Nav 原始导航闭环如何被本项目的 controlled navigation harness 包裹。`external/habitat-lab-v0.1.7`、`recognize_anything`、`SpatialBot` 等外部依赖或候选模型资源不展开到内部实现。
+
+```mermaid
+flowchart TD
+  A["运行入口<br/>run_OpenNav.bash"] --> B["run.py<br/>加载 run_OpenNav.yaml / vlnce_task.yaml"]
+  B --> C["baseline_registry<br/>schedulesampler-OPENNAV"]
+  C --> D["SSTrainer<br/>BaseVLNCETrainerLLM.eval"]
+
+  subgraph Inputs["输入与外部依赖"]
+    I1["R2R / VLN-CE 数据集<br/>Habitat Simulator / MP3D 场景"]
+    I2["预训练导航组件<br/>PolicyViewSelectionCMA + TRM waypoint predictor"]
+    I3["本地 OpenAI-compatible LLM/VLM 服务<br/>Qwen/Qwen-VL 等"]
+  end
+
+  I1 --> D
+  I2 --> D
+  I3 --> D
+
+  D --> E["Episode start<br/>instruction -> actions / landmarks cache"]
+  E --> F["候选生成<br/>RGB-D observation -> waypoint candidates"]
+  F --> G["候选观察<br/>Open_Nav.observe_environment"]
+
+  subgraph Harness["OpenNav Harness / V 系列"]
+    H1["V1 VisualEvidenceLogger<br/>候选级视觉证据抽取"]
+    H2["V3 VisualEvidenceMemory<br/>episode 内证据聚合"]
+    H3["V4 MultimodalSelectorContext<br/>视觉摘要注入 selector 输入"]
+    H4["V2 VisualTargetVerifier<br/>STOP proposal 验证"]
+    H5["VisualEvidenceFallbackRanker<br/>空预测或拒绝 STOP 后排序 fallback"]
+  end
+
+  G --> H1
+  H1 --> H2
+  H2 --> H3
+
+  G --> J["历史回顾 + completion estimation"]
+  J --> K{"completion gate<br/>是否提议 STOP?"}
+  K -- "是" --> H4
+  K -- "否" --> L["LLM selector<br/>move_to_next_vp"]
+  H3 --> L
+
+  H4 -- "allow" --> S["STOP action"]
+  H4 -- "reject / uncertain" --> H5
+  H5 --> L
+
+  L --> M["thought_fusion + test_decisions"]
+  M --> N{"selector 输出"}
+  N -- "候选 waypoint" --> O["环境动作<br/>action=4, angle + distance"]
+  N -- "STOP" --> H4
+  N -- "空预测 / 无效候选" --> H5
+
+  O --> P["envs.step<br/>更新位置、碰撞、history"]
+  P --> Q{"episode 结束?"}
+  Q -- "否" --> F
+  Q -- "是" --> R["episode metrics<br/>SR / SPL / nDTW / TL 等"]
+  S --> R
+
+  R --> T["输出记录<br/>navigation_records / harness_traces / eval_results / running_log"]
+```
+
+关键读法:
+
+- `run_OpenNav.yaml` 是当前 V 系列开关的主要来源；`ENABLE_DECISION_EFFECT=true` 且对应模块 `LOG_ONLY=false` 时，V2/V4 才会真实改变导航决策。
+- V1 负责把候选 RGB 视角转成结构化视觉证据；V3 把证据聚合成 episode 内记忆；V4 把候选级视觉摘要追加到 selector 输入；V2 对 completion gate 或 selector 提出的 STOP 做保守验证。
+- 原始 Open-Nav 的 `move_to_next_vp -> thought_fusion -> test_decisions -> envs.step` 闭环保留，harness 主要在候选证据、STOP gate、fallback、trace 日志四个位置介入。
+
 ## 当前状态
 
 更新时间: 2026-06-15
