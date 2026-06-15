@@ -161,6 +161,15 @@ logs/navigation_records/v24_series_qwen_siglip_local_20260614_122559_train_navig
 5. 在 V2/V4 稳定后，再恢复 R4 adaptive candidate sampling。
 6. 最后再重跑 100 episode，不把小样本正向信号直接写成最终结论。
 
+## 待改进事项
+
+这些方向不直接替换当前主线 baseline，应作为独立 ablation 或后续分支评估，避免把模型升级收益和 Harness 模块收益混在一起。
+
+| 方向 | 当前判断 | 注意事项 |
+|------|----------|----------|
+| DD-PPO depth encoder 替代 | Habitat DD-PPO 官方还有 SE-ResNeXt50 / SE-ResNeXt101 等更强深度编码器可调研 | 当前代码按 `VlnResnetDepthEncoder` + ResNet-50 权重结构加载，不能直接替换 checkpoint，需要改 backbone 和加载逻辑 |
+| SmartWay-style waypoint predictor | 2025 SmartWay 方向用 DINOv2、masked cross-attention、occupancy-aware loss 强化 waypoint prediction，适合作为候选生成升级路线 | 这会改变 waypoint 候选质量和错误分布，应单独做 `Waypoint Predictor Upgrade` 对照，不应混入 V2/V4 主实验 |
+
 下一轮必须检查的日志字段:
 
 ```text
