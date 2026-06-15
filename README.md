@@ -4,20 +4,6 @@
 
 原始 Open-Nav 作为 waypoint-based baseline 保留。本项目在其外层逐步加入显式状态、视觉证据、STOP 验证、selector context、fallback 排序和结构化 trace，用来分析零样本连续环境导航中的失败来源。
 
-## 当前状态
-
-更新时间: 2026-06-15
-
-当前主线: V 系列多模态视觉证据 + V2/V4 decision-effect 修正。
-
-核心判断:
-
-- V1 visual evidence schema 问题已经修复，裸数组输出会被规范化为 `{"candidates": [...]}`。
-- V4 selector context 和 visual ranked fallback 已经能消费候选级视觉证据。
-- 小样本中 V2/V4 有正向信号，但 100 episode 结果还不能作为稳定改进结论。
-- 当前主要风险从“视觉证据未被消费”转为 “V2 STOP allow 过宽”，尤其是泛化目标词和 `completion_gate` 来源的 STOP。
-- 下一步应先跑 10 到 12 episode 小样本验证 STOP 修复，不应直接跑 100 episode。
-
 ## 实验目标
 
 本项目要回答的问题是:
@@ -32,18 +18,52 @@
 - 不引入在线多 sub-agent 协作。
 - 不把模型升级和模块收益混在同一组实验里。
 
+## 当前状态
+
+更新时间: 2026-06-15
+
+当前主线: V 系列多模态视觉证据 + V2/V4 decision-effect 修正。
+
+核心判断:
+
+- V1 visual evidence schema 问题已经修复，裸数组输出会被规范化为 `{"candidates": [...]}`。
+- V4 selector context 和 visual ranked fallback 已经能消费候选级视觉证据。
+- 小样本中 V2/V4 有正向信号，但 100 episode 结果还不能作为稳定改进结论。
+- 当前主要风险从“视觉证据未被消费”转为 “V2 STOP allow 过宽”，尤其是泛化目标词和 `completion_gate` 来源的 STOP。
+- 下一步应先跑 10 到 12 episode 小样本验证 STOP 修复，不应直接跑 100 episode。
+
 ## 阶段划分
 
-| 阶段 | 名称 | 是否改变导航行为 | 当前状态 |
-|------|------|------------------|----------|
-| A0 | Open-Nav original baseline | 否 | 保留为原始对照 |
-| A1 | Instrumented / harnessed baseline | 否 | 已有初版，仍需 A0/A1 指标对齐复核 |
-| B1 | Evidence logging | 否 | V1 visual evidence 已实现 |
-| B2 | Selector context injection | 是 | V4 已进入 decision-effect |
-| C1 | Visual evidence memory | 主要为 log-only | V3 已实现初版 |
-| E | STOP verifier | 是 | V2 已进入 decision-effect，正在收紧 allow |
-| F | Fallback ranking | 是 | visual ranked fallback 已接入并需继续复测 |
-| G | Runtime / resource policy | 是 | compact JSON、JPEG 质量、token cap 已接入 |
+阶段顺序:
+
+```text
+A0/A1 固定可比基线
+  -> B/C 只记录证据和状态
+  -> D/E/F 让证据进入决策链
+  -> G 降低运行成本
+  -> H 单独评估模型升级
+```
+
+A 阶段用于保证可比性。B/C 阶段主要产生日志和诊断证据。D/E/F 阶段才允许改变导航行为。G/H 属于后续优化，不能混入当前 V2/V4 主实验收益。
+
+| 阶段 | 类型 | 核心问题 | 是否改行为 | 当前状态 |
+|------|------|----------|------------|----------|
+| A0 Baseline | 原始对照 | 原始 Open-Nav 在同一批 episode 上表现如何 | 否 | 保留为参照 |
+| A1 Instrumented Baseline | 行为不变的 Harness 外壳 | 加日志、状态、trace 后是否仍与 A0 一致 | 否 | 已有初版，仍需 A0/A1 指标对齐 |
+| B Evidence Logging | 候选级证据采集 | 每个 waypoint 候选是否有可解析语义/视觉证据 | 否 | V1 已实现，schema 修复已生效 |
+| C Memory & State | episode 内状态聚合 | 单步证据能否沉淀为 seen target、arrival evidence、revisit/novelty | 主要 log-only | V3 已实现初版 |
+| D Selector Context | 证据进入候选选择 | 候选级视觉摘要能否帮助 selector 选更合理的 waypoint | 是 | V4 已进入 decision-effect |
+| E STOP Verification | STOP 验证 | STOP 是否有足够视觉证据支持，能否减少提前 STOP | 是 | V2 已接入，正在收紧 allow 规则 |
+| F Fallback Policy | 失败恢复 | 空预测或 STOP 被拒后，能否替代 first-candidate fallback | 是 | visual ranked fallback 已接入，需继续复测 |
+| G Runtime Policy | 运行成本控制 | 如何降低 VLM/LLM latency，同时不破坏证据覆盖率 | 是，但不应改变候选集合 | compact JSON、JPEG、token cap 已接入；adaptive sampling 暂缓 |
+| H Model Upgrade | 模型升级对照 | 更强 depth encoder / waypoint predictor 是否带来独立收益 | 是，必须单独消融 | 待调研 |
+
+阶段验收口径:
+
+- A1 必须先证明 SR/SPL/NE/TL 与 A0 基本一致，才能把后续收益归因给 Harness 模块。
+- B/C 的产物首先是日志质量，不直接声明导航性能收益。
+- D/E/F 的收益必须分别看 selector 变化、STOP allow/reject case、fallback 后 distance gain。
+- G/H 必须单独做对照，避免把运行策略或模型升级收益混入 V2/V4。
 
 ## V 系列模块
 
