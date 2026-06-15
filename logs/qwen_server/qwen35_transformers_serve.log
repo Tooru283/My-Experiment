@@ -1,0 +1,956 @@
+[transformers] Loading /root/models/Qwen3.5-4B@main
+[transformers] loading configuration file /root/models/Qwen3.5-4B/preprocessor_config.json
+[transformers] loading configuration file None
+[transformers] loading configuration file /root/models/Qwen3.5-4B/preprocessor_config.json
+[transformers] loading configuration file /root/models/Qwen3.5-4B/preprocessor_config.json
+[transformers] Image processor Qwen2VLImageProcessor {
+  "do_convert_rgb": true,
+  "do_normalize": true,
+  "do_rescale": true,
+  "do_resize": true,
+  "image_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "image_processor_type": "Qwen2VLImageProcessor",
+  "image_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "merge_size": 2,
+  "patch_size": 16,
+  "resample": 3,
+  "rescale_factor": 0.00392156862745098,
+  "size": {
+    "longest_edge": 16777216,
+    "shortest_edge": 65536
+  },
+  "temporal_patch_size": 2
+}
+
+[transformers] loading configuration file /root/models/Qwen3.5-4B/config.json
+[transformers] Model config Qwen3_5Config {
+  "architectures": [
+    "Qwen3_5ForConditionalGeneration"
+  ],
+  "image_token_id": 248056,
+  "model_type": "qwen3_5",
+  "text_config": {
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "attn_output_gate": true,
+    "bos_token_id": null,
+    "dtype": "bfloat16",
+    "eos_token_id": 248044,
+    "full_attention_interval": 4,
+    "head_dim": 256,
+    "hidden_act": "silu",
+    "hidden_size": 2560,
+    "initializer_range": 0.02,
+    "intermediate_size": 9216,
+    "layer_types": [
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention"
+    ],
+    "linear_conv_kernel_dim": 4,
+    "linear_key_head_dim": 128,
+    "linear_num_key_heads": 16,
+    "linear_num_value_heads": 32,
+    "linear_value_head_dim": 128,
+    "mamba_ssm_dtype": "float32",
+    "max_position_embeddings": 262144,
+    "mlp_only_layers": [],
+    "model_type": "qwen3_5_text",
+    "mtp_num_hidden_layers": 1,
+    "mtp_use_dedicated_embeddings": false,
+    "num_attention_heads": 16,
+    "num_hidden_layers": 32,
+    "num_key_value_heads": 4,
+    "pad_token_id": null,
+    "partial_rotary_factor": 0.25,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "mrope_interleaved": true,
+      "mrope_section": [
+        11,
+        11,
+        10
+      ],
+      "partial_rotary_factor": 0.25,
+      "rope_theta": 10000000,
+      "rope_type": "default"
+    },
+    "tie_word_embeddings": true,
+    "use_cache": true,
+    "vocab_size": 248320
+  },
+  "tie_word_embeddings": true,
+  "transformers_version": "5.9.0",
+  "video_token_id": 248057,
+  "vision_config": {
+    "deepstack_visual_indexes": [],
+    "depth": 24,
+    "hidden_act": "gelu_pytorch_tanh",
+    "hidden_size": 1024,
+    "in_channels": 3,
+    "initializer_range": 0.02,
+    "intermediate_size": 4096,
+    "model_type": "qwen3_5_vision",
+    "num_heads": 16,
+    "num_position_embeddings": 2304,
+    "out_hidden_size": 2560,
+    "patch_size": 16,
+    "spatial_merge_size": 2,
+    "temporal_patch_size": 2
+  },
+  "vision_end_token_id": 248054,
+  "vision_start_token_id": 248053
+}
+
+[transformers] loading configuration file /root/models/Qwen3.5-4B/video_preprocessor_config.json
+[transformers] loading configuration file /root/models/Qwen3.5-4B/video_preprocessor_config.json
+[transformers] Video processor Qwen3VLVideoProcessor {
+  "do_convert_rgb": true,
+  "do_normalize": true,
+  "do_rescale": true,
+  "do_resize": true,
+  "do_sample_frames": true,
+  "fps": 2,
+  "image_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "image_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "max_frames": 768,
+  "merge_size": 2,
+  "min_frames": 4,
+  "patch_size": 16,
+  "resample": 3,
+  "rescale_factor": 0.00392156862745098,
+  "return_metadata": false,
+  "size": {
+    "longest_edge": 25165824,
+    "shortest_edge": 4096
+  },
+  "temporal_patch_size": 2,
+  "video_processor_type": "Qwen3VLVideoProcessor"
+}
+
+[transformers] Processor Qwen3VLProcessor:
+- image_processor: Qwen2VLImageProcessor {
+  "do_convert_rgb": true,
+  "do_normalize": true,
+  "do_rescale": true,
+  "do_resize": true,
+  "image_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "image_processor_type": "Qwen2VLImageProcessor",
+  "image_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "merge_size": 2,
+  "patch_size": 16,
+  "resample": 3,
+  "rescale_factor": 0.00392156862745098,
+  "size": {
+    "longest_edge": 16777216,
+    "shortest_edge": 65536
+  },
+  "temporal_patch_size": 2
+}
+
+- tokenizer: Qwen2Tokenizer(name_or_path='/root/models/Qwen3.5-4B', vocab_size=248044, model_max_length=262144, padding_side='right', truncation_side='right', special_tokens={'eos_token': '<|im_end|>', 'pad_token': '<|endoftext|>', 'audio_bos_token': '<|audio_start|>', 'audio_eos_token': '<|audio_end|>', 'audio_token': '<|audio_pad|>', 'image_token': '<|image_pad|>', 'video_token': '<|video_pad|>', 'vision_bos_token': '<|vision_start|>', 'vision_eos_token': '<|vision_end|>'}, added_tokens_decoder={
+	248044: AddedToken("<|endoftext|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248045: AddedToken("<|im_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248046: AddedToken("<|im_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248047: AddedToken("<|object_ref_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248048: AddedToken("<|object_ref_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248049: AddedToken("<|box_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248050: AddedToken("<|box_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248051: AddedToken("<|quad_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248052: AddedToken("<|quad_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248053: AddedToken("<|vision_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248054: AddedToken("<|vision_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248055: AddedToken("<|vision_pad|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248056: AddedToken("<|image_pad|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248057: AddedToken("<|video_pad|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248058: AddedToken("<tool_call>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248059: AddedToken("</tool_call>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248060: AddedToken("<|fim_prefix|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248061: AddedToken("<|fim_middle|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248062: AddedToken("<|fim_suffix|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248063: AddedToken("<|fim_pad|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248064: AddedToken("<|repo_name|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248065: AddedToken("<|file_sep|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248066: AddedToken("<tool_response>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248067: AddedToken("</tool_response>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248068: AddedToken("<think>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248069: AddedToken("</think>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=False),
+	248070: AddedToken("<|audio_start|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248071: AddedToken("<|audio_end|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248072: AddedToken("<tts_pad>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248073: AddedToken("<tts_text_bos>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248074: AddedToken("<tts_text_eod>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248075: AddedToken("<tts_text_bos_single>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+	248076: AddedToken("<|audio_pad|>", rstrip=False, lstrip=False, single_word=False, normalized=False, special=True),
+})
+- video_processor: Qwen3VLVideoProcessor {
+  "do_convert_rgb": true,
+  "do_normalize": true,
+  "do_rescale": true,
+  "do_resize": true,
+  "do_sample_frames": true,
+  "fps": 2,
+  "image_mean": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "image_std": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "max_frames": 768,
+  "merge_size": 2,
+  "min_frames": 4,
+  "patch_size": 16,
+  "resample": 3,
+  "rescale_factor": 0.00392156862745098,
+  "return_metadata": false,
+  "size": {
+    "longest_edge": 25165824,
+    "shortest_edge": 4096
+  },
+  "temporal_patch_size": 2,
+  "video_processor_type": "Qwen3VLVideoProcessor"
+}
+
+
+{
+  "image_processor": {
+    "do_convert_rgb": true,
+    "do_normalize": true,
+    "do_rescale": true,
+    "do_resize": true,
+    "image_mean": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "image_processor_type": "Qwen2VLImageProcessor",
+    "image_std": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "merge_size": 2,
+    "patch_size": 16,
+    "resample": 3,
+    "rescale_factor": 0.00392156862745098,
+    "size": {
+      "longest_edge": 16777216,
+      "shortest_edge": 65536
+    },
+    "temporal_patch_size": 2
+  },
+  "processor_class": "Qwen3VLProcessor",
+  "video_processor": {
+    "do_convert_rgb": true,
+    "do_normalize": true,
+    "do_rescale": true,
+    "do_resize": true,
+    "do_sample_frames": true,
+    "fps": 2,
+    "image_mean": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "image_std": [
+      0.5,
+      0.5,
+      0.5
+    ],
+    "max_frames": 768,
+    "merge_size": 2,
+    "min_frames": 4,
+    "patch_size": 16,
+    "resample": 3,
+    "rescale_factor": 0.00392156862745098,
+    "return_metadata": false,
+    "size": {
+      "longest_edge": 25165824,
+      "shortest_edge": 4096
+    },
+    "temporal_patch_size": 2,
+    "video_processor_type": "Qwen3VLVideoProcessor"
+  }
+}
+
+[transformers] loading configuration file /root/models/Qwen3.5-4B/config.json
+[transformers] Model config Qwen3_5Config {
+  "architectures": [
+    "Qwen3_5ForConditionalGeneration"
+  ],
+  "dtype": "bfloat16",
+  "image_token_id": 248056,
+  "model_type": "qwen3_5",
+  "text_config": {
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "attn_output_gate": true,
+    "bos_token_id": null,
+    "dtype": "bfloat16",
+    "eos_token_id": 248044,
+    "full_attention_interval": 4,
+    "head_dim": 256,
+    "hidden_act": "silu",
+    "hidden_size": 2560,
+    "initializer_range": 0.02,
+    "intermediate_size": 9216,
+    "layer_types": [
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention"
+    ],
+    "linear_conv_kernel_dim": 4,
+    "linear_key_head_dim": 128,
+    "linear_num_key_heads": 16,
+    "linear_num_value_heads": 32,
+    "linear_value_head_dim": 128,
+    "mamba_ssm_dtype": "float32",
+    "max_position_embeddings": 262144,
+    "mlp_only_layers": [],
+    "model_type": "qwen3_5_text",
+    "mtp_num_hidden_layers": 1,
+    "mtp_use_dedicated_embeddings": false,
+    "num_attention_heads": 16,
+    "num_hidden_layers": 32,
+    "num_key_value_heads": 4,
+    "pad_token_id": null,
+    "partial_rotary_factor": 0.25,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "mrope_interleaved": true,
+      "mrope_section": [
+        11,
+        11,
+        10
+      ],
+      "partial_rotary_factor": 0.25,
+      "rope_theta": 10000000,
+      "rope_type": "default"
+    },
+    "tie_word_embeddings": true,
+    "use_cache": true,
+    "vocab_size": 248320
+  },
+  "tie_word_embeddings": true,
+  "transformers_version": "5.9.0",
+  "video_token_id": 248057,
+  "vision_config": {
+    "deepstack_visual_indexes": [],
+    "depth": 24,
+    "hidden_act": "gelu_pytorch_tanh",
+    "hidden_size": 1024,
+    "in_channels": 3,
+    "initializer_range": 0.02,
+    "intermediate_size": 4096,
+    "model_type": "qwen3_5_vision",
+    "num_heads": 16,
+    "num_position_embeddings": 2304,
+    "out_hidden_size": 2560,
+    "patch_size": 16,
+    "spatial_merge_size": 2,
+    "temporal_patch_size": 2
+  },
+  "vision_end_token_id": 248054,
+  "vision_start_token_id": 248053
+}
+
+[transformers] loading configuration file /root/models/Qwen3.5-4B/config.json
+[transformers] Model config Qwen3_5Config {
+  "architectures": [
+    "Qwen3_5ForConditionalGeneration"
+  ],
+  "dtype": "bfloat16",
+  "image_token_id": 248056,
+  "model_type": "qwen3_5",
+  "text_config": {
+    "attention_bias": false,
+    "attention_dropout": 0.0,
+    "attn_output_gate": true,
+    "bos_token_id": null,
+    "dtype": "bfloat16",
+    "eos_token_id": 248044,
+    "full_attention_interval": 4,
+    "head_dim": 256,
+    "hidden_act": "silu",
+    "hidden_size": 2560,
+    "initializer_range": 0.02,
+    "intermediate_size": 9216,
+    "layer_types": [
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention",
+      "linear_attention",
+      "linear_attention",
+      "linear_attention",
+      "full_attention"
+    ],
+    "linear_conv_kernel_dim": 4,
+    "linear_key_head_dim": 128,
+    "linear_num_key_heads": 16,
+    "linear_num_value_heads": 32,
+    "linear_value_head_dim": 128,
+    "mamba_ssm_dtype": "float32",
+    "max_position_embeddings": 262144,
+    "mlp_only_layers": [],
+    "model_type": "qwen3_5_text",
+    "mtp_num_hidden_layers": 1,
+    "mtp_use_dedicated_embeddings": false,
+    "num_attention_heads": 16,
+    "num_hidden_layers": 32,
+    "num_key_value_heads": 4,
+    "pad_token_id": null,
+    "partial_rotary_factor": 0.25,
+    "rms_norm_eps": 1e-06,
+    "rope_parameters": {
+      "mrope_interleaved": true,
+      "mrope_section": [
+        11,
+        11,
+        10
+      ],
+      "partial_rotary_factor": 0.25,
+      "rope_theta": 10000000,
+      "rope_type": "default"
+    },
+    "tie_word_embeddings": true,
+    "use_cache": true,
+    "vocab_size": 248320
+  },
+  "tie_word_embeddings": true,
+  "transformers_version": "5.9.0",
+  "video_token_id": 248057,
+  "vision_config": {
+    "deepstack_visual_indexes": [],
+    "depth": 24,
+    "hidden_act": "gelu_pytorch_tanh",
+    "hidden_size": 1024,
+    "in_channels": 3,
+    "initializer_range": 0.02,
+    "intermediate_size": 4096,
+    "model_type": "qwen3_5_vision",
+    "num_heads": 16,
+    "num_position_embeddings": 2304,
+    "out_hidden_size": 2560,
+    "patch_size": 16,
+    "spatial_merge_size": 2,
+    "temporal_patch_size": 2
+  },
+  "vision_end_token_id": 248054,
+  "vision_start_token_id": 248053
+}
+
+[transformers] loading weights file /root/models/Qwen3.5-4B/model.safetensors.index.json
+[transformers] Will use dtype=torch.bfloat16 as defined in model's config object
+[transformers] Generate config GenerationConfig {
+  "output_attentions": false,
+  "output_hidden_states": false
+}
+
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/723 [00:00<?, ?it/s]Loading weights:   0%|          | 1/723 [00:00<07:19,  1.64it/s]Loading weights:   2%|▏         | 13/723 [00:00<00:30, 22.92it/s]Loading weights:   4%|▎         | 27/723 [00:00<00:15, 45.24it/s]Loading weights:   5%|▌         | 37/723 [00:00<00:12, 54.78it/s]Loading weights:   6%|▋         | 46/723 [00:01<00:11, 59.50it/s]Loading weights:   9%|▉         | 64/723 [00:01<00:07, 86.63it/s]Loading weights:  11%|█         | 76/723 [00:01<00:07, 90.83it/s]Loading weights:  12%|█▏        | 89/723 [00:01<00:06, 99.25it/s]Loading weights:  14%|█▍        | 101/723 [00:01<00:06, 89.89it/s]Loading weights:  16%|█▋        | 118/723 [00:01<00:06, 99.62it/s]Loading weights:  18%|█▊        | 129/723 [00:01<00:06, 90.34it/s]Loading weights:  19%|█▉        | 139/723 [00:02<00:06, 86.86it/s]Loading weights:  21%|██        | 149/723 [00:02<00:06, 86.16it/s]Loading weights:  22%|██▏       | 159/723 [00:02<00:06, 87.56it/s]Loading weights:  23%|██▎       | 168/723 [00:02<00:07, 78.70it/s]Loading weights:  25%|██▍       | 178/723 [00:02<00:07, 77.33it/s]Loading weights:  26%|██▌       | 187/723 [00:02<00:06, 80.05it/s]Loading weights:  28%|██▊       | 200/723 [00:02<00:05, 91.47it/s]Loading weights:  29%|██▉       | 210/723 [00:02<00:05, 90.74it/s]Loading weights:  31%|███       | 223/723 [00:02<00:04, 101.28it/s]Loading weights:  32%|███▏      | 234/723 [00:03<00:05, 86.01it/s] Loading weights:  34%|███▍      | 247/723 [00:03<00:04, 95.28it/s]Loading weights:  36%|███▌      | 258/723 [00:03<00:05, 86.73it/s]Loading weights:  38%|███▊      | 272/723 [00:03<00:04, 94.48it/s]Loading weights:  39%|███▉      | 282/723 [00:03<00:04, 93.96it/s]Loading weights:  40%|████      | 292/723 [00:03<00:04, 89.46it/s]Loading weights:  42%|████▏     | 306/723 [00:03<00:04, 97.00it/s]Loading weights:  44%|████▎     | 316/723 [00:03<00:04, 95.03it/s]Loading weights:  46%|████▌     | 330/723 [00:04<00:03, 103.93it/s]Loading weights:  47%|████▋     | 341/723 [00:04<00:03, 99.50it/s] Loading weights:  49%|████▊     | 352/723 [00:04<00:03, 98.89it/s]Loading weights:  50%|█████     | 362/723 [00:04<00:03, 91.62it/s]Loading weights:  51%|█████▏    | 372/723 [00:04<00:03, 89.73it/s]Loading weights:  53%|█████▎    | 383/723 [00:04<00:03, 87.27it/s]Loading weights:  54%|█████▍    | 394/723 [00:04<00:03, 92.16it/s]Loading weights:  56%|█████▋    | 407/723 [00:04<00:03, 100.18it/s]Loading weights:  58%|█████▊    | 418/723 [00:05<00:03, 86.65it/s] Loading weights:  60%|█████▉    | 433/723 [00:05<00:02, 99.75it/s]Loading weights:  63%|██████▎   | 454/723 [00:05<00:02, 125.74it/s]Loading weights:  65%|██████▍   | 469/723 [00:05<00:02, 121.97it/s]Loading weights:  68%|██████▊   | 492/723 [00:05<00:01, 141.85it/s]Loading weights:  71%|███████   | 512/723 [00:05<00:01, 154.57it/s]Loading weights:  73%|███████▎  | 528/723 [00:05<00:01, 146.31it/s]Loading weights:  75%|███████▌  | 543/723 [00:05<00:01, 142.94it/s]Loading weights:  77%|███████▋  | 558/723 [00:06<00:01, 141.73it/s]Loading weights:  79%|███████▉  | 574/723 [00:06<00:01, 138.68it/s]Loading weights:  81%|████████▏ | 588/723 [00:06<00:01, 131.48it/s]Loading weights:  83%|████████▎ | 602/723 [00:06<00:00, 123.69it/s]Loading weights:  86%|████████▌ | 622/723 [00:06<00:00, 140.87it/s]Loading weights:  88%|████████▊ | 637/723 [00:06<00:00, 138.17it/s]Loading weights:  90%|█████████ | 651/723 [00:06<00:00, 138.52it/s]Loading weights:  92%|█████████▏| 668/723 [00:06<00:00, 146.83it/s]Loading weights:  94%|█████████▍| 683/723 [00:06<00:00, 142.86it/s]Loading weights:  97%|█████████▋| 698/723 [00:07<00:00, 125.65it/s]Loading weights:  99%|█████████▉| 716/723 [00:07<00:00, 101.18it/s]Loading weights: 100%|██████████| 723/723 [00:07<00:00, 98.45it/s] 
+[transformers] Generation config file not found, using a generation config created from the model config.
+[transformers] loading configuration file /root/models/Qwen3.5-4B/config.json
+[transformers] Generate config GenerationConfig {}
+
+INFO:     Started server process [66170]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:23333 (Press CTRL+C to quit)
+INFO:     127.0.0.1:34696 - "POST /v1/chat/completions HTTP/1.1" 400 Bad Request
+[transformers] Scanning the cache directory for LLMs and VLMs.
+  0%|          | 0/2 [00:00<?, ?it/s]100%|██████████| 2/2 [00:00<00:00, 3131.25it/s]
+INFO:     127.0.0.1:34708 - "GET /v1/models HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] The following generation flags are not valid and may be ignored: ['temperature'].
+[transformers] - `temperature`: `do_sample` is not set to `True`. However, `temperature` is set to `0.0` -- this flag is only used in sample-based generation modes. You should set `do_sample=True` or unset `temperature`.
+If you're using a pretrained model, note that some of these attributes may be set through the model's `generation_config.json` file.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36124 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46790 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52770 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:35386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:35386 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:54780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:46188 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49362 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36448 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:36384 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54162 - "GET /v1/models HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:39780 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:52882 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47236 - "GET /v1/models HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:49146 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:53242 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48814 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:41166 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK
+[transformers] [Request received] Model: /root/models/Qwen3.5-4B@main, CB: False
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+INFO:     127.0.0.1:48884 - "POST /v1/chat/completions HTTP/1.1" 200 OK

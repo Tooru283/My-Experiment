@@ -1,0 +1,2 @@
+2026-06-12 22:16:46 - base_il_trainer_llm.py/_eval_llm[line:395] - INFO: Navigation text log: logs/navigation_records/v_series_qwen_siglip_local_20260612_221613_train_navigation_20260612_221646.log
+2026-06-12 22:16:46 - base_il_trainer_llm.py/_eval_llm[line:396] - INFO: Navigation JSONL record: logs/navigation_records/v_series_qwen_siglip_local_20260612_221613_train_navigation_20260612_221646.jsonl

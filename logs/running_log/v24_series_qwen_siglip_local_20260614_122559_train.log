@@ -1,0 +1,11 @@
+2026-06-14 12:26:12,210 Initializing dataset VLN-CE-v1
+2026-06-14 12:26:28,517 Finished setting up waypoint_predictor.
+2026-06-14 13:48:50,379 Episodes evaluated: 11
+2026-06-14 13:48:50,383 Average episode steps_taken: 5.454545
+2026-06-14 13:48:50,383 Average episode distance_to_goal: 5.779057
+2026-06-14 13:48:50,383 Average episode success: 0.363636
+2026-06-14 13:48:50,383 Average episode oracle_success: 0.363636
+2026-06-14 13:48:50,384 Average episode path_length: 6.461936
+2026-06-14 13:48:50,384 Average episode collisions: 0.014648
+2026-06-14 13:48:50,384 Average episode spl: 0.341577
+2026-06-14 13:48:50,384 Average episode ndtw: 0.584377

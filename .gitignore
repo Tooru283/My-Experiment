@@ -6,11 +6,12 @@ __pycache__/
 # Local OS/editor files
 .DS_Store
 
-# Experiment outputs and local caches
-logs/
+# Experiment caches and transient local outputs
 cache_files/
 image_show/
 navigator_log.log
+logs/checkpoints/
+logs/**/*.pid
 
 # Datasets and local simulator assets
 data/scene_datasets/mp3d/
@@ -24,8 +25,10 @@ data/pretrained_models/ddppo-models/
 waypoint_prediction/checkpoints/
 recognize_anything/pretrained/
 
-# Nested third-party repository metadata
-SpatialBot/.git/
-SpatialBot3B/.git/
-recognize_anything/.git/
-external/habitat-lab-v0.1.7/.git/
+# Local third-party/vendor repositories and model snapshots
+SpatialBot/
+SpatialBot3B/
+recognize_anything/
+external/
+rag/
+RAG/

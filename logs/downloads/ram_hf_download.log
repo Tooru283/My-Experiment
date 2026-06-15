@@ -1,0 +1,7 @@
+Downloading 'ram_swin_large_14m.pth' to '/root/wjj/Open-Nav/recognize_anything/pretrained/.cache/huggingface/download/7h6zEAN5cniys0zAPTz1TYnY7d0=.15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed.incomplete'
+Removing incomplete file '/root/wjj/Open-Nav/recognize_anything/pretrained/.cache/huggingface/download/7h6zEAN5cniys0zAPTz1TYnY7d0=.15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed.incomplete' (force_download=True)
+Downloading 'ram_swin_large_14m.pth' to '/root/wjj/Open-Nav/recognize_anything/pretrained/.cache/huggingface/download/7h6zEAN5cniys0zAPTz1TYnY7d0=.15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed.incomplete'
+Downloading 'ram_swin_large_14m.pth' to '/root/wjj/Open-Nav/recognize_anything/pretrained/.cache/huggingface/download/7h6zEAN5cniys0zAPTz1TYnY7d0=.15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed.incomplete' (resume from 1893518873/5625634877)
+Downloading 'ram_swin_large_14m.pth' to '/root/wjj/Open-Nav/recognize_anything/pretrained/.cache/huggingface/download/7h6zEAN5cniys0zAPTz1TYnY7d0=.15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed.incomplete' (resume from 3246877874/5625634877)
+Download complete. Moving file to /root/wjj/Open-Nav/recognize_anything/pretrained/ram_swin_large_14m.pth
+/root/wjj/Open-Nav/recognize_anything/pretrained/ram_swin_large_14m.pth

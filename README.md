@@ -143,99 +143,58 @@ A 阶段用于保证可比性。B/C 阶段主要产生日志和诊断证据。D/
 | Visual fallback | `vlnce_baselines/common/opennav_ext/visual_fallback.py` | selector 空预测时用视觉证据排序候选 |
 | Schema tools | `vlnce_baselines/common/opennav_ext/visual_evidence_schema.py` | 统一兼容 dict/list 形式的 V1 输出 |
 
+## 数据集与日志
+
+当前仓库已包含 OpenNav_R2R-CE_100 的 `val_unseen` 小规模评估数据:
+
+| 文件 | 用途 |
+|------|------|
+| `data/datasets/R2R_VLNCE_v1-2_preprocessed/val_unseen/OpenNav_R2R-CE_100_bertidx.json.gz` | 100 个 R2R-CE / VLN-CE episode 的指令、路径和 BERT index 预处理数据，用于当前小样本与 100 episode 评估 |
+| `data/datasets/R2R_VLNCE_v1-2_preprocessed/val_unseen/val_unseen_gt.json.gz` | `val_unseen` ground truth，用于 success、oracle_success、SPL、nDTW、distance_to_goal 等指标计算 |
+
+已提交的实验日志目录:
+
+| 目录 | 内容 | 汇报用途 |
+|------|------|----------|
+| `logs/navigation_records/` | 每轮导航的 JSONL 事件日志和 plain log | 复盘每个 episode 的动作、STOP、fallback、V1/V2/V4 事件 |
+| `logs/harness_traces/` | 按 episode 拆分的 structured trace | 定位 selector context、STOP verifier、fallback 对具体 step 的影响 |
+| `logs/eval_results/` | Habitat 评估输出的 aggregate / per-episode 指标 | 快速读取 SR、SPL、nDTW、distance 等指标 |
+| `logs/running_log/` | shell / trainer 运行记录 | 检查启动配置、进程运行和异常终止 |
+| `logs/downloads/` | 模型或依赖下载记录 | 追踪本地模型准备过程 |
+
 ## 已观察结果
 
-### V2/V4 decision-effect 小样本
+### 日志索引
 
-记录文件:
+| ID | 日志文件 |
+|----|----------|
+| V4-100 | `logs/navigation_records/1/v_series_qwen_siglip_local_20260612_233128_train_navigation_20260612_233156.jsonl` |
+| V24-10 | `logs/navigation_records/1/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.jsonl` |
+| R23-10 | `logs/navigation_records/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.jsonl` |
+| R23C-12 | `logs/navigation_records/v24_series_qwen_siglip_local_20260613_175536_train_navigation_20260613_175605.jsonl` |
+| RR-100 | `logs/navigation_records/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.jsonl` |
+| PRE-11 | `logs/navigation_records/v24_series_qwen_siglip_local_20260614_101818_train_navigation_20260614_101847.jsonl` |
+| FIX-11 | `logs/navigation_records/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.jsonl` |
 
-```text
-logs/navigation_records/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.jsonl
-```
+### 主要指标
 
-10 episode 结果:
+| ID | 实验含义 | Ep | success | oracle | SPL | nDTW | mean DTG | 关键诊断 |
+|----|----------|----|---------|--------|-----|------|----------|----------|
+| V4-100 | 早期 V4-only 100 episode | 100 | 10/100 | 11/100 | 0.0921 | 0.4311 | 7.8584 | `parse_error=415/423`，视觉证据大多没有进入 selector |
+| V24-10 | V2/V4 decision-effect 小样本 | 10 | 3/10 | 6/10 | 0.2863 | 0.6699 | 4.2091 | `parse_error=0/57`，`visual_stop_rejected=28`，V4 已真实进入 selector |
+| R23-10 | V2-first STOP gate + visual ranked fallback | 10 | 5/10 | 7/10 | 0.4863 | 0.7105 | 3.4895 | 6 次 fallback 触发，10 episode 中表现最好，但仍有误 STOP 风险 |
+| R23C-12 | conservative STOP / fallback 小样本 | 12 | 5/12 | 7/12 | 0.4053 | 0.6311 | 4.5635 | `visual_stop_allowed=0`，`visual_stop_rejected=36`，全部到 step limit |
+| RR-100 | Runtime Reduce 100 episode | 100 | 19/100 | 24/100 | 0.1708 | 0.4797 | 7.4200 | latency 降低，但 compact schema 漂移导致 `mm_ctx zero=581/600` |
+| PRE-11 | schema 修复前小样本 | 11 | 1/11 | 1/11 | 0.0693 | 0.4777 | 6.9756 | `mm_ctx zero=49/63`，fallback 缺少候选证据 |
+| FIX-11 | schema 修复后小样本 | 11 | 4/11 | 4/11 | 0.3416 | 0.5844 | 5.7791 | `parsed_root_type=dict 60/60`，`mm_ctx zero=0/60`，fallback evidence 7/7 |
 
-| 指标 | 数值 |
-|------|------|
-| success | 3/10 |
-| oracle_success | 6/10 |
-| SPL mean | 0.2863 |
-| nDTW mean | 0.6699 |
-| distance_to_goal mean | 4.2091 |
-| visual_evidence parse_error | 0/57 |
-| visual_stop_rejected | 28 |
+### 诊断结论
 
-结论: V2 拦截提前 STOP 有效，V4 context 已真实进入 selector。
-
-### R2/R3: V2-first STOP gate + visual ranked fallback
-
-记录文件:
-
-```text
-logs/navigation_records/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.jsonl
-```
-
-同 10 episode 对比 V2/V4-current:
-
-| 指标 | V2/V4-current | R2/R3 |
-|------|---------------|-------|
-| success | 3/10 | 5/10 |
-| oracle_success | 6/10 | 7/10 |
-| SPL mean | 0.2863 | 0.4863 |
-| nDTW mean | 0.6699 | 0.7105 |
-| distance_to_goal mean | 4.2091 | 3.4895 |
-
-结论: visual ranked fallback 是正向信号。6 次空预测 fallback 中，3 次改变旧 first-candidate fallback，且这些动作均为正 distance gain。
-
-### 100 episode 运行复盘
-
-记录文件:
-
-```text
-logs/navigation_records/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.jsonl
-```
-
-100 episode 结果:
-
-| 指标 | 数值 |
-|------|------|
-| success | 19/100 |
-| oracle_success | 24/100 |
-| SPL | 0.1708 |
-| nDTW | 0.4797 |
-| mean distance_to_goal | 7.42 |
-
-结论: Runtime Reduce 有效降低耗时，但该 100 episode 结果不能作为当前最优。主要问题是 compact V1 输出发生 schema 漂移，导致 V4/fallback 没有真实消费候选级视觉证据。
-
-### Schema 修复后小样本
-
-记录文件:
-
-```text
-logs/navigation_records/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.jsonl
-```
-
-11 episode 结果:
-
-| 指标 | 修复前 | 修复后 |
-|------|--------|--------|
-| success | 1/11 | 4/11 |
-| SPL | 0.0693 | 0.3416 |
-| nDTW | 0.4777 | 0.5844 |
-| distance_to_goal | 6.9756 | 5.7791 |
-
-修复确认:
-
-- `visual_evidence.parsed_root_type=dict`: 60/60。
-- V4 `candidate_evidence_count=0`: 0。
-- fallback 触发 7 次，候选证据数量均大于 0。
-- fallback 7 次中 3 次改变原首候选，5 次带来正向距离增益。
-
-剩余问题:
-
-- 2 次 `visual_stop_allowed` 都是失败终止。
-- 已修复 `completion_gate` 上泛化 final landmarks 的 STOP allow 过宽问题。
-- 需要下一轮小样本验证该修复是否真正降低误停。
+- 从 V4-100 到 V24-10，核心变化不是单纯加模块，而是把 V1 视觉证据从“记录到日志”推进到“能被 V4 selector context 消费”。`parse_error` 从 415/423 降到 0/57 后，success 从 10% 提升到 30%，oracle_success 从 11% 提升到 60%。
+- R23-10 是当前小样本中最强的正向信号: success 5/10、SPL 0.4863、nDTW 0.7105、mean DTG 3.4895。它说明 visual ranked fallback 有价值，但样本量太小，不能直接写成最终结论。
+- RR-100 说明“运行成本下降”和“导航效果提升”不能混为一谈。该轮 100 episode 的 visual evidence latency 均值约 15.18s/step，但 compact JSON 产生 schema 漂移，导致 V4/fallback 大量拿不到候选证据。
+- PRE-11 到 FIX-11 是最清晰的 schema 修复对照: success 从 1/11 到 4/11，SPL 从 0.0693 到 0.3416，nDTW 从 0.4777 到 0.5844；同时 `candidate_evidence_count=0` 问题被清掉。
+- STOP 仍是当前最大风险点。V2 能显著减少提前 STOP，但 `visual_stop_allowed` 的 evidence threshold 仍需收紧，尤其是 `completion_gate` 来源、泛化目标词、只看到相似类别但没有 arrival evidence 的情况。
 
 ## 下一步
 
@@ -333,10 +292,14 @@ OPENNAV_HARNESS:
 
 ## 依赖和大文件
 
-本仓库没有提交本地大模型权重、Matterport3D 场景数据和运行日志。它们需要按路径自行准备:
+本仓库已提交当前实验日志和 OpenNav_R2R-CE_100 的 `val_unseen` 小规模评估数据。第三方源码库、模型快照和场景资产只作为本地依赖保留，不作为仓库内容提交。以下路径需要按本地环境自行准备:
 
 ```text
 data/scene_datasets/mp3d/
+external/
+recognize_anything/
+SpatialBot/
+SpatialBot3B/
 waypoint_prediction/checkpoints/check_val_best_avg_wayscore
 data/pretrained_models/ddppo-models/gibson-2plus-resnet50.pth
 recognize_anything/pretrained/ram_swin_large_14m.pth
@@ -346,13 +309,20 @@ SpatialBot3B/model-00002-of-00002.safetensors
 
 当前 `.gitignore` 已排除:
 
-- `logs/`
 - `cache_files/`
+- `image_show/`
+- `navigator_log.log`
+- `logs/checkpoints/`
 - `__pycache__/`
 - `data/scene_datasets/mp3d/`
 - `*.safetensors`
 - `*.pth`
 - `waypoint_prediction/checkpoints/`
+- `SpatialBot/`
+- `SpatialBot3B/`
+- `recognize_anything/`
+- `external/`
+- `rag/`
 
 ## 原 Open-Nav 信息
 

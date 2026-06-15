@@ -1,0 +1,40 @@
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Downloading 'README.md' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/Xn7B-BWUGOee2Y6hCZtEhtFu4BE=.48d61e422f426f2aaea4ec574222cb273548d527.incomplete'
+Downloading 'config.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/8_PA_wEVGiVa2goH2H4KQOQpvVY=.709c1ee2f507a847b0e9505e2d8ebe9bd2a00645.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/README.md
+Downloading 'merges.txt' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/PtHk0z_I45atnj23IIRhTExwT3w=.226b0752cac7789c48f0cb3ec53eda48b7be36cc.incomplete'
+Downloading 'configuration_bunny_phi.py' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/C6tAiypGHd1_asATaL01rjIe6-c=.78b315b12d7223e60415542a176d426128052de3.incomplete'
+Downloading '.gitattributes' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/wPaCkH-WbT7GsmxMKKrNZTV4nSM=.a6344aac8c09253b3b630fb776ae94478aa0275b.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/config.json
+Downloading 'model-00001-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/aoe4E07IMh7reFyUkVoVk040mQk=.7d8918a8609afb922081ff0ffda06cce13c91492e75041518bc910dc1ef73d5e.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/.gitattributes
+Fetching 17 files:   6%|▌         | 1/17 [00:01<00:25,  1.61s/it]Downloading 'model-00002-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/Dr_lZJDwE1cnGAQMwA77jJEQIk8=.3b6df6756ba8e19e11ab016ebed9a1e0bdc86771539400e38af78dcb2cef516d.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/configuration_bunny_phi.py
+Downloading 'depth.png' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/uYRvib6Lv7n27ICUzU1IlkIxXrA=.4a051b1880193eca4ea8fdfbfff94e3f43f64da1.incomplete'
+Downloading 'generation_config.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/3EVKVggOldJcKSsGjSdoUCN1AyQ=.45c3a55687dbee02d603f08f6a771f77cd866c7b.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/merges.txt
+Downloading 'modeling_bunny_phi.py' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/Qf4NXN28Bp4GGVqnMUUSpN6I6mc=.99637bb26f7ccad8c6eedc26c138ae349d6cbfb3.incomplete'
+Downloading 'model.safetensors.index.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/yVzAsSxRSINSz-tQbpx-TLpfkLU=.a2e133025f0112199fe63973088e64d6b87cb930.incomplete'
+Downloading 'rgb.jpg' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/CzdBjQPzAQO-mgXpzLrnyXevk08=.b915de221d34653f1fee128ed12a59304125e776.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/generation_config.json
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/modeling_bunny_phi.py
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/rgb.jpg
+Downloading 'tokenizer_config.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/vzaExXFZNBay89bvlQv-ZcI6BTg=.1ee2893ed35b1cb6b330b0ccaf9e8d36ead6c4aa.incomplete'
+Downloading 'special_tokens_map.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/ahkChHUJFxEmOdq5GDFEmerRzCY=.7fb88369a36878182d8a7d1d9249cca0f6093b1a.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/depth.png
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/model.safetensors.index.json
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/tokenizer_config.json
+Downloading 'tokenizer.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/HgM_lKo9sdSCfRtVg7MMFS7EKqo=.42abda8d63936a1d175282ffb01dcfc2572120dc.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/special_tokens_map.json
+Downloading 'vocab.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/j3m-Hy6QvBddw8RXA1uSWl1AJ0c=.84ef7fb594b5c0979e48bdeddb60a0adef33df0b.incomplete'
+Downloading 'added_tokens.json' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/SeqzFlf9ZNZ3or_wZAOIdsM3Yxw=.7debb4784a7d53328d4d021fc46314bec4af3833.incomplete'
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/vocab.json
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/added_tokens.json
+Fetching 17 files:  18%|█▊        | 3/17 [00:05<00:26,  1.86s/it]Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/tokenizer.json
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/model-00002-of-00002.safetensors
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Downloading 'model-00001-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/aoe4E07IMh7reFyUkVoVk040mQk=.7d8918a8609afb922081ff0ffda06cce13c91492e75041518bc910dc1ef73d5e.incomplete' (resume from 4080513629/4990950824)
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Downloading 'model-00001-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/aoe4E07IMh7reFyUkVoVk040mQk=.7d8918a8609afb922081ff0ffda06cce13c91492e75041518bc910dc1ef73d5e.incomplete' (resume from 2604776817/4990950824)
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Downloading 'model-00001-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/aoe4E07IMh7reFyUkVoVk040mQk=.7d8918a8609afb922081ff0ffda06cce13c91492e75041518bc910dc1ef73d5e.incomplete' (resume from 3879278457/4990950824)
+Fetching 17 files:   0%|          | 0/17 [00:00<?, ?it/s]Downloading 'model-00001-of-00002.safetensors' to '/root/wjj/Open-Nav/SpatialBot3B/.cache/huggingface/download/aoe4E07IMh7reFyUkVoVk040mQk=.7d8918a8609afb922081ff0ffda06cce13c91492e75041518bc910dc1ef73d5e.incomplete' (resume from 2940212263/4990950824)
+Download complete. Moving file to /root/wjj/Open-Nav/SpatialBot3B/model-00001-of-00002.safetensors
+Fetching 17 files:  53%|█████▎    | 9/17 [11:37<10:19, 77.48s/it]Fetching 17 files:  88%|████████▊ | 15/17 [11:37<01:19, 39.69s/it]Fetching 17 files: 100%|██████████| 17/17 [11:37<00:00, 41.03s/it]
+/root/wjj/Open-Nav/SpatialBot3B
