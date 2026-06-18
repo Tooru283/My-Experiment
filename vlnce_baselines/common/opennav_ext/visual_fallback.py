@@ -45,6 +45,21 @@ _GENERIC_TERMS = {
     "with",
 }
 
+_WEAK_FINAL_TARGET_TERMS = {
+    "area",
+    "archway",
+    "doorway",
+    "entry way",
+    "entryway",
+    "floor",
+    "hall",
+    "hallway",
+    "room",
+    "stair",
+    "stairs",
+    "staircase",
+}
+
 
 def _as_list(value: Any) -> List[str]:
     if value is None:
@@ -91,6 +106,35 @@ def _extract_terms(*texts: Any) -> List[str]:
     return terms[:32]
 
 
+def _final_instruction_terms(landmarks: str) -> List[str]:
+    chunks = [
+        chunk.strip()
+        for chunk in re.split(r"[,;\n]+", str(landmarks or ""))
+        if chunk.strip()
+    ]
+    if not chunks:
+        return []
+    final_chunk = re.sub(
+        r"^\s*(?:[-*]|\d+[\.\)]|landmark\s*\d+\s*:)\s*",
+        "",
+        chunks[-1],
+        flags=re.I,
+    ).strip()
+    alternatives = [
+        part.strip()
+        for part in re.split(r"\s*(?:/|\||\bor\b)\s*", final_chunk)
+        if part.strip()
+    ]
+    return alternatives or ([final_chunk] if final_chunk else [])
+
+
+def _all_final_terms_weak(landmarks: str) -> bool:
+    final_terms = _final_instruction_terms(landmarks)
+    if not final_terms:
+        return False
+    return all(_normalize_text(term) in _WEAK_FINAL_TARGET_TERMS for term in final_terms)
+
+
 def _local_term_hits(
     terms: List[str],
     observe_text: str,
@@ -123,11 +167,15 @@ class VisualEvidenceFallbackRanker:
         instruction: str = "",
         actions: str = "",
         landmarks: str = "",
+        source_stage: str = "",
+        reason: str = "",
     ) -> Dict[str, Any]:
         if not isinstance(observe_dict, dict):
             observe_dict = {}
         evidence_by_id = _candidate_evidence_by_id(visual_evidence_results)
         required_terms = _extract_terms(instruction, actions, landmarks)
+        stop_rejected_stage = str(source_stage or "") == "stop_rejected"
+        weak_final_target = _all_final_terms_weak(landmarks)
         ranked: List[Dict[str, Any]] = []
         for order, candidate_id in enumerate(str(key) for key in observe_dict.keys()):
             evidence = evidence_by_id.get(candidate_id, {})
@@ -152,20 +200,38 @@ class VisualEvidenceFallbackRanker:
                     if term.lower() not in {hit.lower() for hit in local_hits}
                 ]
             )
-            score: Tuple[Any, ...] = (
-                1 if final_target_visible else 0,
-                1 if arrival_evidence else 0,
-                len(matched_terms),
-                len(local_hits),
-                confidence,
-                len(visible_terms),
-                -missing_penalty,
-                -order,
-            )
+            weak_target_penalty = 1 if weak_final_target and final_target_visible else 0
+            if stop_rejected_stage:
+                score: Tuple[Any, ...] = (
+                    len(matched_terms),
+                    len(local_hits),
+                    -weak_target_penalty,
+                    confidence,
+                    len(visible_terms),
+                    -missing_penalty,
+                    1 if final_target_visible else 0,
+                    1 if arrival_evidence else 0,
+                    -order,
+                )
+                score_policy = "stop_rejected_continue_movement"
+            else:
+                score = (
+                    1 if final_target_visible else 0,
+                    1 if arrival_evidence else 0,
+                    len(matched_terms),
+                    len(local_hits),
+                    confidence,
+                    len(visible_terms),
+                    -weak_target_penalty,
+                    -missing_penalty,
+                    -order,
+                )
+                score_policy = "visual_goal_tracking"
             ranked.append(
                 {
                     "candidate_id": candidate_id,
                     "score": list(score),
+                    "score_policy": score_policy,
                     "final_target_visible": final_target_visible,
                     "arrival_evidence": arrival_evidence,
                     "matched_instruction_terms": matched_terms,
@@ -173,6 +239,7 @@ class VisualEvidenceFallbackRanker:
                     "missing_instruction_terms": missing_terms,
                     "local_instruction_hits": local_hits,
                     "missing_penalty": missing_penalty,
+                    "weak_target_penalty": weak_target_penalty,
                     "confidence": confidence,
                     "has_visual_evidence": candidate_id in evidence_by_id,
                     "original_order": order,
@@ -187,9 +254,22 @@ class VisualEvidenceFallbackRanker:
             "candidate_count": len(observe_dict),
             "candidate_evidence_count": len(evidence_by_id),
             "required_terms": required_terms,
+            "source_stage": source_stage,
+            "reason": reason,
+            "weak_final_target": weak_final_target,
             "parse_error": (
                 visual_evidence_results.get("parse_error")
                 if isinstance(visual_evidence_results, dict)
                 else None
+            ),
+            "schema_error": (
+                visual_evidence_results.get("schema_error")
+                if isinstance(visual_evidence_results, dict)
+                else None
+            ),
+            "schema_warnings": (
+                visual_evidence_results.get("schema_warnings")
+                if isinstance(visual_evidence_results, dict)
+                else []
             ),
         }

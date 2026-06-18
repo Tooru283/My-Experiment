@@ -34,27 +34,23 @@ def _candidate_visual_summary(
     evidence: Dict[str, Any],
     max_chars: int,
 ) -> str:
-    visible = _as_list(evidence.get("visible_landmarks"))
     matched = _as_list(evidence.get("matched_instruction_terms"))
     missing = _as_list(evidence.get("missing_instruction_terms"))
     target = _as_bool(evidence.get("final_target_visible", False))
     arrival = _as_bool(evidence.get("arrival_evidence", False))
     conf = _as_float(evidence.get("confidence", 0.0))
     notes = str(evidence.get("spatial_notes") or "").strip()
-    parts = ["candidate_id={}".format(candidate_id)]
+    parts = ["cid={}".format(candidate_id)]
     if matched:
-        parts.append("matched={}".format(",".join(str(m) for m in matched[:4])))
-    if visible:
-        parts.append("visible={}".format(",".join(str(v) for v in visible[:5])))
+        parts.append("match={}".format(",".join(str(m) for m in matched[:3])))
     if missing:
-        parts.append("missing={}".format(",".join(str(m) for m in missing[:4])))
-    parts.append("target={}".format("Y" if target else "N"))
-    if arrival:
-        parts.append("arrival=Y")
+        parts.append("miss={}".format(",".join(str(m) for m in missing[:3])))
+    parts.append("target={}".format("1" if target else "0"))
+    parts.append("arrival={}".format("1" if arrival else "0"))
     parts.append("conf={:.2f}".format(conf))
     if notes:
-        parts.append("notes={}".format(notes[:80]))
-    return ("[VISUAL_EVIDENCE: {}]".format("; ".join(parts)))[:max_chars]
+        parts.append("note={}".format(notes[:48]))
+    return ("[V: {}]".format("; ".join(parts)))[:max_chars]
 
 
 def _memory_suffix(mem: Dict[str, Any]) -> str:
@@ -81,8 +77,13 @@ class MultimodalSelectorContext:
     When LOG_ONLY=false: caller replaces observe_dict with augmented_observe_dict.
     """
 
-    def __init__(self, max_summary_chars: int = 200) -> None:
+    def __init__(
+        self,
+        max_summary_chars: int = 200,
+        include_memory_suffix: bool = False,
+    ) -> None:
         self.max_summary_chars = max(0, int(max_summary_chars))
+        self.include_memory_suffix = bool(include_memory_suffix)
 
     def build(
         self,
@@ -101,7 +102,8 @@ class MultimodalSelectorContext:
 
         mem_sfx = (
             _memory_suffix(visual_evidence_memory_results)
-            if isinstance(visual_evidence_memory_results, dict)
+            if self.include_memory_suffix
+            and isinstance(visual_evidence_memory_results, dict)
             and visual_evidence_memory_results
             else ""
         )
@@ -131,6 +133,7 @@ class MultimodalSelectorContext:
             "augmented_observation": list(augmented.values()),
             "summaries": summaries,
             "mem_suffix": mem_sfx,
+            "include_memory_suffix": self.include_memory_suffix,
             "candidates_with_evidence": list(per_candidate.keys()),
             "candidate_count": len(observe_dict),
             "candidate_evidence_count": len(per_candidate),

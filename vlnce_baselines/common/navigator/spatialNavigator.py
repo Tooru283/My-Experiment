@@ -2,15 +2,40 @@ import re
 import random
 from vlnce_baselines.common.navigator.api import *
 from vlnce_baselines.common.navigator.prompts import *
+from vlnce_baselines.common.opennav_ext.landmark_matching import (
+    final_landmark_terms,
+    matched_terms as match_landmark_terms,
+    missing_terms as missing_landmark_terms,
+    split_landmark_terms,
+    term_present,
+)
 
 STOP_CANDIDATE = "STOP"
 STOP_WORDS = ("stop", "wait", "stay", "stand", "pause")
+WEAK_FINAL_TARGET_TERMS = {
+    "area",
+    "archway",
+    "doorway",
+    "entry way",
+    "entryway",
+    "floor",
+    "hall",
+    "hallway",
+    "room",
+    "stair",
+    "stairs",
+    "staircase",
+}
 
 class Open_Nav():
     def __init__(self, device, llm_type, api_key):
         self.device = device
         self.llm = llmClient(llm_type, api_key)
         self.spatial = spatialClient(self.device)
+        self.last_test_decision_metadata = {}
+        self.last_stop_gate_metadata = {}
+        self.block_weak_final_target_completion_stop = True
+        self.min_steps_for_weak_final_target_completion_stop = 8
         
     # =====================================
     # ===== Instruction Comprehension =====
@@ -74,13 +99,22 @@ class Open_Nav():
             COMPLETION_ESTIMATION['user'].format(history_traj, landmarks, actions),
             max_tokens=max_tokens,
         )
-        if "Executed Actions" in response:
+        executed_markers = list(
+            re.finditer(r"\bExecuted Actions\s*:?", response, flags=re.I)
+        )
+        if executed_markers:
             logger.info("Executed Actions " + response)
-            marker_idx = response.rfind("Executed Actions")
-            executed = response[marker_idx + len("Executed Actions"):].strip()
-            return executed.lstrip(":").strip()
-        else:
-            return response
+            marker = executed_markers[-1]
+            executed = response[marker.end():].strip()
+            thought_marker = re.search(r"\bThought\s*:", executed, flags=re.I)
+            if thought_marker:
+                executed = executed[:thought_marker.start()].strip()
+            return executed.strip()
+        logger.info("Completion estimator response missing Executed Actions marker: " + response)
+        recovered = self._recover_executed_actions_from_response(actions, response)
+        if recovered:
+            logger.info("Recovered executed actions from unstructured completion response: " + recovered)
+        return recovered
 
     def _normalize_action_text(self, text):
         text = str(text or "").lower()
@@ -108,61 +142,338 @@ class Open_Nav():
         return any(word in normalized.split() for word in STOP_WORDS)
 
     def _split_landmarks(self, landmarks):
-        normalized = self._normalize_action_text(landmarks)
-        skip_words = {"and", "or", "the", "a", "an", "near", "before", "after", "around", "to", "of"}
-        return [
-            word for word in normalized.split()
-            if len(word) > 2 and word not in skip_words
-        ]
+        return split_landmark_terms(landmarks)
+
+    def _final_landmark_gate(self, landmarks, observation):
+        all_landmark_terms = self._split_landmarks(landmarks)
+        final_terms = final_landmark_terms(landmarks)
+        if not final_terms:
+            return {
+                "visible": False,
+                "reason": "empty_landmarks",
+                "all_landmark_terms": all_landmark_terms,
+                "required_landmark_terms": [],
+                "matched_landmark_terms": [],
+                "missing_landmark_terms": [],
+            }
+        matched_landmarks = match_landmark_terms(final_terms, [observation])
+        missing_landmarks = missing_landmark_terms(final_terms, matched_landmarks)
+        visible = bool(matched_landmarks)
+        return {
+            "visible": visible,
+            "reason": "matched_final_landmark" if visible else "missing_final_landmark",
+            "all_landmark_terms": all_landmark_terms,
+            "required_landmark_terms": final_terms,
+            "matched_landmark_terms": matched_landmarks,
+            "missing_landmark_terms": missing_landmarks,
+        }
 
     def _final_landmark_visible(self, landmarks, observation):
-        landmark_words = list(dict.fromkeys(self._split_landmarks(landmarks)))
-        if not landmark_words:
-            return True
-        normalized_observation = self._normalize_action_text(observation)
-        observation_words = set(normalized_observation.split())
-        matched_landmarks = [
-            word for word in landmark_words
-            if word in observation_words
-        ]
-        required_matches = 1 if len(landmark_words) == 1 else 2
-        return len(matched_landmarks) >= required_matches
+        return self._final_landmark_gate(landmarks, observation)["visible"]
 
-    def should_stop(self, logger, actions, landmarks, estimation, history_traj, observation):
+    def _all_final_landmarks_weak(self, landmarks):
+        final_terms = final_landmark_terms(landmarks)
+        if not final_terms:
+            return False
+        return all(
+            self._normalize_action_text(term) in WEAK_FINAL_TARGET_TERMS
+            for term in final_terms
+        )
+
+    def _parse_executed_actions(self, estimation):
+        estimation = str(estimation or "")
+        thought_marker = re.search(r"\bThought\s*:", estimation, flags=re.I)
+        if thought_marker:
+            estimation = estimation[:thought_marker.start()].strip()
+        executed_items = self._split_actions(estimation)
+        executed_text = self._normalize_action_text(estimation)
+        completed_numbers = set()
+        raw_estimation = estimation.lower()
+        negative_markers = (
+            "not executed",
+            "not completed",
+            "not done",
+            "has not",
+            "have not",
+            "not yet",
+            "incomplete",
+        )
+        for match in re.finditer(r"\b(?:action|step)\s*(\d+)\b", raw_estimation):
+            window_start = max(0, match.start() - 80)
+            window_end = min(len(raw_estimation), match.end() + 80)
+            local_window = raw_estimation[window_start:window_end]
+            if any(marker in local_window for marker in negative_markers):
+                continue
+            completed_numbers.add(int(match.group(1)))
+        return executed_items, executed_text, completed_numbers
+
+    def _positive_completion_context(self, action, text):
+        normalized_action = self._normalize_action_text(action)
+        if not normalized_action:
+            return False
+        normalized_text = self._normalize_action_text(text)
+        action_index = normalized_text.find(normalized_action)
+        if action_index < 0:
+            return False
+        window_start = max(0, action_index - 120)
+        window_end = min(
+            len(normalized_text),
+            action_index + len(normalized_action) + 120,
+        )
+        local_window = normalized_text[window_start:window_end]
+        negative_markers = (
+            "not executed",
+            "not completed",
+            "not done",
+            "has not",
+            "have not",
+            "not yet",
+            "incomplete",
+            "cannot be considered",
+            "cannot be done",
+        )
+        if any(marker in local_window for marker in negative_markers):
+            return False
+        positive_markers = (
+            "executed",
+            "completed",
+            "done",
+            "has been",
+            "have been",
+            "successfully",
+            "reached",
+            "arrived",
+        )
+        return any(marker in local_window for marker in positive_markers)
+
+    def _positive_numbered_action_context(self, text):
+        normalized_text = self._normalize_action_text(text)
+        if not normalized_text:
+            return False
+        negative_markers = (
+            "not executed",
+            "not completed",
+            "not done",
+            "has not",
+            "have not",
+            "not yet",
+            "incomplete",
+            "cannot be considered",
+            "cannot be done",
+        )
+        if any(marker in normalized_text for marker in negative_markers):
+            return False
+        positive_markers = (
+            "executed",
+            "completed",
+            "done",
+            "has been",
+            "have been",
+            "successfully",
+            "reached",
+            "arrived",
+        )
+        return any(marker in normalized_text for marker in positive_markers)
+
+    def _recover_executed_actions_from_response(self, actions, response):
+        action_items = self._split_actions(actions)
+        if not action_items:
+            return ""
+        response_text = str(response or "")
+        recovered = []
+        for idx, action in enumerate(action_items, start=1):
+            numbered_pattern = re.compile(
+                r"\b(?:action|step)\s*{}\b".format(idx),
+                flags=re.I,
+            )
+            for match in numbered_pattern.finditer(response_text):
+                window_start = match.start()
+                next_match = re.search(
+                    r"\b(?:action|step)\s*\d+\b",
+                    response_text[match.end():],
+                    flags=re.I,
+                )
+                window_end = (
+                    match.end() + next_match.start()
+                    if next_match
+                    else min(len(response_text), match.end() + 180)
+                )
+                local_window = response_text[window_start:window_end]
+                if self._positive_completion_context(
+                    action,
+                    local_window,
+                ) or self._positive_numbered_action_context(local_window):
+                    recovered.append(f"{idx}. {action}")
+                    break
+        return "\n".join(recovered)
+
+    def _has_negative_action_context(self, action, estimation):
+        normalized_action = self._normalize_action_text(action)
+        if not normalized_action:
+            return False
+        normalized_estimation = self._normalize_action_text(estimation)
+        negative_markers = (
+            "not executed",
+            "not completed",
+            "not done",
+            "has not",
+            "have not",
+            "not yet",
+            "incomplete",
+        )
+        action_index = normalized_estimation.find(normalized_action)
+        if action_index < 0:
+            return False
+        window_start = max(0, action_index - 80)
+        window_end = min(
+            len(normalized_estimation),
+            action_index + len(normalized_action) + 80,
+        )
+        local_window = normalized_estimation[window_start:window_end]
+        return any(marker in local_window for marker in negative_markers)
+
+    def _action_completed(self, action, action_index, executed_items, completed_numbers, estimation):
+        if self._has_negative_action_context(action, estimation):
+            return False
+        normalized_action = self._normalize_action_text(action)
+        if action_index in completed_numbers:
+            return True
+        for executed_item in executed_items:
+            normalized_executed = self._normalize_action_text(executed_item)
+            if not normalized_executed:
+                continue
+            if normalized_action == normalized_executed:
+                return True
+            if term_present(normalized_action, [normalized_executed]):
+                return True
+        return False
+
+    def should_stop(
+        self,
+        logger,
+        actions,
+        landmarks,
+        estimation,
+        history_traj,
+        observation,
+        current_step=None,
+    ):
+        try:
+            current_step_number = int(current_step)
+        except (TypeError, ValueError):
+            current_step_number = 0
+        self.last_stop_gate_metadata = {
+            "decision": False,
+            "rejection_reason": None,
+            "current_step": current_step_number,
+            "completed_actions": [],
+            "final_action_completed": False,
+            "all_actions_completed": False,
+            "weak_final_target": False,
+            "weak_final_target_min_steps": (
+                self.min_steps_for_weak_final_target_completion_stop
+            ),
+            "landmark_gate": None,
+        }
         if not history_traj or history_traj == "Step 0 start position. ":
+            self.last_stop_gate_metadata["rejection_reason"] = "empty_history"
             return False, ""
 
         action_items = self._split_actions(actions)
         if not action_items:
+            self.last_stop_gate_metadata["rejection_reason"] = "empty_actions"
             return False, ""
 
-        normalized_actions = [self._normalize_action_text(action) for action in action_items]
-        normalized_estimation = self._normalize_action_text(estimation)
-        if not normalized_estimation:
+        executed_items, _, completed_numbers = self._parse_executed_actions(estimation)
+        if not executed_items and not completed_numbers:
+            logger.info(
+                "Stop gate rejected: no structured executed actions parsed."
+            )
+            self.last_stop_gate_metadata[
+                "rejection_reason"
+            ] = "no_structured_executed_actions"
             return False, ""
 
         completed_actions = [
-            action for action in normalized_actions
-            if action and action in normalized_estimation
+            action for idx, action in enumerate(action_items, start=1)
+            if self._action_completed(
+                action,
+                idx,
+                executed_items,
+                completed_numbers,
+                estimation,
+            )
         ]
-        final_action = normalized_actions[-1]
-        final_action_completed = final_action and final_action in normalized_estimation
-        all_actions_completed = len(completed_actions) == len(normalized_actions)
-        final_landmark_visible = self._final_landmark_visible(landmarks, observation)
+        final_action_completed = self._action_completed(
+            action_items[-1],
+            len(action_items),
+            executed_items,
+            completed_numbers,
+            estimation,
+        )
+        all_actions_completed = len(completed_actions) == len(action_items)
+        landmark_gate = self._final_landmark_gate(landmarks, observation)
+        final_landmark_visible = landmark_gate["visible"]
+        weak_final_target = self._all_final_landmarks_weak(landmarks)
+        self.last_stop_gate_metadata.update(
+            {
+                "completed_actions": completed_actions,
+                "final_action_completed": final_action_completed,
+                "all_actions_completed": all_actions_completed,
+                "weak_final_target": weak_final_target,
+                "current_step": current_step_number,
+                "weak_final_target_min_steps": (
+                    self.min_steps_for_weak_final_target_completion_stop
+                ),
+                "landmark_gate": landmark_gate,
+            }
+        )
 
         if not final_landmark_visible:
+            logger.info(
+                "Stop gate rejected by landmark gate: {}".format(landmark_gate)
+            )
+            self.last_stop_gate_metadata[
+                "rejection_reason"
+            ] = "missing_final_landmark"
+            return False, ""
+
+        if (
+            weak_final_target
+            and self.block_weak_final_target_completion_stop
+            and self.min_steps_for_weak_final_target_completion_stop > 0
+            and current_step_number
+            < self.min_steps_for_weak_final_target_completion_stop
+        ):
+            logger.info(
+                "Stop gate rejected weak final target for completion auto-stop: {}".format(
+                    landmark_gate
+                )
+            )
+            self.last_stop_gate_metadata[
+                "rejection_reason"
+            ] = "weak_final_target_completion_auto_stop"
             return False, ""
 
         if all_actions_completed:
             reason = "Completion estimator indicates all decomposed actions have been executed and the final landmark is visible."
-            logger.info(f"Stop decision: {reason}")
+            logger.info(
+                "Stop decision: {} gate={}".format(reason, landmark_gate)
+            )
+            self.last_stop_gate_metadata["decision"] = True
             return True, reason
 
         if self._is_stop_action(action_items[-1]) and final_action_completed:
             reason = "Completion estimator indicates the final stop/wait action has been executed and the final landmark is visible."
-            logger.info(f"Stop decision: {reason}")
+            logger.info(
+                "Stop decision: {} gate={}".format(reason, landmark_gate)
+            )
+            self.last_stop_gate_metadata["decision"] = True
             return True, reason
 
+        self.last_stop_gate_metadata[
+            "rejection_reason"
+        ] = "completion_requirements_not_met"
         return False, ""
 
     def _parse_prediction(self, prediction_text, candidate_ids):
@@ -178,17 +489,55 @@ class Open_Nav():
 
     def _fallback_candidate(self, logger, fused_pred_thought, observe_dict):
         valid_candidates = {str(key) for key in observe_dict.keys()}
+        available_candidates = [str(key) for key in observe_dict.keys()]
+        if not available_candidates:
+            logger.info("Fallback failed because no observed candidates are available")
+            return STOP_CANDIDATE, "", {
+                "fallback_strategy": "navigator_internal",
+                "fallback_reason": "no_available_candidates",
+                "available_candidates": [],
+                "selected_candidate": STOP_CANDIDATE,
+                "ranked_candidates": [],
+            }
         for key, thought in fused_pred_thought.items():
             if key == STOP_CANDIDATE:
                 logger.info("Fallback selected STOP from fused predictions")
-                return STOP_CANDIDATE, thought
+                return STOP_CANDIDATE, thought, {
+                    "fallback_strategy": "navigator_internal",
+                    "fallback_reason": "fused_stop_candidate",
+                    "available_candidates": available_candidates,
+                    "selected_candidate": STOP_CANDIDATE,
+                    "ranked_candidates": [],
+                }
             if key in valid_candidates:
                 logger.info(f"Fallback selected valid fused candidate {key}")
-                return key, thought
+                return key, thought, {
+                    "fallback_strategy": "navigator_internal",
+                    "fallback_reason": "first_valid_fused_candidate",
+                    "available_candidates": available_candidates,
+                    "selected_candidate": key,
+                    "ranked_candidates": [
+                        {"candidate_id": str(candidate), "source": "fused_prediction"}
+                        for candidate in fused_pred_thought.keys()
+                    ],
+                }
 
         fallback = next(iter(observe_dict.keys()))
         logger.info(f"Fallback selected first observed candidate {fallback}")
-        return str(fallback), observe_dict[fallback]
+        return str(fallback), observe_dict[fallback], {
+            "fallback_strategy": "navigator_internal",
+            "fallback_reason": "first_observed_candidate",
+            "available_candidates": available_candidates,
+            "selected_candidate": str(fallback),
+            "ranked_candidates": [
+                {
+                    "candidate_id": str(candidate),
+                    "score": [0, -idx],
+                    "source": "observation_order",
+                }
+                for idx, candidate in enumerate(available_candidates)
+            ],
+        }
     
     # =================================
     # ===== Move to next position =====
@@ -285,6 +634,12 @@ class Open_Nav():
                 
             if len(fused_pred_thought.keys()) == 1:
                 for key, value in fused_pred_thought.items():
+                    self.last_test_decision_metadata = {
+                        "fallback_used": False,
+                        "decision_source": "single_fused_candidate",
+                        "selected_candidate": key,
+                        "available_candidates": [str(candidate) for candidate in observe_dict.keys()],
+                    }
                     return key, value, error_number
             else:
                 fused_pred_thought_ = "; ".join(["Direction Viewpoint ID: "+key+" Thought: "+value for key, value in fused_pred_thought.items()])
@@ -310,10 +665,24 @@ class Open_Nav():
         
             logger.info(f"In test decision the predicted direction: {next_vp}")
             logger.info(f"In test decision the predicted thought: {fused_pred_thought[next_vp]}")
+            self.last_test_decision_metadata = {
+                "fallback_used": False,
+                "decision_source": "decision_test_llm",
+                "selected_candidate": next_vp,
+                "available_candidates": [str(candidate) for candidate in observe_dict.keys()],
+                "fused_candidates": [str(candidate) for candidate in fused_pred_thought.keys()],
+            }
             return next_vp, fused_pred_thought[next_vp], error_number
         except Exception as e:
             logger.info(f"Error in test decision {e}")
             error_number += 1
             logger.info(f"Error number is {error_number}")
-            next_vp, thought = self._fallback_candidate(logger, fused_pred_thought, observe_dict)
-            return next_vp, thought, 0
+            next_vp, thought, fallback_metadata = self._fallback_candidate(logger, fused_pred_thought, observe_dict)
+            self.last_test_decision_metadata = {
+                "fallback_used": True,
+                "fallback_source": "test_decisions_exception",
+                "error": str(e),
+                "error_number": error_number,
+                **fallback_metadata,
+            }
+            return next_vp, thought, error_number

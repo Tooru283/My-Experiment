@@ -1,8 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXP_NAME="${EXP_NAME:-v24_series_qwen_siglip_local_$(date +%Y%m%d_%H%M%S)}"
-EPISODE_COUNT="${EPISODE_COUNT:-11}"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+HABITAT_LAB_DIR="${HABITAT_LAB_DIR:-${PROJECT_ROOT}/external/habitat-lab-v0.1.7}"
+
+cd "$PROJECT_ROOT"
+
+EPISODE_COUNT="${EPISODE_COUNT:-100}"
+EXP_NAME="${EXP_NAME:-ep${EPISODE_COUNT}_series_qwen_siglip_local_$(date +%Y%m%d_%H%M%S)}"
+
+if [[ -d "${HABITAT_LAB_DIR}/habitat" ]]; then
+  export PYTHONPATH="${HABITAT_LAB_DIR}:${PROJECT_ROOT}:${PYTHONPATH:-}"
+else
+  echo "Warning: habitat-lab not found at ${HABITAT_LAB_DIR}; Python may fail to import habitat." >&2
+  export PYTHONPATH="${PROJECT_ROOT}:${PYTHONPATH:-}"
+fi
 
 export MAGNUM_LOG="${MAGNUM_LOG:-verbose}"
 export HABITAT_SIM_LOG="${HABITAT_SIM_LOG:-verbose}"

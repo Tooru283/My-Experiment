@@ -43,6 +43,111 @@
 - 问题 9 的原始表述需要收窄: 当前代码已经会写 `selector_empty_prediction_fallback` 事件；真实问题是没有 visual fallback ranker 时该事件可能只有空结果，随后 `test_decisions()` 内部 fallback 仍缺少结构化原因和排序依据。
 - 问题 5 和 10 属于规则/配置风险，代码状态真实存在，但是否造成实际误拒需要后续样本统计。
 
+## 本轮解决方案与执行状态 2026-06-15
+
+本轮目标不是扩大实验矩阵，而是先封住会直接污染 decision-effect 的逻辑风险，并补足下一轮小样本所需的可观测字段。修改顺序为: 先写方案，再改代码，再做定向 smoke / py_compile 验证。
+
+执行状态: 已按本节完成代码修改；仍需下一轮 10 到 12 episode 小样本验证 `visual_stop_allowed`、`stop_rejected_fallback`、`selector_empty_prediction_fallback` 和 schema warning 的实际分布。
+
+### 2026-06-15 最新小样本复核后的修正
+
+`v24_series_qwen_siglip_local_20260615_204351` 暴露出一个新的关键事实: `candidate_id=0` 不是稳定的 current-view，它只是正前方方向扇区的 waypoint candidate。该轮 66 个 step 中只有 34 个 step 的 waypoint candidate 集合包含 `0`，因此固定用 `selected_candidate="0"` 会产生大量伪 `selected_candidate_not_sampled:0`。
+
+因此本轮将 `candidate_id=0` 方案降级为过渡方案，正式改为 STOP 专用 current-view evidence:
+
+- movement selector / fallback 继续使用普通 waypoint candidate visual evidence。
+- STOP verifier 在出现 STOP proposal 时单独生成 `stop_current_view_evidence`，候选 ID 固定为虚拟值 `__current_view__`。
+- `__current_view__` 由当前 12 向全景 RGB contact sheet 构成，不依赖 waypoint predictor 是否产生正前方候选。
+- STOP verifier 调用使用 `selected_candidate="__current_view__"` 和 `stop_evidence_mode="current_pano"`。
+- `__current_view__` 不进入 selector / fallback 的 movement candidate 集合，避免虚拟候选被用于移动。
+- V2 verifier 的 final landmark 条件同步改为只取最终 landmark group；中间路径地标只用于诊断，不再作为 STOP allow 必要条件或误触发条件。
+
+新的复核标准:
+
+- `selected_candidate_not_sampled:0` 应消失。
+- STOP verifier 日志中 `stop_relevant_candidate_id="__current_view__"`。
+- 每次 STOP proposal 都应有 `stop_current_view_evidence` 事件。
+- `visual_stop_allowed` 必须来自 `candidate_alignment="aligned"` 的 `__current_view__`。
+- `multimodal_selector_context`、`selector_empty_prediction_fallback`、`stop_rejected_fallback` 中不应把 `__current_view__` 当作可移动候选。
+
+### 2026-06-15 `__current_view__` 复跑后的新增收紧
+
+`v24_series_qwen_siglip_local_20260615_221911` 证明 `__current_view__` 流程已生效: 8 次 STOP proposal 均生成 `stop_current_view_evidence`，`selected_candidate_not_sampled:0` 消失，且 `__current_view__` 没有进入 movement fallback。但 episode `748` 暴露出新的误放行: 指令要求 `dining room table`，current-view 文本只稳定描述了 `table/chairs/couch/TV/staircase` 和 `living room/room`，VLM 却把普通 table 升格为 `dining room table`，导致 `visual_stop_allowed` 后仍以 `distance_to_goal=9.949` 失败。
+
+新增方案:
+
+- 对 `stop_evidence_mode="current_pano"` 的 STOP allow 增加 current-view 文本佐证。
+- VLM 返回的 `visible_landmarks` / `matched_instruction_terms` 不能单独证明多词 final target。
+- 对多词 final target，尤其包含地点/房间修饰词的目标，要求 `current_view_observation` 中同时出现修饰词和核心物体词；例如 `dining room table` 至少要有 `dining` 与 `table`，只有 `table` 不允许 STOP。
+- 佐证失败时把 selected candidate 的 allow 降为 `uncertain`，记录 blocker `uncorroborated_final_target:<term>`。
+- 该规则只作用于 STOP current pano allow，不影响 waypoint candidate ranking / fallback。
+
+新增复核标准:
+
+- episode `748` 这类 `dining room table` 但 observation 只有普通 `table` 的 STOP proposal 应变为 `visual_stop_rejected` 或 `uncertain`。
+- `visual_stop_rejected.allow_blockers` 应包含 `uncorroborated_final_target:dining room table`。
+- 正常包含完整 final phrase 或修饰词+核心物体词的 current-view STOP allow 不应被误挡。
+
+### 设计原则
+
+- STOP allow 必须使用当前位置相关证据。STOP 专用 current-view evidence 使用虚拟 `candidate_id=__current_view__`；普通 waypoint candidate 的 allow 只记录为 future-candidate evidence，不直接放行 STOP。
+- STOP current-view allow 还必须被 current-view 文本观察佐证，防止 VLM 把普通物体升格为带房间/位置修饰的最终目标。
+- V1 visual evidence 采样继续优先包含 `candidate_id=0`，但这只用于 waypoint evidence 覆盖率，不再作为 STOP current-view 的唯一依据。
+- landmark 匹配规则在 V2 verifier 与 V3 memory 中共享，禁止继续使用双向子串。默认使用 token / phrase 边界匹配，只保留少量显式等价词，避免 `door -> doorway`、`room -> bedroom`、`hall -> hallway` 这类短词误命中。
+- 旧 `should_stop()` 只消费结构化 `Executed Actions`。缺少 marker、空 landmarks、或 completion 文本中带否定上下文时，不允许 STOP。
+- fallback 不能再无条件取第一个 dict key。STOP rejected fallback 和 empty-prediction fallback 优先复用 `VisualEvidenceFallbackRanker` 的排序结果；如果没有视觉证据，也要写出 `fallback_reason`、`available_candidates`、`ranked_candidates` 和最终选择依据。
+- schema 修复必须区分 JSON parse 成功但 schema 不可用的情况。`parse_error=null` 不再等于 V1 可消费，日志必须包含 `schema_warnings`、raw / valid / invalid candidate count 等字段。
+
+### 问题对应修改
+
+1. STOP verifier 任意候选放行:
+   - `completion_gate` 与 `selector_stop_gate` 调用 verifier 时传入 `selected_candidate="__current_view__"`，并增加 `stop_evidence_mode="current_pano"`。
+   - 只有 STOP proposal 出现时才额外生成 `stop_current_view_evidence`，避免每步增加不必要的 VLM 成本。
+   - `VisualTargetVerifier._verdict()` 在 STOP 场景下只根据 selected candidate 判定 `allow`；如果 selected candidate 未采样或不是 allow，则返回 `uncertain/reject`，不再扫描任意 allow candidate。
+   - `current_pano` allow 必须通过 current-view observation 文本佐证；多词 final target 不能只依赖 VLM 的 matched terms。
+   - 日志保留 `future_supporting_candidate_id` / `supporting_candidate_id`，用于分析“前方可见但当前位置不应 STOP”的样本。
+
+2. 旧 STOP gate landmark 判定:
+   - `spatialNavigator._final_landmark_visible()` 改为返回结构化 gate detail。
+   - landmarks 为空时返回 false，reason=`empty_landmarks`。
+   - 只取 landmarks 列表中的最终 landmark group 作为 STOP gate 的视觉条件；中间 landmark 只记录到 `all_landmark_terms`，不再单独触发 STOP allow。
+   - 用共享 phrase matcher 判断 observation 是否命中 final landmark，记录 `required_landmark_terms`、`matched_landmark_terms`、`landmark_gate_reason`。
+
+3. final landmark 匹配过宽:
+   - 新增共享工具模块，提供 `term_present()` / `missing_terms()` / `matched_terms()`。
+   - `visual_target_verifier.py` 和 `visual_evidence_memory.py` 统一改用该工具。
+   - 默认不把 `door` 视为 `doorway`、不把 `room` 视为 `bedroom`、不把 `hall` 视为 `hallway`。
+
+4. action completion 自由文本误判:
+   - `estimate_completion()` 缺少 `Executed Actions` marker 时返回空 executed section，并记录 marker 缺失。
+   - `should_stop()` 将 executed section 解析为 action 条目 / 编号集合，精确匹配 decomposed action，不再在完整自由文本上做子串判断。
+   - 对 `not executed`、`not completed`、`not done` 等否定短语命中的 action 不计入 completed。
+
+5. generic STOP blocker 过宽:
+   - 本轮确认该 blocker 过宽，当前 `run_OpenNav.yaml` 与默认配置均保持 `BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW=False`。
+   - generic final terms 继续保留为可选诊断/ablation 开关，不作为当前默认 STOP hard blocker。
+
+6. schema 合法 JSON 漂移:
+   - `visual_evidence_schema.py` 增加 schema stats / warnings。
+   - `VisualEvidenceLogger` 输出 `schema_warnings`、`schema_error`、`raw_candidate_count`、`valid_candidate_count`、`invalid_candidate_count`、`normalized_from_root_type`。
+   - 下游 verifier / fallback / memory 继续通过统一 schema 工具读取候选。
+
+7. STOP 被拒后的 fallback:
+   - `base_il_trainer_llm.py` 中 STOP rejected fallback 改用视觉 ranker 对非 STOP candidates 重新排序。
+   - 如果 ranker 不可用，则调用 navigator 内部 fallback，但内部 fallback 必须返回 metadata；任何强制移动都写 `stop_rejected_fallback` 结构化事件。
+
+8. `test_decisions()` 错误计数:
+   - exception 分支返回递增后的 `error_number`。
+   - `test_decisions()` 增加可选 metadata 返回或缓存字段，记录 fallback source / reason / candidates。
+
+9. 空预测 fallback 结构化记录:
+   - `selector_empty_prediction_fallback` 无论 ranker 是否可用，都写出 reason、source_stage、available_candidates、selected_candidate、ranked_candidates。
+   - navigator 内部 `_fallback_candidate()` 也返回 `fallback_metadata`，避免 fallback event 为空。
+
+10. 默认配置一致性:
+   - 默认 `BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW=False`，与当前 V2 decision-effect 实验一致。
+   - 文档继续提醒如果后续打开该配置，必须统计 generic blocker 的 near-goal case，避免有效 STOP 漏拒。
+
 ## P0 / P1 问题
 
 ### 1. STOP verifier 使用任意候选 allow 放行 STOP
@@ -227,11 +332,11 @@ door, doorway, room, stairs, hallway, floor, archway ...
 当前运行配置中:
 
 ```yaml
-BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: True
+BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: False
 REJECT_ON_UNCERTAIN: True
 ```
 
-当 final landmarks 全部落入 generic terms 时，allow 会被降级为 `uncertain`，随后被 `REJECT_ON_UNCERTAIN=True` 拦截。
+该 blocker 当前默认关闭；如果后续再次打开，当 final landmarks 全部落入 generic terms 时，allow 会被降级为 `uncertain`，随后被 `REJECT_ON_UNCERTAIN=True` 拦截。
 
 风险:
 
@@ -415,12 +520,12 @@ REJECT_ON_UNCERTAIN: True
 现象:
 
 - 默认配置中 `BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW=False`。
-- 当前实验运行配置中该项为 `True`。
-- 文档描述的是当前实验配置行为，不是全局默认行为。
+- 当前实验运行配置中该项也为 `False`。
+- 该项已经从当前默认 hard blocker 降级为可选 ablation 开关。
 
 风险:
 
-- 后续如果只启用 V2 而没有加载 `run_OpenNav.yaml`，会回到旧行为，`completion_gate` 泛化 STOP 仍可能被放行。
+- 后续如果重新打开该项，可能从“挡早停”变成“漏正确停”，需要配套统计 near-goal case。
 
 建议:
 

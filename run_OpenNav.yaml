@@ -12,7 +12,7 @@ RESULTS_DIR: logs/eval_results/
 EVAL:
   USE_CKPT_CONFIG: False
   SPLIT: val_unseen
-  EPISODE_COUNT: -100
+  EPISODE_COUNT: 100
 
 MODEL:
   policy_name: PolicyViewSelectionCMA
@@ -63,7 +63,7 @@ OPENNAV_HARNESS:
     LOG_ONLY: True
     BASE_URL: http://127.0.0.1:23333/v1
     MODEL: /root/models/Qwen3.5-4B
-    MAX_CANDIDATES: 4
+    MAX_CANDIDATES: 5
     MAX_IMAGE_EDGE: 384
     MAX_TOKENS: 768
     TIMEOUT_SECONDS: 60.0
@@ -73,8 +73,9 @@ OPENNAV_HARNESS:
 
   # V2: visual verification for STOP proposals. With LOG_ONLY false and global
   # ENABLE_DECISION_EFFECT true, STOP is allowed only when verdict=allow. The
-  # allow path is intentionally conservative after R2/R3 showed one early false
-  # STOP on generic archway/floor evidence.
+  # allow path uses STOP-only current-view evidence. Current-view text
+  # corroboration is logged as a warning by default; turning it into a hard
+  # blocker was too conservative for valid near-goal STOPs.
   VISUAL_TARGET_VERIFIER:
     ENABLED: True
     LOG_ONLY: false
@@ -84,7 +85,9 @@ OPENNAV_HARNESS:
     REJECT_ON_UNCERTAIN: True
     MIN_STEPS_BEFORE_ALLOW: 3
     REQUIRE_FULL_COVERAGE_FOR_ALLOW: True
-    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: True
+    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: False
+    REQUIRE_COMPLETION_FOR_SELECTOR_STOP: True
+    REQUIRE_CURRENT_VIEW_TEXT_CORROBORATION_FOR_ALLOW: False
 
   # V3: aggregate V1 visual evidence across the current episode.
   VISUAL_EVIDENCE_MEMORY:
@@ -95,16 +98,27 @@ OPENNAV_HARNESS:
 
   # V4: build compressed visual evidence context for selector candidates.
   # With LOG_ONLY false and global ENABLE_DECISION_EFFECT true, the augmented
-  # context is fed into move_to_next_vp/test_decisions.
+  # context is fed into move_to_next_vp/test_decisions. Keep episode-level V3
+  # memory out of the selector prompt by default; it remains logged for analysis.
   MULTIMODAL_SELECTOR_CONTEXT:
     ENABLED: True
     LOG_ONLY: false
-    MAX_SUMMARY_CHARS: 200
+    MAX_SUMMARY_CHARS: 180
+    INCLUDE_MEMORY_SUFFIX: False
 
   # Low-risk runtime reduction: cap verbose text LLM outputs while keeping the
   # same decision flow and candidate set. Set a value <=0 to disable a cap.
   LLM_RUNTIME:
-    COMPLETION_MAX_TOKENS: 384
-    NAVIGATOR_MAX_TOKENS: 768
+    COMPLETION_MAX_TOKENS: 512
+    NAVIGATOR_MAX_TOKENS: 1024
     THOUGHT_FUSION_MAX_TOKENS: 256
     DECISION_MAX_TOKENS: 64
+
+  # The previous 8/10 hard limit cut off many near-goal episodes. Keep the
+  # evaluation bounded, but leave enough room for recovery after a wrong turn.
+  NAVIGATION_RUNTIME:
+    SHORT_ACTION_STEP_LIMIT: 10
+    LONG_ACTION_STEP_LIMIT: 12
+    SHORT_ACTION_COUNT_THRESHOLD: 6
+    BLOCK_WEAK_FINAL_TARGET_COMPLETION_STOP: True
+    MIN_STEPS_FOR_WEAK_FINAL_TARGET_COMPLETION_STOP: 8
