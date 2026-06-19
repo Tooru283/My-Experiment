@@ -6,7 +6,7 @@ import time
 import warnings
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 from PIL import Image
 import requests
 from openai import OpenAI
@@ -22,6 +22,7 @@ from vlnce_baselines.common.opennav_ext import (
     VisualEvidenceFallbackRanker,
     VisualEvidenceMemory,
     VisualEvidenceLogger,
+    STOP_CURRENT_VIEW_CANDIDATE_ID,
     VisualTargetVerifier,
     VisualGraphMemoryDiagnostic,
     build_candidate_records,
@@ -416,8 +417,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         navigator_max_tokens = 0
         thought_fusion_max_tokens = 0
         decision_max_tokens = 0
+        short_action_step_limit = 10
+        long_action_step_limit = 12
+        short_action_count_threshold = 6
+        block_weak_final_target_completion_stop = True
+        min_steps_for_weak_final_target_completion_stop = 8
         active_harness_episode_id = None
         active_navigation_episode_id = None
+        stop_current_view_candidate_id = STOP_CURRENT_VIEW_CANDIDATE_ID
         split = config.TASK_CONFIG.DATASET.SPLIT
         if harness_enabled:
             run_id = "{}_seed{}_r{}_w{}".format(
@@ -483,6 +490,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW",
                         False,
                     ),
+                    require_completion_for_selector_stop=getattr(
+                        verifier_config,
+                        "REQUIRE_COMPLETION_FOR_SELECTOR_STOP",
+                        True,
+                    ),
+                    require_current_view_text_corroboration_for_allow=getattr(
+                        verifier_config,
+                        "REQUIRE_CURRENT_VIEW_TEXT_CORROBORATION_FOR_ALLOW",
+                        False,
+                    ),
                 )
                 visual_target_verifier_decision_effect = (
                     decision_effect_enabled(config)
@@ -501,6 +518,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 vsc_config = config.OPENNAV_HARNESS.MULTIMODAL_SELECTOR_CONTEXT
                 multimodal_selector_context = MultimodalSelectorContext(
                     max_summary_chars=vsc_config.MAX_SUMMARY_CHARS,
+                    include_memory_suffix=getattr(
+                        vsc_config,
+                        "INCLUDE_MEMORY_SUFFIX",
+                        False,
+                    ),
                 )
                 multimodal_selector_context_decision_effect = (
                     decision_effect_enabled(config)
@@ -524,6 +546,45 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 )
                 decision_max_tokens = getattr(
                     llm_runtime_config, "DECISION_MAX_TOKENS", 0
+                )
+            navigation_runtime_config = getattr(
+                config.OPENNAV_HARNESS, "NAVIGATION_RUNTIME", None
+            )
+            if navigation_runtime_config is not None:
+                short_action_step_limit = int(
+                    getattr(
+                        navigation_runtime_config,
+                        "SHORT_ACTION_STEP_LIMIT",
+                        short_action_step_limit,
+                    )
+                )
+                long_action_step_limit = int(
+                    getattr(
+                        navigation_runtime_config,
+                        "LONG_ACTION_STEP_LIMIT",
+                        long_action_step_limit,
+                    )
+                )
+                short_action_count_threshold = int(
+                    getattr(
+                        navigation_runtime_config,
+                        "SHORT_ACTION_COUNT_THRESHOLD",
+                        short_action_count_threshold,
+                    )
+                )
+                block_weak_final_target_completion_stop = bool(
+                    getattr(
+                        navigation_runtime_config,
+                        "BLOCK_WEAK_FINAL_TARGET_COMPLETION_STOP",
+                        block_weak_final_target_completion_stop,
+                    )
+                )
+                min_steps_for_weak_final_target_completion_stop = int(
+                    getattr(
+                        navigation_runtime_config,
+                        "MIN_STEPS_FOR_WEAK_FINAL_TARGET_COMPLETION_STOP",
+                        min_steps_for_weak_final_target_completion_stop,
+                    )
                 )
 
         def run_harness_tool(tool_name, step_id, fallback, func, *args, **kwargs):
@@ -621,6 +682,85 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             except (TypeError, ValueError):
                 return None
             return value if value > 0 else None
+
+        def observation_order_fallback(observe_dict):
+            if not isinstance(observe_dict, dict) or not observe_dict:
+                return {
+                    "fallback_strategy": "observation_order",
+                    "fallback_reason": "no_available_candidates",
+                    "selected_candidate": None,
+                    "available_candidates": [],
+                    "ranked_candidates": [],
+                }
+            available_candidates = [str(key) for key in observe_dict.keys()]
+            selected_candidate = available_candidates[0]
+            return {
+                "fallback_strategy": "observation_order",
+                "fallback_reason": "ranker_unavailable_or_empty",
+                "selected_candidate": selected_candidate,
+                "available_candidates": available_candidates,
+                "ranked_candidates": [
+                    {
+                        "candidate_id": candidate,
+                        "score": [0, -idx],
+                        "source": "observation_order",
+                    }
+                    for idx, candidate in enumerate(available_candidates)
+                ],
+            }
+
+        def rank_movement_fallback(
+            tool_name,
+            step_id,
+            observe_dict,
+            visual_evidence_results,
+            instruction,
+            actions,
+            landmarks,
+            source_stage,
+            reason,
+        ):
+            fallback_results = run_harness_tool(
+                tool_name,
+                step_id,
+                {},
+                visual_fallback_ranker.rank
+                if visual_fallback_ranker is not None
+                else None,
+                observe_dict,
+                visual_evidence_results,
+                instruction,
+                actions,
+                landmarks,
+                source_stage,
+                reason,
+            )
+            if not isinstance(fallback_results, dict):
+                fallback_results = {}
+            selected_candidate = fallback_results.get("selected_candidate")
+            if selected_candidate not in observe_dict:
+                fallback_results = observation_order_fallback(observe_dict)
+                selected_candidate = fallback_results.get("selected_candidate")
+            if "fallback_strategy" not in fallback_results:
+                fallback_results["fallback_strategy"] = "visual_evidence_ranked"
+            fallback_results["fallback_reason"] = reason
+            fallback_results["source_stage"] = source_stage
+            fallback_results.setdefault(
+                "available_candidates",
+                [str(key) for key in observe_dict.keys()],
+            )
+            fallback_results["selected_candidate"] = selected_candidate
+            return fallback_results
+
+        def log_fallback_event(event_name, episode_id, step, payload):
+            write_navigation_record(
+                event_name,
+                episode_id=episode_id,
+                step=step,
+                **payload,
+            )
+            if harness_enabled and harness_logger is not None:
+                harness_logger.log_event(event_name, step, payload)
         
         dataset_name = "R2R"
         if not os.path.exists(f"cache_files/{dataset_name}"):
@@ -634,6 +774,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             actions_cache = {} 
         
         navigator = Open_Nav(self.device,config.LLM, config.API_KEY)
+        navigator.block_weak_final_target_completion_stop = (
+            block_weak_final_target_completion_stop
+        )
+        navigator.min_steps_for_weak_final_target_completion_stop = (
+            min_steps_for_weak_final_target_completion_stop
+        )
         current_step = 0
         nav_history = []
         error_number = 0
@@ -718,7 +864,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         },
                     )
             
-            step_length = 6 if len(actions.split("\n")) <= 6 else 8 
+            action_count = len(navigator._split_actions(actions))
+            if action_count <= short_action_count_threshold:
+                step_length = short_action_step_limit
+            else:
+                step_length = long_action_step_limit
 
             stop_flag = False
             stop_reason = ""
@@ -758,6 +908,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             geometry_results = []
             grounding_results = []
             visual_evidence_results = {}
+            stop_current_view_evidence_results = None
             visual_evidence_memory_results = {}
             memory_results = {}
             if harness_enabled and harness_logger is not None:
@@ -1040,12 +1191,53 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     estimation=estimation,
                 )
 
+                def get_stop_current_view_evidence():
+                    nonlocal stop_current_view_evidence_results
+                    if stop_current_view_evidence_results is not None:
+                        return stop_current_view_evidence_results
+                    stop_current_view_evidence_results = run_harness_tool(
+                        "stop_current_view_evidence",
+                        current_step,
+                        {},
+                        visual_evidence.run if visual_evidence is not None else None,
+                        instruction,
+                        actions,
+                        landmarks,
+                        [],
+                        images_list,
+                        observe_dict,
+                        stop_current_view_evidence=True,
+                    )
+                    if visual_evidence is not None:
+                        write_navigation_record(
+                            "stop_current_view_evidence",
+                            episode_id=current_episode_id,
+                            step=current_step,
+                            **stop_current_view_evidence_results,
+                        )
+                        if harness_enabled and harness_logger is not None:
+                            harness_logger.log_event(
+                                "stop_current_view_evidence",
+                                current_step,
+                                stop_current_view_evidence_results,
+                            )
+                    return stop_current_view_evidence_results
+
                 def record_visual_target_verifier(
                     source,
                     stop_proposal,
                     reason,
                     selected_candidate=None,
+                    stop_evidence_mode="selected_candidate",
                 ):
+                    verifier_selected_candidate = (
+                        selected_candidate if stop_proposal else None
+                    )
+                    verifier_visual_evidence = (
+                        get_stop_current_view_evidence()
+                        if stop_proposal
+                        else visual_evidence_results
+                    )
                     verifier_results = run_harness_tool(
                         "visual_target_verifier",
                         current_step,
@@ -1060,11 +1252,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         estimation,
                         history_traj,
                         observation,
-                        visual_evidence_results,
+                        verifier_visual_evidence,
                         stop_proposal,
                         reason,
-                        selected_candidate,
+                        verifier_selected_candidate,
                         current_step,
+                        stop_evidence_mode,
                     )
                     if visual_target_verifier is not None:
                         write_navigation_record(
@@ -1104,6 +1297,50 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         and verifier_results.get("verdict") == "allow"
                     )
 
+                def visual_stop_can_rescue_selector_stop(
+                    verifier_results,
+                    old_stop_flag,
+                ):
+                    if old_stop_flag or not visual_target_verifier_decision_effect:
+                        return False
+                    if not isinstance(verifier_results, dict):
+                        return False
+                    if verifier_results.get("skipped"):
+                        return False
+                    if verifier_results.get("source") != "selector_stop_gate":
+                        return False
+                    if verifier_results.get("stop_evidence_mode") != "current_pano":
+                        return False
+                    if (
+                        verifier_results.get("stop_relevant_candidate_id")
+                        != stop_current_view_candidate_id
+                    ):
+                        return False
+                    selected_verdict = (
+                        verifier_results.get("selected_candidate_verdict") or {}
+                    )
+                    if selected_verdict.get("verdict") != "allow":
+                        return False
+                    if not selected_verdict.get("final_target_visible"):
+                        return False
+                    if not selected_verdict.get("arrival_evidence"):
+                        return False
+                    if verifier_results.get("allow_warnings"):
+                        return False
+                    if selected_verdict.get("missing_instruction_terms"):
+                        return False
+                    contradictions = set(
+                        verifier_results.get("contradictions") or []
+                    )
+                    if "stop_proposed_while_estimation_is_negative" in contradictions:
+                        return False
+                    hard_blockers = [
+                        blocker
+                        for blocker in (verifier_results.get("allow_blockers") or [])
+                        if blocker != "selector_stop_without_completion_support"
+                    ]
+                    return not hard_blockers
+
                 def log_visual_stop_allowed(
                     source,
                     original_stop_reason,
@@ -1117,8 +1354,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "supporting_candidate_id": verifier_results.get(
                             "supporting_candidate_id"
                         ),
+                        "future_supporting_candidate_id": verifier_results.get(
+                            "future_supporting_candidate_id"
+                        ),
                         "stop_relevant_candidate_id": verifier_results.get(
                             "stop_relevant_candidate_id"
+                        ),
+                        "stop_evidence_mode": verifier_results.get(
+                            "stop_evidence_mode"
                         ),
                         "candidate_alignment": verifier_results.get(
                             "candidate_alignment"
@@ -1131,6 +1374,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         ),
                         "confidence": verifier_results.get("confidence"),
                         "allow_blockers": verifier_results.get("allow_blockers"),
+                        "allow_warnings": verifier_results.get("allow_warnings"),
                     }
                     write_navigation_record(
                         "visual_stop_allowed",
@@ -1174,8 +1418,15 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         ),
                         "contradictions": verifier_results.get("contradictions"),
                         "allow_blockers": verifier_results.get("allow_blockers"),
+                        "allow_warnings": verifier_results.get("allow_warnings"),
                         "visual_evidence_parse_error": verifier_results.get(
                             "visual_evidence_parse_error"
+                        ),
+                        "stop_relevant_candidate_id": verifier_results.get(
+                            "stop_relevant_candidate_id"
+                        ),
+                        "stop_evidence_mode": verifier_results.get(
+                            "stop_evidence_mode"
                         ),
                     }
                     write_navigation_record(
@@ -1198,11 +1449,120 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     )
                     return False, "", True
 
-                stop_flag, stop_reason = navigator.should_stop(nav_logger, actions, landmarks, estimation, history_traj, observation)
+                def log_visual_stop_rescued(
+                    source,
+                    original_stop_reason,
+                    verifier_results,
+                    old_stop_flag,
+                    old_stop_reason,
+                ):
+                    rescued_payload = {
+                        "source": source,
+                        "original_stop_reason": original_stop_reason,
+                        "old_stop_flag": old_stop_flag,
+                        "old_stop_reason": old_stop_reason,
+                        "verdict": verifier_results.get("verdict"),
+                        "verifier_reason": verifier_results.get("reason"),
+                        "supporting_candidate_id": verifier_results.get(
+                            "supporting_candidate_id"
+                        ),
+                        "stop_relevant_candidate_id": verifier_results.get(
+                            "stop_relevant_candidate_id"
+                        ),
+                        "stop_evidence_mode": verifier_results.get(
+                            "stop_evidence_mode"
+                        ),
+                        "candidate_alignment": verifier_results.get(
+                            "candidate_alignment"
+                        ),
+                        "selected_candidate_verdict": verifier_results.get(
+                            "selected_candidate_verdict"
+                        ),
+                        "final_target_visible": verifier_results.get(
+                            "final_target_visible"
+                        ),
+                        "arrival_evidence": verifier_results.get(
+                            "arrival_evidence"
+                        ),
+                        "confidence": verifier_results.get("confidence"),
+                        "allow_blockers": verifier_results.get("allow_blockers"),
+                        "allow_warnings": verifier_results.get("allow_warnings"),
+                        "contradictions": verifier_results.get("contradictions"),
+                    }
+                    write_navigation_record(
+                        "visual_stop_rescued",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **rescued_payload,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "visual_stop_rescued",
+                            current_step,
+                            rescued_payload,
+                        )
+
+                stop_flag, stop_reason = navigator.should_stop(
+                    nav_logger,
+                    actions,
+                    landmarks,
+                    estimation,
+                    history_traj,
+                    observation,
+                    current_step=current_step,
+                )
+                stop_gate_metadata = dict(
+                    getattr(navigator, "last_stop_gate_metadata", {}) or {}
+                )
+                if (
+                    stop_gate_metadata.get("rejection_reason")
+                    == "weak_final_target_completion_auto_stop"
+                ):
+                    weak_stop_payload = {
+                        "source": "completion_gate",
+                        "rejection_reason": stop_gate_metadata.get(
+                            "rejection_reason"
+                        ),
+                        "weak_final_target": stop_gate_metadata.get(
+                            "weak_final_target"
+                        ),
+                        "current_step": stop_gate_metadata.get(
+                            "current_step"
+                        ),
+                        "weak_final_target_min_steps": (
+                            stop_gate_metadata.get(
+                                "weak_final_target_min_steps"
+                            )
+                        ),
+                        "landmark_gate": stop_gate_metadata.get("landmark_gate"),
+                        "completed_actions": stop_gate_metadata.get(
+                            "completed_actions"
+                        ),
+                        "all_actions_completed": stop_gate_metadata.get(
+                            "all_actions_completed"
+                        ),
+                        "final_action_completed": stop_gate_metadata.get(
+                            "final_action_completed"
+                        ),
+                    }
+                    write_navigation_record(
+                        "completion_gate_weak_final_target",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **weak_stop_payload,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "completion_gate_weak_final_target",
+                            current_step,
+                            weak_stop_payload,
+                        )
                 completion_verifier_results = record_visual_target_verifier(
                     "completion_gate",
                     stop_flag,
                     stop_reason,
+                    selected_candidate=stop_current_view_candidate_id,
+                    stop_evidence_mode="current_pano",
                 )
                 stop_flag, stop_reason, _ = apply_visual_stop_gate(
                     "completion_gate",
@@ -1228,6 +1588,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         step=current_step,
                         reason=stop_reason,
                         estimation=estimation,
+                        stop_gate_metadata=stop_gate_metadata,
                     )
                     write_navigation_record(
                         "selector_final",
@@ -1334,18 +1695,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             },
                         )
                     if not predictions:
-                        fallback_results = run_harness_tool(
+                        fallback_results = rank_movement_fallback(
                             "selector_empty_prediction_fallback",
                             current_step,
-                            {},
-                            visual_fallback_ranker.rank
-                            if visual_fallback_ranker is not None
-                            else None,
                             selector_observe_dict,
                             visual_evidence_results,
                             instruction,
                             actions,
                             landmarks,
+                            source_stage="selector_raw",
+                            reason="empty_selector_prediction",
                         )
                         selected_fallback = (
                             fallback_results.get("selected_candidate")
@@ -1355,23 +1714,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         if selected_fallback in selector_observe_dict:
                             predictions = [selected_fallback]
                             thoughts = [selector_observe_dict[selected_fallback]]
-                        write_navigation_record(
+                        fallback_results["previous_predictions"] = []
+                        log_fallback_event(
                             "selector_empty_prediction_fallback",
-                            episode_id=current_episode_id,
-                            step=current_step,
-                            previous_predictions=[],
-                            **(
-                                fallback_results
-                                if isinstance(fallback_results, dict)
-                                else {}
-                            ),
+                            current_episode_id,
+                            current_step,
+                            fallback_results,
                         )
-                        if harness_enabled and harness_logger is not None:
-                            harness_logger.log_event(
-                                "selector_empty_prediction_fallback",
-                                current_step,
-                                fallback_results,
-                            )
 
                     nav_logger.info("========== Thought ==========")
                     thought_fusion_start_time = time.perf_counter()
@@ -1424,7 +1773,38 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         fused_candidate_count=len(fused_pred_thought),
                     )
                     if next_vp == STOP_CANDIDATE:
-                        old_stop_flag, old_stop_reason = navigator.should_stop(nav_logger, actions, landmarks, estimation, history_traj, observation)
+                        old_stop_flag, old_stop_reason = navigator.should_stop(
+                            nav_logger,
+                            actions,
+                            landmarks,
+                            estimation,
+                            history_traj,
+                            observation,
+                            current_step=current_step,
+                        )
+                        old_stop_gate_metadata = dict(
+                            getattr(navigator, "last_stop_gate_metadata", {})
+                            or {}
+                        )
+                        if old_stop_gate_metadata:
+                            selector_stop_gate_payload = dict(
+                                old_stop_gate_metadata
+                            )
+                            selector_stop_gate_payload[
+                                "source"
+                            ] = "selector_stop_gate"
+                            write_navigation_record(
+                                "selector_stop_gate_metadata",
+                                episode_id=current_episode_id,
+                                step=current_step,
+                                **selector_stop_gate_payload,
+                            )
+                            if harness_enabled and harness_logger is not None:
+                                harness_logger.log_event(
+                                    "selector_stop_gate_metadata",
+                                    current_step,
+                                    selector_stop_gate_payload,
+                                )
                         stop_flag = old_stop_flag
                         stop_reason = old_stop_reason
                         selector_stop_rejection_reason = (
@@ -1434,9 +1814,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             "selector_stop_gate",
                             True,
                             old_stop_reason or "Navigator selected STOP.",
-                            selected_candidate=None,
+                            selected_candidate=stop_current_view_candidate_id,
+                            stop_evidence_mode="current_pano",
                         )
-                        if visual_target_verifier_allows_stop(
+                        if old_stop_flag and visual_target_verifier_allows_stop(
                             selector_verifier_results
                         ):
                             stop_flag = True
@@ -1449,6 +1830,32 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 old_stop_reason
                                 or "Navigator selected STOP.",
                                 selector_verifier_results,
+                            )
+                        elif visual_stop_can_rescue_selector_stop(
+                            selector_verifier_results,
+                            old_stop_flag,
+                        ):
+                            stop_flag = True
+                            stop_reason = (
+                                "Navigator selected STOP and current-view visual "
+                                "evidence rescued STOP."
+                            )
+                            log_visual_stop_rescued(
+                                "selector_stop_gate",
+                                old_stop_reason or "Navigator selected STOP.",
+                                selector_verifier_results,
+                                old_stop_flag,
+                                old_stop_reason,
+                            )
+                        elif visual_target_verifier_allows_stop(
+                            selector_verifier_results
+                        ):
+                            nav_logger.info(
+                                "Navigator selected STOP and visual target verifier allowed it, "
+                                "but rescue conditions did not pass; fallback to movement."
+                            )
+                            selector_stop_rejection_reason = (
+                                "visual_stop_rescue_conditions_failed"
                             )
                         elif visual_target_verifier_rejects_stop(
                             selector_verifier_results
@@ -1494,18 +1901,73 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                     filtered_fused_pred_thought
                                 ),
                             )
-                            if next_vp == STOP_CANDIDATE:
-                                fallback_vp = next(iter(selector_observe_dict.keys()))
-                                nav_logger.info(f"Stop rejection fallback returned STOP; force movement candidate {fallback_vp}")
-                                write_navigation_record(
-                                    "stop_rejected_fallback",
-                                    episode_id=current_episode_id,
-                                    step=current_step,
-                                    invalid_candidate=next_vp,
-                                    fallback_candidate=fallback_vp,
+                            test_decision_metadata = dict(
+                                getattr(
+                                    navigator,
+                                    "last_test_decision_metadata",
+                                    {},
                                 )
-                                next_vp = fallback_vp
-                                thought = selector_observe_dict[fallback_vp]
+                                or {}
+                            )
+                            if (
+                                next_vp == STOP_CANDIDATE
+                                or next_vp not in selector_observe_dict
+                                or test_decision_metadata.get("fallback_used")
+                            ):
+                                nav_logger.info(
+                                    "Stop rejection fallback needs ranked movement candidate; invalid result {}".format(
+                                        next_vp
+                                    )
+                                )
+                                fallback_results = rank_movement_fallback(
+                                    "stop_rejected_fallback",
+                                    current_step,
+                                    selector_observe_dict,
+                                    visual_evidence_results,
+                                    instruction,
+                                    actions,
+                                    landmarks,
+                                    source_stage="stop_rejected",
+                                    reason="stop_rejected_no_valid_movement",
+                                )
+                                fallback_vp = fallback_results.get(
+                                    "selected_candidate"
+                                )
+                                fallback_results[
+                                    "invalid_candidate"
+                                ] = next_vp
+                                fallback_results[
+                                    "decision_test_metadata"
+                                ] = test_decision_metadata
+                                log_fallback_event(
+                                    "stop_rejected_fallback",
+                                    current_episode_id,
+                                    current_step,
+                                    fallback_results,
+                                )
+                                if fallback_vp in selector_observe_dict:
+                                    next_vp = fallback_vp
+                                    thought = selector_observe_dict[fallback_vp]
+                            else:
+                                fallback_results = {
+                                    "fallback_strategy": "decision_test_non_stop",
+                                    "fallback_reason": "stop_rejected_non_stop_candidate",
+                                    "source_stage": "stop_rejected",
+                                    "selected_candidate": next_vp,
+                                    "available_candidates": [
+                                        str(key)
+                                        for key in selector_observe_dict.keys()
+                                    ],
+                                    "decision_test_metadata": (
+                                        test_decision_metadata
+                                    ),
+                                }
+                                log_fallback_event(
+                                    "stop_rejected_fallback",
+                                    current_episode_id,
+                                    current_step,
+                                    fallback_results,
+                                )
                             write_navigation_record(
                                 "stop_rejected",
                                 episode_id=current_episode_id,
@@ -1576,22 +2038,83 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     env_actions.append({"action": {"action": 0, "action_args": None}})
                 else:
                     if next_vp not in radius_dict or next_vp not in distance_dict:
-                        fallback_vp = next(iter(radius_dict.keys()))
-                        nav_logger.info(f"Invalid selected candidate {next_vp}; fallback to {fallback_vp}")
-                        write_navigation_record(
+                        fallback_results = rank_movement_fallback(
                             "selector_fallback",
-                            episode_id=current_episode_id,
-                            step=current_step,
-                            invalid_candidate=next_vp,
-                            fallback_candidate=fallback_vp,
+                            current_step,
+                            observe_dict,
+                            visual_evidence_results,
+                            instruction,
+                            actions,
+                            landmarks,
+                            source_stage="env_action_validation",
+                            reason="selected_candidate_not_in_action_space",
                         )
-                        next_vp = fallback_vp
-                    env_actions.append({'action':
-                        {'action': 4,
-                        'action_args':{
-                            'angle': radius_dict[next_vp],
-                            'distance': distance_dict[next_vp],
-                        }}})
+                        fallback_vp = fallback_results.get("selected_candidate")
+                        fallback_results["invalid_candidate"] = next_vp
+                        nav_logger.info(
+                            "Invalid selected candidate {}; ranked fallback to {}".format(
+                                next_vp,
+                                fallback_vp,
+                            )
+                        )
+                        log_fallback_event(
+                            "selector_fallback",
+                            current_episode_id,
+                            current_step,
+                            fallback_results,
+                        )
+                        if fallback_vp in radius_dict and fallback_vp in distance_dict:
+                            next_vp = fallback_vp
+                        elif radius_dict:
+                            fallback_vp = list(radius_dict.keys())[0]
+                            last_resort_payload = {
+                                "fallback_strategy": "action_space_order_last_resort",
+                                "fallback_reason": "ranked_fallback_not_in_action_space",
+                                "source_stage": "env_action_validation",
+                                "invalid_candidate": next_vp,
+                                "selected_candidate": fallback_vp,
+                                "available_candidates": [
+                                    str(key) for key in radius_dict.keys()
+                                ],
+                            }
+                            log_fallback_event(
+                                "selector_fallback_last_resort",
+                                current_episode_id,
+                                current_step,
+                                last_resort_payload,
+                            )
+                            next_vp = fallback_vp
+                        else:
+                            no_action_payload = {
+                                "fallback_strategy": "stop_last_resort",
+                                "fallback_reason": "empty_action_space",
+                                "source_stage": "env_action_validation",
+                                "invalid_candidate": next_vp,
+                                "selected_candidate": STOP_CANDIDATE,
+                                "available_candidates": [],
+                            }
+                            log_fallback_event(
+                                "selector_fallback_last_resort",
+                                current_episode_id,
+                                current_step,
+                                no_action_payload,
+                            )
+                            stop_flag = True
+                            stop_reason = (
+                                "No movement candidates remained after fallback."
+                            )
+                            next_vp = STOP_CANDIDATE
+                    if stop_flag:
+                        env_actions.append(
+                            {"action": {"action": 0, "action_args": None}}
+                        )
+                    else:
+                        env_actions.append({'action':
+                            {'action': 4,
+                            'action_args':{
+                                'angle': radius_dict[next_vp],
+                                'distance': distance_dict[next_vp],
+                            }}})
 
                 nav_logger.info(f"The final env action: {env_actions}")
                 write_navigation_record(

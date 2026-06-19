@@ -1,6 +1,14 @@
-import re
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
+from vlnce_baselines.common.opennav_ext.landmark_matching import (
+    final_landmark_terms,
+    matched_terms as match_landmark_terms,
+    missing_terms as missing_landmark_terms,
+    normalize_text,
+    split_landmark_terms,
+    term_present,
+    unique_normalized,
+)
 from vlnce_baselines.common.opennav_ext.visual_evidence_schema import (
     candidate_evidence_from_result,
 )
@@ -38,42 +46,23 @@ def _as_bool(value: Any) -> bool:
 
 
 def _norm(text: Any) -> str:
-    return re.sub(r"\s+", " ", str(text or "").strip().lower())
+    return normalize_text(text)
 
 
 def _unique(values: Iterable[str]) -> List[str]:
-    seen = set()
-    result = []
-    for value in values:
-        normalized = _norm(value)
-        if not normalized or normalized in seen:
-            continue
-        seen.add(normalized)
-        result.append(str(value).strip())
-    return result
+    return unique_normalized(values)
 
 
 def _landmark_terms(landmarks: str) -> List[str]:
-    chunks = re.split(r"[,;\n]+", str(landmarks or ""))
-    cleaned = []
-    for chunk in chunks:
-        text = re.sub(r"^\s*[-*\d.)]+\s*", "", chunk).strip()
-        if text:
-            cleaned.append(text)
-    return _unique(cleaned)
+    return split_landmark_terms(landmarks)
+
+
+def _final_landmark_terms(landmarks: str) -> List[str]:
+    return final_landmark_terms(landmarks)
 
 
 def _term_present(term: str, values: Iterable[str]) -> bool:
-    term_norm = _norm(term)
-    if not term_norm:
-        return False
-    for value in values:
-        value_norm = _norm(value)
-        if not value_norm:
-            continue
-        if term_norm in value_norm or value_norm in term_norm:
-            return True
-    return False
+    return term_present(term, values)
 
 
 def _candidate_evidence(visual_evidence: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -83,6 +72,9 @@ def _candidate_evidence(visual_evidence: Dict[str, Any]) -> List[Dict[str, Any]]
 _DEFAULT_GENERIC_FINAL_TERMS = (
     "area",
     "archway",
+    "bed",
+    "chair",
+    "couch",
     "door",
     "doorway",
     "entry way",
@@ -90,10 +82,49 @@ _DEFAULT_GENERIC_FINAL_TERMS = (
     "floor",
     "hall",
     "hallway",
+    "lamp",
     "room",
+    "sink",
+    "stair",
     "stairs",
-    "stairway",
+    "staircase",
+    "table",
 )
+
+_STOP_FINAL_TARGET_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "at",
+    "beside",
+    "by",
+    "in",
+    "inside",
+    "near",
+    "next",
+    "of",
+    "on",
+    "the",
+    "to",
+}
+
+_LOCATION_MODIFIER_TOKENS = {
+    "bath",
+    "bathroom",
+    "bed",
+    "bedroom",
+    "dining",
+    "foyer",
+    "hall",
+    "hallway",
+    "kitchen",
+    "living",
+    "lounge",
+    "office",
+    "outdoor",
+    "patio",
+    "room",
+}
 
 
 class VisualTargetVerifier:
@@ -107,6 +138,8 @@ class VisualTargetVerifier:
         min_steps_before_allow: int = 0,
         require_full_coverage_for_allow: bool = False,
         block_generic_final_terms_for_allow: bool = False,
+        require_completion_for_selector_stop: bool = True,
+        require_current_view_text_corroboration_for_allow: bool = False,
         generic_final_terms: Optional[Iterable[str]] = None,
     ) -> None:
         self.confidence_threshold = confidence_threshold
@@ -116,6 +149,12 @@ class VisualTargetVerifier:
         self.require_full_coverage_for_allow = require_full_coverage_for_allow
         self.block_generic_final_terms_for_allow = (
             block_generic_final_terms_for_allow
+        )
+        self.require_completion_for_selector_stop = (
+            require_completion_for_selector_stop
+        )
+        self.require_current_view_text_corroboration_for_allow = (
+            require_current_view_text_corroboration_for_allow
         )
         self.generic_final_terms = {
             _norm(term)
@@ -137,14 +176,31 @@ class VisualTargetVerifier:
         stop_reason: str = "",
         selected_candidate: Optional[str] = None,
         step_id: Optional[int] = None,
+        stop_evidence_mode: str = "selected_candidate",
     ) -> Dict[str, Any]:
         candidates = _candidate_evidence(visual_evidence)
-        final_terms = _landmark_terms(landmarks)
+        all_landmark_terms = _landmark_terms(landmarks)
+        final_terms = _final_landmark_terms(landmarks)
         sample_info = self._sample_info(visual_evidence)
         parse_error = (
             visual_evidence.get("parse_error")
             if isinstance(visual_evidence, dict)
             else None
+        )
+        schema_error = (
+            visual_evidence.get("schema_error")
+            if isinstance(visual_evidence, dict)
+            else None
+        )
+        schema_warnings = (
+            _as_list(visual_evidence.get("schema_warnings"))
+            if isinstance(visual_evidence, dict)
+            else []
+        )
+        current_view_observation = (
+            str(visual_evidence.get("current_view_observation", ""))
+            if isinstance(visual_evidence, dict)
+            else ""
         )
 
         candidate_verdicts = [
@@ -186,8 +242,9 @@ class VisualTargetVerifier:
             arrival_evidence,
             missing_terms,
             parse_error,
+            schema_error,
         )
-        allow_blockers = self._allow_blockers(
+        allow_policy = self._allow_policy_findings(
             source,
             stop_proposal,
             step_id,
@@ -195,7 +252,13 @@ class VisualTargetVerifier:
             final_terms,
             selected_candidate_verdict,
             candidate_verdicts,
+            selected_candidate,
+            stop_evidence_mode,
+            current_view_observation,
+            estimation,
         )
+        allow_blockers = allow_policy["blockers"]
+        allow_warnings = allow_policy["warnings"]
         verdict = self._verdict(
             stop_proposal,
             parse_error,
@@ -203,6 +266,9 @@ class VisualTargetVerifier:
             sample_info["sampled_all"],
             selected_candidate_verdict,
             allow_blockers,
+        )
+        stop_selected_candidate_required = (
+            bool(stop_proposal) and selected_candidate is not None
         )
 
         return {
@@ -215,20 +281,39 @@ class VisualTargetVerifier:
             "arrival_evidence": arrival_evidence,
             "matched_final_landmarks": matched_terms,
             "missing_final_landmarks": missing_terms,
+            "all_landmark_terms": all_landmark_terms,
+            "required_landmark_terms": final_terms,
             "best_candidate": best_candidate,
             "supporting_candidate_id": supporting_candidate,
+            "future_supporting_candidate_id": supporting_candidate
+            if (
+                selected_candidate is None
+                or supporting_candidate is None
+                or str(supporting_candidate) != str(selected_candidate)
+            )
+            else None,
             "stop_relevant_candidate_id": (
                 str(selected_candidate) if selected_candidate is not None else None
             ),
+            "stop_evidence_mode": stop_evidence_mode,
+            "stop_selected_candidate_required": stop_selected_candidate_required,
             "selected_candidate_verdict": selected_candidate_verdict,
             "candidate_alignment": candidate_alignment,
             "candidate_verdicts": candidate_verdicts,
             "selected_candidate": selected_candidate,
             "visual_evidence_candidate_count": len(candidates),
             "visual_evidence_parse_error": parse_error,
+            "visual_evidence_schema_error": schema_error,
+            "visual_evidence_schema_warnings": schema_warnings,
+            "current_view_corroboration": self._current_view_corroboration_report(
+                stop_evidence_mode,
+                final_terms,
+                current_view_observation,
+            ),
             "visual_evidence_sample": sample_info,
             "contradictions": contradictions,
             "allow_blockers": allow_blockers,
+            "allow_warnings": allow_warnings,
             "confidence": confidence,
             "reason": self._reason(
                 verdict,
@@ -289,14 +374,10 @@ class VisualTargetVerifier:
         visible_terms = _as_list(candidate.get("visible_landmarks"))
         matched_instruction_terms = _as_list(candidate.get("matched_instruction_terms"))
         evidence_terms = visible_terms + matched_instruction_terms
-        matched_final_terms = [
-            term for term in final_terms if _term_present(term, evidence_terms)
-        ]
-        missing_final_terms = [
-            term
-            for term in final_terms
-            if not _term_present(term, matched_final_terms)
-        ]
+        matched_final_terms = match_landmark_terms(final_terms, evidence_terms)
+        missing_final_terms = missing_landmark_terms(
+            final_terms, matched_final_terms
+        )
         final_target_visible = _as_bool(candidate.get("final_target_visible"))
         arrival_evidence = _as_bool(candidate.get("arrival_evidence"))
         confidence = _as_float(candidate.get("confidence"))
@@ -421,11 +502,7 @@ class VisualTargetVerifier:
             candidate_verdicts,
             "matched_final_landmarks",
         )
-        return [
-            term
-            for term in final_terms
-            if not _term_present(term, matched_terms)
-        ]
+        return missing_landmark_terms(final_terms, matched_terms)
 
     def _contradictions(
         self,
@@ -435,10 +512,13 @@ class VisualTargetVerifier:
         arrival_evidence: bool,
         missing_terms: List[str],
         parse_error: Any,
+        schema_error: Any,
     ) -> List[str]:
         contradictions = []
         if parse_error:
             contradictions.append("visual_evidence_parse_error")
+        if schema_error:
+            contradictions.append("visual_evidence_schema_error")
         if not stop_proposal:
             return contradictions
         if not final_target_visible:
@@ -477,7 +557,78 @@ class VisualTargetVerifier:
                 return False
         return True
 
-    def _allow_blockers(
+    def _meaningful_tokens(self, term: str) -> List[str]:
+        tokens = []
+        for token in _norm(term).split():
+            if token in _STOP_FINAL_TARGET_STOPWORDS:
+                continue
+            if len(token) <= 1:
+                continue
+            tokens.append(token)
+        return unique_normalized(tokens)
+
+    def _requires_current_view_corroboration(self, term: str) -> bool:
+        tokens = self._meaningful_tokens(term)
+        if len(tokens) < 2:
+            return False
+        return any(token in _LOCATION_MODIFIER_TOKENS for token in tokens)
+
+    def _current_view_term_corroborated(
+        self,
+        term: str,
+        current_view_observation: str,
+    ) -> bool:
+        if not self._requires_current_view_corroboration(term):
+            return True
+        tokens = self._meaningful_tokens(term)
+        if not tokens:
+            return True
+        if term_present(term, [current_view_observation]):
+            return True
+        return all(term_present(token, [current_view_observation]) for token in tokens)
+
+    def _uncorroborated_current_view_terms(
+        self,
+        final_terms: Sequence[str],
+        current_view_observation: str,
+    ) -> List[str]:
+        if not str(current_view_observation or "").strip():
+            return [
+                term
+                for term in unique_normalized(final_terms)
+                if self._requires_current_view_corroboration(term)
+            ]
+        return [
+            term
+            for term in unique_normalized(final_terms)
+            if not self._current_view_term_corroborated(
+                term,
+                current_view_observation,
+            )
+        ]
+
+    def _current_view_corroboration_report(
+        self,
+        stop_evidence_mode: str,
+        final_terms: Sequence[str],
+        current_view_observation: str,
+    ) -> Dict[str, Any]:
+        if stop_evidence_mode != "current_pano":
+            return {
+                "required": False,
+                "uncorroborated_terms": [],
+            }
+        uncorroborated_terms = self._uncorroborated_current_view_terms(
+            final_terms,
+            current_view_observation,
+        )
+        return {
+            "required": True,
+            "uncorroborated_terms": uncorroborated_terms,
+            "observation_chars": len(str(current_view_observation or "")),
+        }
+
+    def _allow_policy_findings(
         self,
         source: str,
         stop_proposal: bool,
@@ -486,13 +637,40 @@ class VisualTargetVerifier:
         final_terms: List[str],
         selected_candidate_verdict: Optional[Dict[str, Any]],
         candidate_verdicts: List[Dict[str, Any]],
-    ) -> List[str]:
+        selected_candidate: Optional[str],
+        stop_evidence_mode: str,
+        current_view_observation: str,
+        estimation: str,
+    ) -> Dict[str, List[str]]:
         if not stop_proposal or not self._has_allow_candidate(
             selected_candidate_verdict, candidate_verdicts
         ):
-            return []
+            return {"blockers": [], "warnings": []}
 
         blockers = []
+        warnings = []
+        if (
+            source == "selector_stop_gate"
+            and self.require_completion_for_selector_stop
+            and not self._estimation_supports_stop(estimation)
+        ):
+            blockers.append("selector_stop_without_completion_support")
+        if selected_candidate is not None and selected_candidate_verdict is None:
+            blockers.append("selected_candidate_not_sampled:{}".format(selected_candidate))
+        if (
+            stop_evidence_mode == "current_pano"
+            and selected_candidate_verdict is not None
+            and selected_candidate_verdict.get("verdict") == "allow"
+        ):
+            for term in self._uncorroborated_current_view_terms(
+                final_terms,
+                current_view_observation,
+            ):
+                finding = "uncorroborated_final_target:{}".format(_norm(term))
+                if self.require_current_view_text_corroboration_for_allow:
+                    blockers.append(finding)
+                else:
+                    warnings.append(finding)
         step_number = _as_int(step_id, 0)
         if self.min_steps_before_allow and step_number < self.min_steps_before_allow:
             blockers.append(
@@ -513,7 +691,27 @@ class VisualTargetVerifier:
                     ",".join(_norm(term) for term in final_terms)
                 )
             )
-        return blockers
+        return {
+            "blockers": blockers,
+            "warnings": warnings,
+        }
+
+    def _estimation_supports_stop(self, estimation: str) -> bool:
+        normalized = _norm(estimation)
+        if not normalized or normalized == "none":
+            return False
+        negative_markers = (
+            "not executed",
+            "not completed",
+            "not done",
+            "has not",
+            "have not",
+            "not yet",
+            "incomplete",
+        )
+        if any(marker in normalized for marker in negative_markers):
+            return False
+        return True
 
     def _verdict(
         self,
@@ -539,9 +737,7 @@ class VisualTargetVerifier:
                 return "reject"
             return "uncertain"
         if any(candidate["verdict"] == "allow" for candidate in candidate_verdicts):
-            if allow_blockers:
-                return "uncertain"
-            return "allow"
+            return "uncertain"
         if not sampled_all:
             return "uncertain"
         if any(candidate["verdict"] == "reject" for candidate in candidate_verdicts):

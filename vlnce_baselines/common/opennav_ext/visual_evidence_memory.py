@@ -1,6 +1,12 @@
-import re
 from typing import Any, Dict, List, Optional
 
+from vlnce_baselines.common.opennav_ext.landmark_matching import (
+    matched_terms as match_landmark_terms,
+    missing_terms as missing_landmark_terms,
+    normalize_text,
+    split_landmark_terms,
+    term_present,
+)
 from vlnce_baselines.common.opennav_ext.visual_evidence_schema import (
     candidate_evidence_from_result,
 )
@@ -44,28 +50,15 @@ def _unique_sorted(values: List[str]) -> List[str]:
 
 
 def _norm(text: Any) -> str:
-    return re.sub(r"\s+", " ", str(text or "").strip().lower())
+    return normalize_text(text)
 
 
 def _term_present(term: str, values: List[str]) -> bool:
-    term_norm = _norm(term)
-    if not term_norm:
-        return False
-    for value in values:
-        value_norm = _norm(value)
-        if term_norm in value_norm or value_norm in term_norm:
-            return True
-    return False
+    return term_present(term, values)
 
 
 def _landmark_terms(landmarks: str) -> List[str]:
-    chunks = re.split(r"[,;\n]+", str(landmarks or ""))
-    terms = []
-    for chunk in chunks:
-        text = re.sub(r"^\s*[-*\d.)]+\s*", "", chunk).strip()
-        if text:
-            terms.append(text)
-    return _unique_sorted(terms)
+    return _unique_sorted(split_landmark_terms(landmarks))
 
 
 class VisualEvidenceMemory:
@@ -139,14 +132,14 @@ class VisualEvidenceMemory:
             candidate.get("matched_instruction_terms")
         )
         evidence_terms = visible_landmarks + matched_instruction_terms
-        matched_final_landmarks = [
-            term for term in final_terms if _term_present(term, evidence_terms)
-        ]
-        missing_final_landmarks = [
-            term
-            for term in final_terms
-            if not _term_present(term, matched_final_landmarks)
-        ]
+        matched_final_landmarks = match_landmark_terms(
+            final_terms,
+            evidence_terms,
+        )
+        missing_final_landmarks = missing_landmark_terms(
+            final_terms,
+            matched_final_landmarks,
+        )
         raw_final_target_visible = _as_bool(candidate.get("final_target_visible"))
         raw_arrival_evidence = _as_bool(candidate.get("arrival_evidence"))
         verified_final_target_visible = (

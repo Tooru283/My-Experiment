@@ -26,6 +26,9 @@ from vlnce_baselines.common.opennav_ext.visual_graph_memory import (
     VisualGraphMemoryDiagnostic,
 )
 from vlnce_baselines.common.opennav_ext.visual_evidence import VisualEvidenceLogger
+from vlnce_baselines.common.opennav_ext.visual_evidence import (
+    STOP_CURRENT_VIEW_CANDIDATE_ID,
+)
 from vlnce_baselines.common.opennav_ext.visual_evidence_memory import (
     VisualEvidenceMemory,
 )
@@ -48,6 +51,7 @@ __all__ = [
     "MetricsLogger",
     "VisualGraphMemoryDiagnostic",
     "VisualEvidenceLogger",
+    "STOP_CURRENT_VIEW_CANDIDATE_ID",
     "VisualEvidenceMemory",
     "VisualEvidenceFallbackRanker",
     "VisualTargetVerifier",
