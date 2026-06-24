@@ -14,7 +14,7 @@
 
 - 不训练或微调新 policy。
 - 不切换到 waypoint-free 主链。
-- 不做自由工具调用式 LLM Agent。
+- 当前主实验不做自由工具调用式 LLM Agent；后续可按“先 Harness 化、再工具化、再 controlled tool-calling”的路线单独推进。
 - 不引入在线多 sub-agent 协作。
 - 不把模型升级和模块收益混在同一组实验里。
 
@@ -215,6 +215,33 @@ A 阶段用于保证可比性。B/C 阶段主要产生日志和诊断证据。D/
 |------|----------|----------|
 | DD-PPO depth encoder 替代 | Habitat DD-PPO 官方还有 SE-ResNeXt50 / SE-ResNeXt101 等更强深度编码器可调研 | 当前代码按 `VlnResnetDepthEncoder` + ResNet-50 权重结构加载，不能直接替换 checkpoint，需要改 backbone 和加载逻辑 |
 | SmartWay-style waypoint predictor | 2025 SmartWay 方向用 DINOv2、masked cross-attention、occupancy-aware loss 强化 waypoint prediction，适合作为候选生成升级路线 | 这会改变 waypoint 候选质量和错误分布，应单独做 `Waypoint Predictor Upgrade` 对照，不应混入 V2/V4 主实验 |
+| 自由工具调用 Agent 演进 | 可以把现有 V1/V2/V3/V4、selector、fallback、env action 包装为 typed tools，再引入受控 Agent Controller | 不应直接切到 LangChain 自由 Agent；必须保留 Tool Registry、Action Validator、STOP Verifier、预算限制和 trace |
+
+## Agent 化演进方向
+
+当前项目已经有 embodied navigation agent 的基本闭环，但不是 LangChain 式自由工具调用 Agent。更稳妥的后续路线是把现有固定 pipeline 逐步改造成受控 tool-calling agent:
+
+```text
+L0 当前 Harness 固定流程
+  -> L1 Tool Registry 抽象
+  -> L2 Scripted Controller
+  -> L3 LLM Tool Planner logging-only
+  -> L4 Controlled Tool-Calling Agent
+  -> L5 LangChain / LangGraph 适配
+```
+
+核心原则:
+
+- 先把现有 `visual_evidence`、`visual_target_verifier`、`visual_evidence_memory`、`multimodal_selector_context`、`visual_fallback`、selector 和 env action 抽象成 typed tools。
+- 先让工具调用可记录、可回放、可消融，再允许 LLM 在白名单工具内选择下一步调用。
+- STOP 仍必须经过 `VisualTargetVerifier`，环境动作必须经过 Action Validator。
+- LangChain/LangGraph 只作为后续 controller runtime，不替代项目内的 ToolSpec、AgentState、MetricsLogger 和安全约束。
+
+详细路线见:
+
+```text
+Controlled-Navigation-Harness/自由工具调用Agent演进路线.md
+```
 
 下一轮必须检查的日志字段:
 
@@ -283,6 +310,7 @@ OPENNAV_HARNESS:
 |------|------|
 | `Controlled-Navigation-Harness/项目总控.md` | 项目边界、阶段定义和文档入口 |
 | `Controlled-Navigation-Harness/实验方案.md` | 完整实验方案和 harness 设计 |
+| `Controlled-Navigation-Harness/自由工具调用Agent演进路线.md` | 从当前 Harness 向受控 tool-calling Agent 演进的阶段路线 |
 | `Controlled-Navigation-Harness/V系列多模态视觉证据初步实现后调整方案.md` | V0-V4 初步实现后的问题复盘和下一轮矩阵 |
 | `Controlled-Navigation-Harness/V系列多模态视觉证据实验记录-封存-20260613.md` | V 系列初步实现过程记录 |
 | `Controlled-Navigation-Harness/docs/experiment_record_20260610.md` | 本地 Qwen / SigLIP A0 smoke、A1 logging 接入 |
