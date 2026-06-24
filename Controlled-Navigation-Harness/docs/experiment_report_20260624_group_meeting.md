@@ -9,6 +9,7 @@
 - `logs/navigation_records/**/*.jsonl`
 - `Controlled-Navigation-Harness/docs/experiment_record_*.md`
 - 原文 Open-Nav 对比表: `Method / TL / NE / nDTW / OSR / SR / SPL`
+- HiMemVLN 外部强基线: arXiv:2603.14807 与用户提供的对齐表格数据
 
 ## 1. 汇报摘要
 
@@ -320,6 +321,7 @@ U 系列当前经验:
 |---|---:|---:|---:|---:|---:|---:|---|
 | Open-Nav-Llama3.1 (Ours, 原文) | 8.07 | 7.25 | 44.99 | 23 | 16 | 12.90 | 原文结果 |
 | Open-Nav-GPT4 (Ours, 原文) | 7.68 | 6.70 | 45.79 | 23 | 19 | 16.10 | 原文结果 |
+| HiMemVLN-Qwen2-VL-72B | 7.55 | 6.65 | 52.79 | 36 | 30 | 26.85 | 层次化记忆 + 72B MLLM，作为外部强基线 |
 | 2026-06-13 V24 local | - | 7.42 | 47.97 | 24 | 19 | 17.08 | 本地 ep100，SR/SPL/nDTW 最接近或略高于原文 GPT4，但 NE 更差 |
 | 2026-06-22 ep100 local | - | 7.10 | 41.89 | 29 | 19 | 12.95 | 本地 ep100，OSR 最高，SR 与原文 GPT4 持平 |
 | 2026-06-23 latest local | - | 7.02 | 41.80 | 27 | 18 | 11.22 | 最新本地 ep100，NE 优于 Llama3.1、弱于 GPT4，SR 低于 GPT4 1 点 |
@@ -330,6 +332,25 @@ U 系列当前经验:
 - 本地 6/22 和 6/23 的 OSR 高于原文两行，说明“到过目标附近”的能力不弱，主要差距仍在 OSR 到 SR 的转化。
 - 本地最新 NE 为 7.02，比原文 Llama3.1 的 7.25 好，但仍弱于 GPT4 的 6.70。
 - 本地最新 SPL 明显低于原文 GPT4，说明路径效率和主动 STOP/hold 仍是主要短板。
+
+### 4.2 与 HiMemVLN 的对比
+
+HiMemVLN-Qwen2-VL-72B 的 SR 到 30%，不能简单解读为“只要加 memory 就能涨 10 个点”，也不能直接说明我们的记忆机制无效。两边的 memory 进入决策闭环的深度不同:
+
+- HiMemVLN 的记忆是方法主体: 短期 Localer 使用视觉图记忆做当前位置回忆、重访检测和候选方向软约束；长期 Globaler 抽取全局导航 schema，并持续用历史轨迹校准当前动作。也就是说，它的 memory 直接影响 waypoint 选择和长程方向一致性。
+- 我们当前 V3 `VisualEvidenceMemory` 第一版主要是 episode 内视觉证据聚合和 trace 诊断；V4 中 `include_memory_suffix` 默认关闭，避免把“历史看见过目标”误注入到每个候选里，导致 selector 把旧证据当成当前方向证据。因此当前实验并没有真正测试一个强 decision-effect memory policy。
+- HiMemVLN 使用 Qwen2-VL-72B，视觉理解、指令跟随、长上下文推理和对 memory 文本的使用能力都显著强于我们当前主跑的本地 4B/9B 配置。记忆模块本身依赖基座模型正确读取和执行，模型规模差异会放大收益差距。
+- 从指标看，HiMemVLN 相对本地 2026-06-22 最好 OSR 是 36 vs 29，提升 7 点；SR 是 30 vs 19，提升 11 点。也就是说它不仅更容易到过目标附近，还更能把 near-goal 状态保持到最终 STOP。我们的主要瓶颈仍是 OSR-to-SR 转化、STOP/hold 和 recovery 漂移。
+
+因此当前结果说明我们的“视觉证据记忆记录”还不是 HiMemVLN 式的“层次化决策记忆”。它不是完全不行，而是还停留在可观测、可诊断、弱注入阶段；下一步应该把 memory 做成 phase-gated、空间锚定、只在可信场景影响动作的决策模块，而不是简单打开全局 memory suffix。
+
+后续可做的对齐消融:
+
+- `M0`: 当前 log-only / weak-injection memory，作为对照。
+- `M1`: 只加入短期 visual graph memory，用于重访检测和候选方向降权。
+- `M2`: 加入 near-goal hold memory，专门减少 OSR=1 但 SR=0 的漂移。
+- `M3`: 加入长期 instruction schema / CameFrom / last-k trajectory summary，约束长程方向漂移。
+- `M4`: 与 U2 STOP verifier 联动，只在 current-view 或近两步高置信证据支持时允许 memory 影响 STOP。
 
 解读:
 
@@ -520,10 +541,19 @@ false negative:
 
 ### 9.1 固化分析脚本
 
-优先新增:
+已新增:
 
 ```text
 scripts/analyze_navigation_jsonl.py
+```
+
+典型用法:
+
+```text
+python3 scripts/analyze_navigation_jsonl.py \
+  logs/eval_results/ep20/20260623/ep20_series_qwen_siglip_local_20260623_183532 \
+  logs/navigation_records/ep20/20260623/ep20_series_qwen_siglip_local_20260623_183532_train_navigation_20260623_183557.jsonl \
+  --top 10
 ```
 
 输出:
@@ -535,11 +565,19 @@ scripts/analyze_navigation_jsonl.py
 - high-confidence current-view evidence 分布。
 - selector empty prediction、fallback changed、recovery override。
 - phase 分布和 recover 触发原因。
+- schema / parse health，包括 schema error、schema warning、parse error。
 
 目的:
 
 - 每轮 ep20/ep100 后自动回答“为什么 SR 没升”。
 - 避免继续依赖手工 jq 和主观观察。
+
+已用 2026-06-23 ep20 验证:
+
+- 复现 SR 3/20、OSR 7/20、SPL 0.1306、nDTW 0.4987。
+- 自动列出 `265/513/810/1092` 为 `OSR=1 but SR=0`。
+- 自动定位最大 drift 为 `810: min_distance 0.045m -> final_distance 5.1767m`。
+- 统计 recover 分布: `recover=96`，主要触发为 `stop_false_positive` 和 `empty_fallback_bad`。
 
 ### 9.2 current-view verify auto-stop
 
