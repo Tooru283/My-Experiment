@@ -15,10 +15,15 @@ from openai import OpenAI
 from vlnce_baselines.common.navigator.spatialNavigator import *
 from vlnce_baselines.common.opennav_ext import (
     ContextBuilder,
+    FailureDiagnostic,
     GeometryQueryLogger,
     GrounderDiagnostic,
     MetricsLogger,
     MultimodalSelectorContext,
+    PhaseAwareEvidenceScaffolder,
+    PhaseEvidenceTracker,
+    RecoveryPolicy,
+    StopEvidenceVerifier,
     VisualEvidenceFallbackRanker,
     VisualEvidenceMemory,
     VisualEvidenceLogger,
@@ -34,6 +39,11 @@ from vlnce_baselines.common.opennav_ext import (
     module_log_only,
     selected_distance_gain,
     summarize_step_outputs,
+    build_decision_audit,
+    u_decision_effect_unit,
+    u_module_enabled,
+    u_module_log_only,
+    u_series_enabled,
     validate_a1_harness_config,
 )
 import torch
@@ -81,6 +91,17 @@ from ..utils import get_camera_orientations
 from ..models.utils import (
     length2mask, dir_angle_feature, dir_angle_feature_with_ele,
 )
+
+
+def _episode_group_name(episode_count) -> str:
+    try:
+        value = int(episode_count)
+    except (TypeError, ValueError):
+        return "ep_unknown"
+    if value < 0:
+        return "ep_all"
+    return "ep{}".format(value)
+
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
@@ -293,6 +314,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             config.TASK_CONFIG.TASK.MEASUREMENTS.append("COLLISIONS")
         config.freeze()
 
+        os.makedirs(config.RESULTS_DIR, exist_ok=True)
         if config.EVAL.SAVE_RESULTS:
             fname = os.path.join(
                 config.RESULTS_DIR,
@@ -363,9 +385,15 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         start_time = time.time()
 
         # set up the navigation record logger
-        nav_record_dir = os.path.join("logs", "navigation_records")
-        os.makedirs(nav_record_dir, exist_ok=True)
         run_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_date = os.environ.get("OPENNAV_RUN_DATE") or run_stamp[:8]
+        episode_group = os.environ.get("OPENNAV_EPISODE_GROUP") or _episode_group_name(
+            config.EVAL.EPISODE_COUNT
+        )
+        nav_record_dir = os.path.join(
+            "logs", "navigation_records", episode_group, run_date
+        )
+        os.makedirs(nav_record_dir, exist_ok=True)
         exp_name = os.path.splitext(os.path.basename(config.LOG_FILE))[0]
         nav_record_prefix = f"{exp_name}_navigation_{run_stamp}"
         log_file = os.path.join(nav_record_dir, f"{nav_record_prefix}.log")
@@ -412,6 +440,17 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         multimodal_selector_context_decision_effect = False
         memory_diagnostic = None
         context_builder = None
+        u_series_active = False
+        u_decision_unit = "none"
+        phase_evidence_tracker = None
+        phase_aware_scaffolder = None
+        phase_aware_scaffolder_decision_effect = False
+        stop_evidence_verifier = None
+        stop_evidence_verifier_decision_effect = False
+        failure_diagnostic = None
+        recovery_policy = None
+        recovery_policy_decision_effect = False
+        max_recovery_per_episode = 2
         oracle_metrics_enabled = False
         completion_max_tokens = 0
         navigator_max_tokens = 0
@@ -523,6 +562,21 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "INCLUDE_MEMORY_SUFFIX",
                         False,
                     ),
+                    decision_mode=getattr(
+                        vsc_config,
+                        "DECISION_MODE",
+                        "phase_gated_u1",
+                    ),
+                    suppress_target_arrival_for_selector=getattr(
+                        vsc_config,
+                        "SUPPRESS_TARGET_ARRIVAL_FOR_SELECTOR",
+                        True,
+                    ),
+                    min_confidence_for_target_hint=getattr(
+                        vsc_config,
+                        "MIN_CONFIDENCE_FOR_TARGET_HINT",
+                        0.9,
+                    ),
                 )
                 multimodal_selector_context_decision_effect = (
                     decision_effect_enabled(config)
@@ -532,6 +586,126 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 memory_diagnostic = VisualGraphMemoryDiagnostic()
             if module_enabled(config, "CONTEXT_BUILDER"):
                 context_builder = ContextBuilder()
+            if u_series_enabled(config):
+                u_series_active = True
+                u_decision_unit = u_decision_effect_unit(config)
+                u_config = config.OPENNAV_HARNESS.U_SERIES
+                if u_module_enabled(config, "PHASE_EVIDENCE"):
+                    phase_config = u_config.PHASE_EVIDENCE
+                    phase_evidence_tracker = PhaseEvidenceTracker(
+                        late_step_threshold=getattr(
+                            phase_config,
+                            "LATE_STEP_THRESHOLD",
+                            4,
+                        ),
+                        unknown_confidence_threshold=getattr(
+                            phase_config,
+                            "UNKNOWN_CONFIDENCE_THRESHOLD",
+                            0.4,
+                        ),
+                    )
+                    selector_context_config = getattr(
+                        config.OPENNAV_HARNESS,
+                        "MULTIMODAL_SELECTOR_CONTEXT",
+                        None,
+                    )
+                    phase_aware_scaffolder = PhaseAwareEvidenceScaffolder(
+                        max_context_chars=getattr(
+                            selector_context_config,
+                            "MAX_SUMMARY_CHARS",
+                            220,
+                        ),
+                        apply_phases=getattr(
+                            selector_context_config,
+                            "APPLY_PHASES",
+                            ["search", "approach"],
+                        ),
+                    )
+                    phase_aware_scaffolder_decision_effect = (
+                        decision_effect_enabled(config)
+                        and u_decision_unit in {"U1", "combined"}
+                        and not u_module_log_only(config, "PHASE_EVIDENCE")
+                    )
+                if u_module_enabled(config, "STOP_EVIDENCE_VERIFIER"):
+                    stop_config = u_config.STOP_EVIDENCE_VERIFIER
+                    stop_evidence_verifier = StopEvidenceVerifier(
+                        enable_rescue=getattr(
+                            stop_config,
+                            "ENABLE_RESCUE",
+                            False,
+                        ),
+                        enable_relation_check=getattr(
+                            stop_config,
+                            "ENABLE_RELATION_CHECK",
+                            False,
+                        ),
+                        enable_weak_target_adjustment=getattr(
+                            stop_config,
+                            "ENABLE_WEAK_TARGET_ADJUSTMENT",
+                            False,
+                        ),
+                        rescue_confidence_threshold=getattr(
+                            stop_config,
+                            "RESCUE_CONFIDENCE_THRESHOLD",
+                            0.99,
+                        ),
+                        rescue_min_step=getattr(
+                            stop_config,
+                            "RESCUE_MIN_STEP",
+                            8,
+                        ),
+                        rescue_max_non_positive_gains=getattr(
+                            stop_config,
+                            "RESCUE_MAX_NON_POSITIVE_GAINS",
+                            1,
+                        ),
+                        rescue_require_positive_recent_gain=getattr(
+                            stop_config,
+                            "RESCUE_REQUIRE_POSITIVE_RECENT_GAIN",
+                            True,
+                        ),
+                        rescue_allow_phase_verify=getattr(
+                            stop_config,
+                            "RESCUE_ALLOW_PHASE_VERIFY",
+                            False,
+                        ),
+                    )
+                    stop_evidence_verifier_decision_effect = (
+                        decision_effect_enabled(config)
+                        and u_decision_unit in {"U2", "combined"}
+                        and not u_module_log_only(config, "STOP_EVIDENCE_VERIFIER")
+                    )
+                if u_module_enabled(config, "FAILURE_RECOVERY"):
+                    recovery_config = u_config.FAILURE_RECOVERY
+                    failure_diagnostic = FailureDiagnostic(
+                        negative_gain_window=getattr(
+                            recovery_config,
+                            "NEGATIVE_GAIN_WINDOW",
+                            2,
+                        )
+                    )
+                    max_recovery_per_episode = int(
+                        getattr(
+                            recovery_config,
+                            "MAX_RECOVERY_PER_EPISODE",
+                            max_recovery_per_episode,
+                        )
+                    )
+                    recovery_policy = RecoveryPolicy(
+                        max_recovery_per_episode=max_recovery_per_episode
+                    )
+                    recovery_policy_decision_effect = (
+                        decision_effect_enabled(config)
+                        and u_decision_unit in {"U3", "combined"}
+                        and not u_module_log_only(config, "FAILURE_RECOVERY")
+                        and bool(
+                            getattr(
+                                recovery_config,
+                                "ENABLE_RESELECT",
+                                False,
+                            )
+                        )
+                    )
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
@@ -691,6 +865,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     "selected_candidate": None,
                     "available_candidates": [],
                     "ranked_candidates": [],
+                    "recovery_rank_trusted": False,
                 }
             available_candidates = [str(key) for key in observe_dict.keys()]
             selected_candidate = available_candidates[0]
@@ -707,6 +882,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     }
                     for idx, candidate in enumerate(available_candidates)
                 ],
+                "recovery_rank_trusted": False,
             }
 
         def rank_movement_fallback(
@@ -750,6 +926,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 [str(key) for key in observe_dict.keys()],
             )
             fallback_results["selected_candidate"] = selected_candidate
+            fallback_results["recovery_rank_trusted"] = bool(
+                fallback_results.get("fallback_strategy") == "visual_evidence_ranked"
+                and fallback_results.get("ranked_candidates")
+            )
             return fallback_results
 
         def log_fallback_event(event_name, episode_id, step, payload):
@@ -761,6 +941,159 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             )
             if harness_enabled and harness_logger is not None:
                 harness_logger.log_event(event_name, step, payload)
+
+        def log_u_event(event_name, episode_id, step, payload):
+            if not u_series_active:
+                return
+            write_navigation_record(
+                event_name,
+                episode_id=episode_id,
+                step=step,
+                **(payload or {}),
+            )
+            if harness_enabled and harness_logger is not None:
+                harness_logger.log_event(event_name, step, payload or {})
+
+        unit_override_records = []
+
+        def record_u_override(payload):
+            if isinstance(payload, dict):
+                unit_override_records.append(dict(payload))
+            log_u_event(
+                "unit_override",
+                current_episode_id,
+                current_step,
+                payload,
+            )
+
+        def build_action_decision_audit(final_action, stop_requested):
+            action_overrides = [
+                record
+                for record in unit_override_records
+                if record.get("action_affecting", True)
+            ]
+            if action_overrides:
+                original_action = action_overrides[0].get("original_action")
+                proposed_action = action_overrides[-1].get("proposed_action")
+                override_reason = " | ".join(
+                    str(record.get("override_reason") or "")
+                    for record in action_overrides
+                    if record.get("override_reason")
+                )
+                expected_failure_addressed = " | ".join(
+                    str(record.get("expected_failure_addressed") or "")
+                    for record in action_overrides
+                    if record.get("expected_failure_addressed")
+                )
+            else:
+                original_action = final_action
+                proposed_action = final_action
+                override_reason = ""
+                expected_failure_addressed = "none"
+            return build_decision_audit(
+                unit_enabled=u_decision_unit if u_series_active else "none",
+                original_action=original_action,
+                proposed_action=proposed_action,
+                final_action=final_action,
+                override_reason=override_reason,
+                expected_failure_addressed=expected_failure_addressed or "none",
+                source_stage="action_pre_step",
+                extra={
+                    "stop_flag": stop_requested,
+                    "phase": latest_phase_evidence.get("phase")
+                    if isinstance(latest_phase_evidence, dict)
+                    else None,
+                    "failure_type": latest_failure_signal.get("failure_type")
+                    if isinstance(latest_failure_signal, dict)
+                    else None,
+                    "unit_override_count": len(unit_override_records),
+                    "action_override_count": len(action_overrides),
+                    "unit_overrides": unit_override_records,
+                },
+            )
+
+        def apply_failure_recovery(
+            trigger_type,
+            source_stage,
+            observe_dict,
+            fallback_results,
+            failure_signal,
+            current_candidate,
+            current_thought,
+        ):
+            nonlocal recovery_budget_remaining
+            recovery_results = run_harness_tool(
+                "failure_recovery",
+                current_step,
+                {},
+                recovery_policy.propose if recovery_policy is not None else None,
+                trigger_type,
+                failure_signal,
+                fallback_results,
+                observe_dict,
+                current_candidate,
+                recovery_budget_remaining,
+                recent_distance_gains,
+            )
+            if isinstance(recovery_results, dict):
+                recovery_results = dict(recovery_results)
+                would_apply = bool(recovery_results.get("applied"))
+                recovery_results["would_apply"] = would_apply
+                recovery_results[
+                    "decision_effect_enabled"
+                ] = recovery_policy_decision_effect
+                recovery_results["applied_to_action"] = bool(
+                    recovery_policy_decision_effect and would_apply
+                )
+                recovery_results["budget_after_proposed"] = recovery_results.get(
+                    "budget_after"
+                )
+                if not recovery_policy_decision_effect:
+                    recovery_results["applied"] = False
+                    recovery_results["budget_after"] = recovery_budget_remaining
+            if recovery_policy is not None:
+                log_u_event(
+                    "failure_recovery",
+                    current_episode_id,
+                    current_step,
+                    recovery_results,
+                )
+            if (
+                not recovery_policy_decision_effect
+                or not isinstance(recovery_results, dict)
+                or not recovery_results.get("applied")
+            ):
+                return current_candidate, current_thought, recovery_results
+            recovered_candidate = recovery_results.get("selected_candidate")
+            if recovered_candidate not in observe_dict:
+                return current_candidate, current_thought, recovery_results
+            recovery_budget_remaining = int(
+                recovery_results.get(
+                    "budget_after",
+                    max(0, recovery_budget_remaining - 1),
+                )
+            )
+            recovered_thought = observe_dict[recovered_candidate]
+            recovery_override = build_decision_audit(
+                unit_enabled=u_decision_unit,
+                original_action=current_candidate,
+                proposed_action=recovered_candidate,
+                final_action=recovered_candidate,
+                override_reason=recovery_results.get("reason", ""),
+                expected_failure_addressed=(
+                    recovery_results.get("failure_type", "unknown")
+                ),
+                source_stage=source_stage,
+                extra={
+                    "trigger_type": trigger_type,
+                    "budget_before": recovery_results.get("budget_before"),
+                    "budget_after": recovery_results.get("budget_after"),
+                },
+            )
+            recovery_override["effect_type"] = "fallback_reselect"
+            recovery_override["action_affecting"] = True
+            record_u_override(recovery_override)
+            return recovered_candidate, recovered_thought, recovery_results
         
         dataset_name = "R2R"
         if not os.path.exists(f"cache_files/{dataset_name}"):
@@ -783,6 +1116,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         current_step = 0
         nav_history = []
         error_number = 0
+        recent_distance_gains = []
+        recovery_budget_remaining = max_recovery_per_episode
+        latest_phase_evidence = {}
+        latest_failure_signal = {}
         while envs.num_envs > 0 and len(stats_episodes) < episodes_to_eval:
             current_episodes = envs.current_episodes()
             positions = []; headings = []
@@ -841,6 +1178,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             nav_logger.info("Landmarks: " + landmarks)
             if active_navigation_episode_id != current_episode_id:
                 active_navigation_episode_id = current_episode_id
+                recent_distance_gains = []
+                recovery_budget_remaining = max_recovery_per_episode
+                latest_phase_evidence = {}
+                latest_failure_signal = {}
                 write_navigation_record(
                     "episode_start",
                     episode_id=current_episode_id,
@@ -863,6 +1204,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             "headings": headings,
                         },
                     )
+                log_u_event(
+                    "u_series_episode_start",
+                    current_episode_id,
+                    0,
+                    {
+                        "enabled": u_series_active,
+                        "decision_effect_unit": u_decision_unit,
+                        "recovery_budget": recovery_budget_remaining,
+                    },
+                )
             
             action_count = len(navigator._split_actions(actions))
             if action_count <= short_action_count_threshold:
@@ -933,6 +1284,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             selector_observation = observation
             selector_observe_dict = observe_dict
             multimodal_selector_context_results = {}
+            phase_aware_context_results = {}
+            phase_context_applied = False
+            phase_context_should_apply = False
+            unit_override_records = []
             write_navigation_record(
                 "observation",
                 episode_id=current_episode_id,
@@ -1190,6 +1545,146 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     step=current_step,
                     estimation=estimation,
                 )
+                latest_phase_evidence = run_harness_tool(
+                    "phase_evidence",
+                    current_step,
+                    {},
+                    phase_evidence_tracker.build
+                    if phase_evidence_tracker is not None
+                    else None,
+                    instruction,
+                    actions,
+                    landmarks,
+                    estimation,
+                    history_traj,
+                    current_step,
+                    recent_distance_gains,
+                    {},
+                    latest_failure_signal,
+                )
+                if phase_evidence_tracker is not None:
+                    log_u_event(
+                        "phase_evidence",
+                        current_episode_id,
+                        current_step,
+                        latest_phase_evidence,
+                    )
+                phase_aware_context_results = run_harness_tool(
+                    "phase_aware_context",
+                    current_step,
+                    {},
+                    phase_aware_scaffolder.build
+                    if phase_aware_scaffolder is not None
+                    else None,
+                    selector_observe_dict,
+                    latest_phase_evidence,
+                    multimodal_selector_context_results,
+                    latest_failure_signal,
+                )
+                if phase_aware_scaffolder is not None:
+                    v4_context_applied = bool(
+                        isinstance(multimodal_selector_context_results, dict)
+                        and multimodal_selector_context_results.get("applied")
+                    )
+                    phase_context_should_apply = (
+                        phase_aware_scaffolder_decision_effect
+                        and isinstance(phase_aware_context_results, dict)
+                        and not phase_aware_context_results.get("skipped")
+                        and phase_aware_context_results.get(
+                            "eligible_for_application",
+                            True,
+                        )
+                        and isinstance(
+                            phase_aware_context_results.get(
+                                "augmented_observe_dict"
+                            ),
+                            dict,
+                        )
+                    )
+                    phase_aware_context_results[
+                        "decision_effect_enabled"
+                    ] = phase_aware_scaffolder_decision_effect
+                    phase_aware_context_results[
+                        "would_apply"
+                    ] = phase_context_should_apply
+                    phase_aware_context_results["applied"] = False
+                    phase_aware_context_results["input_context_source"] = (
+                        "v4_augmented" if v4_context_applied else "raw_observation"
+                    )
+                    phase_aware_context_results[
+                        "u1_shadow_matches_ablation_context"
+                    ] = not v4_context_applied
+
+                def phase_context_not_applied_reason():
+                    if not phase_aware_scaffolder_decision_effect:
+                        return "log_only"
+                    if not isinstance(phase_aware_context_results, dict):
+                        return "invalid_context"
+                    if phase_aware_context_results.get("skipped"):
+                        return "skipped"
+                    if not phase_aware_context_results.get(
+                        "eligible_for_application",
+                        True,
+                    ):
+                        return "phase_not_eligible"
+                    return ""
+
+                def apply_phase_aware_context_for_selector():
+                    nonlocal selector_observe_dict
+                    nonlocal selector_observation
+                    nonlocal phase_context_applied
+                    if phase_aware_scaffolder is None:
+                        return
+                    if phase_context_should_apply:
+                        original_selector_candidate_ids = list(
+                            selector_observe_dict.keys()
+                        )
+                        selector_observe_dict = phase_aware_context_results[
+                            "augmented_observe_dict"
+                        ]
+                        selector_observation = (
+                            phase_aware_context_results.get(
+                                "augmented_observation"
+                            )
+                            or list(selector_observe_dict.values())
+                        )
+                        phase_context_applied = True
+                        phase_aware_context_results["applied"] = True
+                        context_override = build_decision_audit(
+                            unit_enabled=u_decision_unit,
+                            original_action="selector_context",
+                            proposed_action="phase_aware_context",
+                            final_action="phase_aware_context",
+                            override_reason="u1_phase_aware_selector_context",
+                            expected_failure_addressed="progress_drift",
+                            source_stage="phase_aware_context",
+                            extra={
+                                "phase": phase_aware_context_results.get("phase"),
+                                "context_mode": (
+                                    phase_aware_context_results.get("context_mode")
+                                ),
+                                "candidate_ids": [
+                                    str(candidate_id)
+                                    for candidate_id in (
+                                        original_selector_candidate_ids
+                                    )
+                                ],
+                                "input_context_source": (
+                                    phase_aware_context_results.get(
+                                        "input_context_source"
+                                    )
+                                ),
+                            },
+                        )
+                        context_override["effect_type"] = "selector_context"
+                        context_override["action_affecting"] = False
+                        record_u_override(context_override)
+                    else:
+                        not_applied_reason = phase_context_not_applied_reason()
+                        if not_applied_reason:
+                            phase_aware_context_results[
+                                "not_applied_reason"
+                            ] = not_applied_reason
 
                 def get_stop_current_view_evidence():
                     nonlocal stop_current_view_evidence_results
@@ -1273,6 +1768,85 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         )
                     return verifier_results
 
+                def record_stop_evidence_verification(
+                    source,
+                    verifier_results,
+                    stop_gate_context,
+                ):
+                    stop_evidence_results = run_harness_tool(
+                        "stop_evidence_verifier",
+                        current_step,
+                        {},
+                        stop_evidence_verifier.verify
+                        if stop_evidence_verifier is not None
+                        else None,
+                        source,
+                        verifier_results,
+                        stop_gate_context,
+                        latest_phase_evidence,
+                        instruction,
+                        actions,
+                        landmarks,
+                        estimation,
+                        current_step,
+                    )
+                    if stop_evidence_verifier is not None:
+                        if isinstance(stop_evidence_results, dict):
+                            stop_evidence_results[
+                                "decision_effect_enabled"
+                            ] = stop_evidence_verifier_decision_effect
+                            stop_evidence_results["decision_scope"] = (
+                                "selector_visual_rescue_only"
+                                if stop_evidence_verifier_decision_effect
+                                else "log_only"
+                            )
+                        log_u_event(
+                            "stop_verification",
+                            current_episode_id,
+                            current_step,
+                            stop_evidence_results,
+                        )
+                        weak_target_adjustment = stop_evidence_results.get(
+                            "weak_target_adjustment",
+                            "none",
+                        )
+                        if (
+                            stop_evidence_results.get("weak_target")
+                            or weak_target_adjustment != "none"
+                        ):
+                            log_u_event(
+                                "weak_target_decision",
+                                current_episode_id,
+                                current_step,
+                                {
+                                    "source": source,
+                                    "target_type": stop_evidence_results.get(
+                                        "target_type"
+                                    ),
+                                    "weak_target": stop_evidence_results.get(
+                                        "weak_target"
+                                    ),
+                                    "landmark_terms": stop_evidence_results.get(
+                                        "landmark_terms"
+                                    ),
+                                    "weak_target_adjustment": (
+                                        stop_evidence_results.get(
+                                            "weak_target_adjustment"
+                                        )
+                                    ),
+                                    "allow_stop": stop_evidence_results.get(
+                                        "allow_stop"
+                                    ),
+                                    "allow_rescue": stop_evidence_results.get(
+                                        "allow_rescue"
+                                    ),
+                                    "reject_reasons": stop_evidence_results.get(
+                                        "reject_reasons"
+                                    ),
+                                },
+                            )
+                    return stop_evidence_results
+
                 def visual_target_verifier_rejects_stop(verifier_results):
                     if not visual_target_verifier_decision_effect:
                         return False
@@ -1301,6 +1875,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     verifier_results,
                     old_stop_flag,
                 ):
+                    def has_hard_allow_warnings(results):
+                        return any(
+                            not str(warning).startswith(
+                                "uncorroborated_final_target:"
+                            )
+                            for warning in (results.get("allow_warnings") or [])
+                        )
+
                     if old_stop_flag or not visual_target_verifier_decision_effect:
                         return False
                     if not isinstance(verifier_results, dict):
@@ -1325,7 +1907,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         return False
                     if not selected_verdict.get("arrival_evidence"):
                         return False
-                    if verifier_results.get("allow_warnings"):
+                    if has_hard_allow_warnings(verifier_results):
                         return False
                     if selected_verdict.get("missing_instruction_terms"):
                         return False
@@ -1564,6 +2146,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     selected_candidate=stop_current_view_candidate_id,
                     stop_evidence_mode="current_pano",
                 )
+                record_stop_evidence_verification(
+                    "completion_gate",
+                    completion_verifier_results,
+                    stop_gate_metadata,
+                )
                 stop_flag, stop_reason, _ = apply_visual_stop_gate(
                     "completion_gate",
                     stop_flag,
@@ -1579,6 +2166,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         completion_verifier_results,
                     )
                 if stop_flag:
+                    if phase_aware_scaffolder is not None:
+                        phase_aware_context_results[
+                            "not_applied_reason"
+                        ] = "completion_stop_before_selector"
+                        log_u_event(
+                            "phase_aware_context",
+                            current_episode_id,
+                            current_step,
+                            phase_aware_context_results,
+                        )
                     next_vp = STOP_CANDIDATE
                     thought = stop_reason
                     nav_logger.info(f"========== Stop Decision: {stop_reason} ==========")
@@ -1606,6 +2203,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             )
                             else False
                         ),
+                        phase_context_applied=phase_context_applied,
                     )
                     if harness_enabled and harness_logger is not None:
                         harness_logger.log_event(
@@ -1632,9 +2230,18 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                     )
                                     else False
                                 ),
+                                "phase_context_applied": phase_context_applied,
                             },
                         )
                 else:
+                    apply_phase_aware_context_for_selector()
+                    if phase_aware_scaffolder is not None:
+                        log_u_event(
+                            "phase_aware_context",
+                            current_episode_id,
+                            current_step,
+                            phase_aware_context_results,
+                        )
                     nav_logger.info("========== Next Action Prediction ==========")
                     selector_start_time = time.perf_counter()
                     predictions, thoughts, break_flag = navigator.move_to_next_vp(
@@ -1673,6 +2280,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             )
                             else False
                         ),
+                        phase_context_applied=phase_context_applied,
                     )
                     if harness_enabled and harness_logger is not None:
                         harness_logger.log_event(
@@ -1692,6 +2300,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                     )
                                     else False
                                 ),
+                                "phase_context_applied": phase_context_applied,
                             },
                         )
                     if not predictions:
@@ -1715,6 +2324,56 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             predictions = [selected_fallback]
                             thoughts = [selector_observe_dict[selected_fallback]]
                         fallback_results["previous_predictions"] = []
+                        latest_failure_signal = run_harness_tool(
+                            "failure_type_diagnostic",
+                            current_step,
+                            {},
+                            failure_diagnostic.diagnose
+                            if failure_diagnostic is not None
+                            else None,
+                            "selector_empty",
+                            current_step,
+                            latest_phase_evidence,
+                            recent_distance_gains,
+                            fallback_results,
+                            {},
+                            {
+                                "predictions": [],
+                                "thoughts": thoughts,
+                                "source_stage": "selector_raw",
+                            },
+                        )
+                        if failure_diagnostic is not None:
+                            log_u_event(
+                                "failure_type_diagnostic",
+                                current_episode_id,
+                                current_step,
+                                latest_failure_signal,
+                            )
+                        if selected_fallback in selector_observe_dict:
+                            recovered_candidate, recovered_thought, recovery_results = (
+                                apply_failure_recovery(
+                                    "selector_empty",
+                                    "selector_empty_prediction_fallback",
+                                    selector_observe_dict,
+                                    fallback_results,
+                                    latest_failure_signal,
+                                    selected_fallback,
+                                    selector_observe_dict[selected_fallback],
+                                )
+                            )
+                            fallback_results["recovery_results"] = recovery_results
+                            if recovered_candidate in selector_observe_dict:
+                                selected_fallback = recovered_candidate
+                                predictions = [recovered_candidate]
+                                thoughts = [recovered_thought]
+                                if (
+                                    isinstance(recovery_results, dict)
+                                    and recovery_results.get("applied_to_action")
+                                ):
+                                    fallback_results[
+                                        "selected_candidate_after_recovery"
+                                    ] = recovered_candidate
                         log_fallback_event(
                             "selector_empty_prediction_fallback",
                             current_episode_id,
@@ -1817,6 +2476,27 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             selected_candidate=stop_current_view_candidate_id,
                             stop_evidence_mode="current_pano",
                         )
+                        selector_stop_evidence_results = (
+                            record_stop_evidence_verification(
+                                "selector_stop_gate",
+                                selector_verifier_results,
+                                old_stop_gate_metadata,
+                            )
+                        )
+                        selector_visual_rescue_candidate = (
+                            visual_stop_can_rescue_selector_stop(
+                                selector_verifier_results,
+                                old_stop_flag,
+                            )
+                        )
+                        u2_rescue_allowed = True
+                        if (
+                            stop_evidence_verifier_decision_effect
+                            and selector_visual_rescue_candidate
+                        ):
+                            u2_rescue_allowed = bool(
+                                selector_stop_evidence_results.get("allow_rescue")
+                            )
                         if old_stop_flag and visual_target_verifier_allows_stop(
                             selector_verifier_results
                         ):
@@ -1831,9 +2511,9 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 or "Navigator selected STOP.",
                                 selector_verifier_results,
                             )
-                        elif visual_stop_can_rescue_selector_stop(
-                            selector_verifier_results,
-                            old_stop_flag,
+                        elif (
+                            selector_visual_rescue_candidate
+                            and u2_rescue_allowed
                         ):
                             stop_flag = True
                             stop_reason = (
@@ -1846,6 +2526,32 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 selector_verifier_results,
                                 old_stop_flag,
                                 old_stop_reason,
+                            )
+                        elif (
+                            selector_visual_rescue_candidate
+                            and not u2_rescue_allowed
+                        ):
+                            selector_stop_rejection_reason = (
+                                "u2_stop_evidence_blocked_visual_rescue"
+                            )
+                            override_payload = build_decision_audit(
+                                unit_enabled=u_decision_unit,
+                                original_action=STOP_CANDIDATE,
+                                proposed_action=STOP_CANDIDATE,
+                                final_action="movement_fallback",
+                                override_reason=selector_stop_rejection_reason,
+                                expected_failure_addressed="stop_false_positive",
+                                source_stage="selector_stop_gate",
+                                extra={
+                                    "source": "selector_stop_gate",
+                                    "stop_evidence": selector_stop_evidence_results,
+                                },
+                            )
+                            override_payload["effect_type"] = "stop_rescue_block"
+                            override_payload["action_affecting"] = True
+                            record_u_override(override_payload)
+                            nav_logger.info(
+                                "U2 stop evidence blocked visual STOP rescue; fallback to movement."
                             )
                         elif visual_target_verifier_allows_stop(
                             selector_verifier_results
@@ -1939,12 +2645,6 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 fallback_results[
                                     "decision_test_metadata"
                                 ] = test_decision_metadata
-                                log_fallback_event(
-                                    "stop_rejected_fallback",
-                                    current_episode_id,
-                                    current_step,
-                                    fallback_results,
-                                )
                                 if fallback_vp in selector_observe_dict:
                                     next_vp = fallback_vp
                                     thought = selector_observe_dict[fallback_vp]
@@ -1962,12 +2662,60 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                         test_decision_metadata
                                     ),
                                 }
-                                log_fallback_event(
-                                    "stop_rejected_fallback",
+                            latest_failure_signal = run_harness_tool(
+                                "failure_type_diagnostic",
+                                current_step,
+                                {},
+                                failure_diagnostic.diagnose
+                                if failure_diagnostic is not None
+                                else None,
+                                "stop_rejected",
+                                current_step,
+                                latest_phase_evidence,
+                                recent_distance_gains,
+                                fallback_results,
+                                selector_verifier_results,
+                                {
+                                    "predictions": predictions,
+                                    "next_vp": next_vp,
+                                    "source_stage": "selector_stop_gate",
+                                },
+                            )
+                            if failure_diagnostic is not None:
+                                log_u_event(
+                                    "failure_type_diagnostic",
                                     current_episode_id,
                                     current_step,
-                                    fallback_results,
+                                    latest_failure_signal,
                                 )
+                            recovered_candidate, recovered_thought, recovery_results = (
+                                apply_failure_recovery(
+                                    "stop_rejected",
+                                    "stop_rejected_fallback",
+                                    selector_observe_dict,
+                                    fallback_results,
+                                    latest_failure_signal,
+                                    next_vp,
+                                    thought,
+                                )
+                            )
+                            fallback_results["recovery_results"] = recovery_results
+                            if recovered_candidate in selector_observe_dict:
+                                next_vp = recovered_candidate
+                                thought = recovered_thought
+                                if (
+                                    isinstance(recovery_results, dict)
+                                    and recovery_results.get("applied_to_action")
+                                ):
+                                    fallback_results[
+                                        "selected_candidate_after_recovery"
+                                    ] = recovered_candidate
+                            log_fallback_event(
+                                "stop_rejected_fallback",
+                                current_episode_id,
+                                current_step,
+                                fallback_results,
+                            )
                             write_navigation_record(
                                 "stop_rejected",
                                 episode_id=current_episode_id,
@@ -2117,6 +2865,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             }}})
 
                 nav_logger.info(f"The final env action: {env_actions}")
+                decision_audit_payload = build_action_decision_audit(
+                    next_vp,
+                    stop_flag,
+                )
+                log_u_event(
+                    "decision_audit",
+                    current_episode_id,
+                    current_step,
+                    decision_audit_payload,
+                )
                 write_navigation_record(
                     "action_pre_step",
                     episode_id=current_episode_id,
@@ -2155,6 +2913,33 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             "stop_reason": stop_reason if stop_flag else None,
                         },
                     )
+                selected_gain = None
+                if step_output_summary:
+                    selected_gain = step_output_summary[0].get(
+                        "distance_gain_selected"
+                    )
+                try:
+                    if selected_gain is not None:
+                        recent_distance_gains.append(float(selected_gain))
+                        recent_distance_gains = recent_distance_gains[-3:]
+                except (TypeError, ValueError):
+                    pass
+                log_u_event(
+                    "post_action_progress",
+                    current_episode_id,
+                    current_step,
+                    {
+                        "selected_candidate": next_vp,
+                        "distance_gain_selected": selected_gain,
+                        "recent_distance_gains": recent_distance_gains,
+                        "phase": latest_phase_evidence.get("phase")
+                        if isinstance(latest_phase_evidence, dict)
+                        else None,
+                        "failure_type": latest_failure_signal.get("failure_type")
+                        if isinstance(latest_failure_signal, dict)
+                        else None,
+                    },
+                )
 
                 if not stop_flag:
                     curr_observe = observe_dict[next_vp]
@@ -2262,6 +3047,24 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         termination_reason=termination_reasons[i],
                         evaluated_episodes=len(stats_episodes),
                         total_episodes=episodes_to_eval,
+                    )
+                    log_u_event(
+                        "u_series_episode_end",
+                        ep_id,
+                        episode_end_step,
+                        {
+                            "decision_effect_unit": u_decision_unit,
+                            "recent_distance_gains": recent_distance_gains,
+                            "latest_phase": latest_phase_evidence.get("phase")
+                            if isinstance(latest_phase_evidence, dict)
+                            else None,
+                            "latest_failure_type": latest_failure_signal.get(
+                                "failure_type"
+                            )
+                            if isinstance(latest_failure_signal, dict)
+                            else None,
+                            "recovery_budget_remaining": recovery_budget_remaining,
+                        },
                     )
                     active_navigation_episode_id = None
                     if harness_enabled and harness_logger is not None:

@@ -1,0 +1,1450 @@
+[
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022",
+    "dest": "logs/eval_results/ep1/20260610/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_1ep_20260610_233812",
+    "dest": "logs/eval_results/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_101703",
+    "dest": "logs/eval_results/ep1/20260612/a1_harness_qwen_siglip_local_20260612_101703",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_103255",
+    "dest": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_103255",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_104754",
+    "dest": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_104754",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_104920",
+    "dest": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_104920",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_105243",
+    "dest": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_105243",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_105509",
+    "dest": "logs/eval_results/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105509",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_113326",
+    "dest": "logs/eval_results/ep10/20260612/a1_harness_qwen_siglip_local_20260612_113326",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_155446",
+    "dest": "logs/eval_results/ep10/20260612/a1_harness_qwen_siglip_local_20260612_155446",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/a1_harness_qwen_siglip_local_20260612_190827",
+    "dest": "logs/eval_results/ep10/20260612/a1_harness_qwen_siglip_local_20260612_190827",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep100_series_qwen_siglip_local_20260615_232107",
+    "dest": "logs/eval_results/ep100/20260615/ep100_series_qwen_siglip_local_20260615_232107",
+    "episode_group": "ep100",
+    "date": "20260615",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep100_series_qwen_siglip_local_20260616_132506",
+    "dest": "logs/eval_results/ep100/20260616/ep100_series_qwen_siglip_local_20260616_132506",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep100_series_qwen_siglip_local_20260616_162306",
+    "dest": "logs/eval_results/ep100/20260616/ep100_series_qwen_siglip_local_20260616_162306",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep100_series_qwen_siglip_local_20260621_225137",
+    "dest": "logs/eval_results/ep100/20260621/ep100_series_qwen_siglip_local_20260621_225137",
+    "episode_group": "ep100",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep10_series_qwen_siglip_local_20260621_210255",
+    "dest": "logs/eval_results/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210255",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep10_series_qwen_siglip_local_20260621_210539",
+    "dest": "logs/eval_results/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210539",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep20_series_qwen_siglip_local_20260616_100333",
+    "dest": "logs/eval_results/ep20/20260616/ep20_series_qwen_siglip_local_20260616_100333",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep20_series_qwen_siglip_local_20260616_132553",
+    "dest": "logs/eval_results/ep20/20260616/ep20_series_qwen_siglip_local_20260616_132553",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/ep20_series_qwen_siglip_local_20260622_183509",
+    "dest": "logs/eval_results/ep20/20260622/ep20_series_qwen_siglip_local_20260622_183509",
+    "episode_group": "ep20",
+    "date": "20260622",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/u0_log_smoke",
+    "dest": "logs/eval_results/ep_unknown/20260619/u0_log_smoke",
+    "episode_group": "ep_unknown",
+    "date": "20260619",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v123_visual_logonly_smoke_20260612_184828",
+    "dest": "logs/eval_results/ep_unknown/20260612/v123_visual_logonly_smoke_20260612_184828",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v1_visual_evidence_smoke_20260612_182411",
+    "dest": "logs/eval_results/ep_unknown/20260612/v1_visual_evidence_smoke_20260612_182411",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260613_112044",
+    "dest": "logs/eval_results/ep10/20260613/v24_series_qwen_siglip_local_20260613_112044",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260613_150848",
+    "dest": "logs/eval_results/ep10/20260613/v24_series_qwen_siglip_local_20260613_150848",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260613_175536",
+    "dest": "logs/eval_results/ep12/20260613/v24_series_qwen_siglip_local_20260613_175536",
+    "episode_group": "ep12",
+    "date": "20260613",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260613_212115",
+    "dest": "logs/eval_results/ep100/20260613/v24_series_qwen_siglip_local_20260613_212115",
+    "episode_group": "ep100",
+    "date": "20260613",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260614_101818",
+    "dest": "logs/eval_results/ep11/20260614/v24_series_qwen_siglip_local_20260614_101818",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260614_122559",
+    "dest": "logs/eval_results/ep11/20260614/v24_series_qwen_siglip_local_20260614_122559",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260615_203746",
+    "dest": "logs/eval_results/ep_unknown/20260615/v24_series_qwen_siglip_local_20260615_203746",
+    "episode_group": "ep_unknown",
+    "date": "20260615",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260615_204351",
+    "dest": "logs/eval_results/ep11/20260615/v24_series_qwen_siglip_local_20260615_204351",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v24_series_qwen_siglip_local_20260615_221911",
+    "dest": "logs/eval_results/ep11/20260615/v24_series_qwen_siglip_local_20260615_221911",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260612_221613",
+    "dest": "logs/eval_results/ep_unknown/20260612/v_series_qwen_siglip_local_20260612_221613",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260612_221813",
+    "dest": "logs/eval_results/ep10/20260612/v_series_qwen_siglip_local_20260612_221813",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260612_233128",
+    "dest": "logs/eval_results/ep100/20260612/v_series_qwen_siglip_local_20260612_233128",
+    "episode_group": "ep100",
+    "date": "20260612",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260613_093035",
+    "dest": "logs/eval_results/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_093035",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260613_095853",
+    "dest": "logs/eval_results/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_095853",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260613_095945",
+    "dest": "logs/eval_results/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_095945",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "eval",
+    "src": "logs/eval_results/v_series_qwen_siglip_local_20260613_100335",
+    "dest": "logs/eval_results/ep10/20260613/v_series_qwen_siglip_local_20260613_100335",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "stats_ep_count"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260615_232107_train_navigation_20260615_232129.jsonl",
+    "dest": "logs/navigation_records/ep100/20260615/ep100_series_qwen_siglip_local_20260615_232107_train_navigation_20260615_232129.jsonl",
+    "episode_group": "ep100",
+    "date": "20260615",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260615_232107_train_navigation_20260615_232129.log",
+    "dest": "logs/navigation_records/ep100/20260615/ep100_series_qwen_siglip_local_20260615_232107_train_navigation_20260615_232129.log",
+    "episode_group": "ep100",
+    "date": "20260615",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260616_162306_train_navigation_20260616_162326.jsonl",
+    "dest": "logs/navigation_records/ep100/20260616/ep100_series_qwen_siglip_local_20260616_162306_train_navigation_20260616_162326.jsonl",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260616_162306_train_navigation_20260616_162326.log",
+    "dest": "logs/navigation_records/ep100/20260616/ep100_series_qwen_siglip_local_20260616_162306_train_navigation_20260616_162326.log",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260621_225137_train_navigation_20260621_225154.jsonl",
+    "dest": "logs/navigation_records/ep100/20260621/ep100_series_qwen_siglip_local_20260621_225137_train_navigation_20260621_225154.jsonl",
+    "episode_group": "ep100",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep100_series_qwen_siglip_local_20260621_225137_train_navigation_20260621_225154.log",
+    "dest": "logs/navigation_records/ep100/20260621/ep100_series_qwen_siglip_local_20260621_225137_train_navigation_20260621_225154.log",
+    "episode_group": "ep100",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep10_series_qwen_siglip_local_20260621_210539_train_navigation_20260621_210600.jsonl",
+    "dest": "logs/navigation_records/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210539_train_navigation_20260621_210600.jsonl",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep10_series_qwen_siglip_local_20260621_210539_train_navigation_20260621_210600.log",
+    "dest": "logs/navigation_records/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210539_train_navigation_20260621_210600.log",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260616_100333_train_navigation_20260616_100351.jsonl",
+    "dest": "logs/navigation_records/ep20/20260616/ep20_series_qwen_siglip_local_20260616_100333_train_navigation_20260616_100351.jsonl",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260616_100333_train_navigation_20260616_100351.log",
+    "dest": "logs/navigation_records/ep20/20260616/ep20_series_qwen_siglip_local_20260616_100333_train_navigation_20260616_100351.log",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260616_132553_train_navigation_20260616_132609.jsonl",
+    "dest": "logs/navigation_records/ep20/20260616/ep20_series_qwen_siglip_local_20260616_132553_train_navigation_20260616_132609.jsonl",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260616_132553_train_navigation_20260616_132609.log",
+    "dest": "logs/navigation_records/ep20/20260616/ep20_series_qwen_siglip_local_20260616_132553_train_navigation_20260616_132609.log",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260622_183509_train_navigation_20260622_183526.jsonl",
+    "dest": "logs/navigation_records/ep20/20260622/ep20_series_qwen_siglip_local_20260622_183509_train_navigation_20260622_183526.jsonl",
+    "episode_group": "ep20",
+    "date": "20260622",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav",
+    "src": "logs/navigation_records/ep20_series_qwen_siglip_local_20260622_183509_train_navigation_20260622_183526.log",
+    "dest": "logs/navigation_records/ep20/20260622/ep20_series_qwen_siglip_local_20260622_183509_train_navigation_20260622_183526.log",
+    "episode_group": "ep20",
+    "date": "20260622",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep100_series_qwen_siglip_local_20260615_232107_train.log",
+    "dest": "logs/running_log/ep100/20260615/ep100_series_qwen_siglip_local_20260615_232107_train.log",
+    "episode_group": "ep100",
+    "date": "20260615",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep100_series_qwen_siglip_local_20260616_132506_train.log",
+    "dest": "logs/running_log/ep100/20260616/ep100_series_qwen_siglip_local_20260616_132506_train.log",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep100_series_qwen_siglip_local_20260616_162306_train.log",
+    "dest": "logs/running_log/ep100/20260616/ep100_series_qwen_siglip_local_20260616_162306_train.log",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep100_series_qwen_siglip_local_20260621_225137_train.log",
+    "dest": "logs/running_log/ep100/20260621/ep100_series_qwen_siglip_local_20260621_225137_train.log",
+    "episode_group": "ep100",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep10_series_qwen_siglip_local_20260621_210255_train.log",
+    "dest": "logs/running_log/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210255_train.log",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep10_series_qwen_siglip_local_20260621_210539_train.log",
+    "dest": "logs/running_log/ep10/20260621/ep10_series_qwen_siglip_local_20260621_210539_train.log",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep20_series_qwen_siglip_local_20260616_100333_train.log",
+    "dest": "logs/running_log/ep20/20260616/ep20_series_qwen_siglip_local_20260616_100333_train.log",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep20_series_qwen_siglip_local_20260616_132553_train.log",
+    "dest": "logs/running_log/ep20/20260616/ep20_series_qwen_siglip_local_20260616_132553_train.log",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/ep20_series_qwen_siglip_local_20260622_183509_train.log",
+    "dest": "logs/running_log/ep20/20260622/ep20_series_qwen_siglip_local_20260622_183509_train.log",
+    "episode_group": "ep20",
+    "date": "20260622",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog",
+    "src": "logs/running_log/u0_log_smoke_train.log",
+    "dest": "logs/running_log/ep_unknown/20260619/u0_log_smoke_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260619",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_val_unseen_seed0_r0_w1_20260610_233829",
+    "dest": "logs/harness_traces/ep1/20260610/a1/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_val_unseen_seed0_r0_w1_20260610_233829",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_101703_train_val_unseen_seed0_r0_w1_20260612_101731",
+    "dest": "logs/harness_traces/ep1/20260612/a1/a1_harness_qwen_siglip_local_20260612_101703_train_val_unseen_seed0_r0_w1_20260612_101731",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_103255_train_val_unseen_seed0_r0_w1_20260612_103321",
+    "dest": "logs/harness_traces/ep1/20260612/a1/a1_harness_qwen_siglip_local_20260612_103255_train_val_unseen_seed0_r0_w1_20260612_103321",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_104754_train_val_unseen_seed0_r0_w1_20260612_104815",
+    "dest": "logs/harness_traces/ep_unknown/20260612/a1/a1_harness_qwen_siglip_local_20260612_104754_train_val_unseen_seed0_r0_w1_20260612_104815",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_104920_train_val_unseen_seed0_r0_w1_20260612_104943",
+    "dest": "logs/harness_traces/ep_unknown/20260612/a1/a1_harness_qwen_siglip_local_20260612_104920_train_val_unseen_seed0_r0_w1_20260612_104943",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "unknown"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_105243_train_val_unseen_seed0_r0_w1_20260612_105305",
+    "dest": "logs/harness_traces/ep1/20260612/a1/a1_harness_qwen_siglip_local_20260612_105243_train_val_unseen_seed0_r0_w1_20260612_105305",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_105509_train_val_unseen_seed0_r0_w1_20260612_105538",
+    "dest": "logs/harness_traces/ep1/20260612/a1/a1_harness_qwen_siglip_local_20260612_105509_train_val_unseen_seed0_r0_w1_20260612_105538",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_113326_train_val_unseen_seed0_r0_w1_20260612_113357",
+    "dest": "logs/harness_traces/ep10/20260612/a1/a1_harness_qwen_siglip_local_20260612_113326_train_val_unseen_seed0_r0_w1_20260612_113357",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_155446_train_val_unseen_seed0_r0_w1_20260612_155515",
+    "dest": "logs/harness_traces/ep10/20260612/a1/a1_harness_qwen_siglip_local_20260612_155446_train_val_unseen_seed0_r0_w1_20260612_155515",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/a1_harness_qwen_siglip_local_20260612_190827_train_val_unseen_seed0_r0_w1_20260612_190851",
+    "dest": "logs/harness_traces/ep10/20260612/a1/a1_harness_qwen_siglip_local_20260612_190827_train_val_unseen_seed0_r0_w1_20260612_190851",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/v123_visual_logonly_smoke_20260612_184828_train_val_unseen_seed0_r0_w1_20260612_184854",
+    "dest": "logs/harness_traces/ep1/20260612/a1/v123_visual_logonly_smoke_20260612_184828_train_val_unseen_seed0_r0_w1_20260612_184854",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/a1/v1_visual_evidence_smoke_20260612_182411_train_val_unseen_seed0_r0_w1_20260612_182437",
+    "dest": "logs/harness_traces/ep1/20260612/a1/v1_visual_evidence_smoke_20260612_182411_train_val_unseen_seed0_r0_w1_20260612_182437",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/u123_combined_decision_effect/ep100_series_qwen_siglip_local_20260621_225137_train_val_unseen_seed0_r0_w1_20260621_225154",
+    "dest": "logs/harness_traces/ep100/20260621/u123_combined_decision_effect/ep100_series_qwen_siglip_local_20260621_225137_train_val_unseen_seed0_r0_w1_20260621_225154",
+    "episode_group": "ep100",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/u_existing_modules_conservative/ep20_series_qwen_siglip_local_20260622_183509_train_val_unseen_seed0_r0_w1_20260622_183526",
+    "dest": "logs/harness_traces/ep20/20260622/u_existing_modules_conservative/ep20_series_qwen_siglip_local_20260622_183509_train_val_unseen_seed0_r0_w1_20260622_183526",
+    "episode_group": "ep20",
+    "date": "20260622",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260615_232107_train_val_unseen_seed0_r0_w1_20260615_232129",
+    "dest": "logs/harness_traces/ep100/20260615/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260615_232107_train_val_unseen_seed0_r0_w1_20260615_232129",
+    "episode_group": "ep100",
+    "date": "20260615",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260616_132506_train_val_unseen_seed0_r0_w1_20260616_132525",
+    "dest": "logs/harness_traces/ep100/20260616/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260616_132506_train_val_unseen_seed0_r0_w1_20260616_132525",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260616_162306_train_val_unseen_seed0_r0_w1_20260616_162326",
+    "dest": "logs/harness_traces/ep100/20260616/v2_v4_decision_effect/ep100_series_qwen_siglip_local_20260616_162306_train_val_unseen_seed0_r0_w1_20260616_162326",
+    "episode_group": "ep100",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep10_series_qwen_siglip_local_20260621_210255_train_val_unseen_seed0_r0_w1_20260621_210312",
+    "dest": "logs/harness_traces/ep10/20260621/v2_v4_decision_effect/ep10_series_qwen_siglip_local_20260621_210255_train_val_unseen_seed0_r0_w1_20260621_210312",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep10_series_qwen_siglip_local_20260621_210539_train_val_unseen_seed0_r0_w1_20260621_210600",
+    "dest": "logs/harness_traces/ep10/20260621/v2_v4_decision_effect/ep10_series_qwen_siglip_local_20260621_210539_train_val_unseen_seed0_r0_w1_20260621_210600",
+    "episode_group": "ep10",
+    "date": "20260621",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep20_series_qwen_siglip_local_20260616_100333_train_val_unseen_seed0_r0_w1_20260616_100351",
+    "dest": "logs/harness_traces/ep20/20260616/v2_v4_decision_effect/ep20_series_qwen_siglip_local_20260616_100333_train_val_unseen_seed0_r0_w1_20260616_100351",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/ep20_series_qwen_siglip_local_20260616_132553_train_val_unseen_seed0_r0_w1_20260616_132609",
+    "dest": "logs/harness_traces/ep20/20260616/v2_v4_decision_effect/ep20_series_qwen_siglip_local_20260616_132553_train_val_unseen_seed0_r0_w1_20260616_132609",
+    "episode_group": "ep20",
+    "date": "20260616",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_112044_train_val_unseen_seed0_r0_w1_20260613_112112",
+    "dest": "logs/harness_traces/ep10/20260613/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_112044_train_val_unseen_seed0_r0_w1_20260613_112112",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_150848_train_val_unseen_seed0_r0_w1_20260613_150914",
+    "dest": "logs/harness_traces/ep10/20260613/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_150848_train_val_unseen_seed0_r0_w1_20260613_150914",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_175536_train_val_unseen_seed0_r0_w1_20260613_175605",
+    "dest": "logs/harness_traces/ep12/20260613/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_175536_train_val_unseen_seed0_r0_w1_20260613_175605",
+    "episode_group": "ep12",
+    "date": "20260613",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_212115_train_val_unseen_seed0_r0_w1_20260613_212143",
+    "dest": "logs/harness_traces/ep100/20260613/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260613_212115_train_val_unseen_seed0_r0_w1_20260613_212143",
+    "episode_group": "ep100",
+    "date": "20260613",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260614_101818_train_val_unseen_seed0_r0_w1_20260614_101847",
+    "dest": "logs/harness_traces/ep11/20260614/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260614_101818_train_val_unseen_seed0_r0_w1_20260614_101847",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260614_122559_train_val_unseen_seed0_r0_w1_20260614_122628",
+    "dest": "logs/harness_traces/ep11/20260614/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260614_122559_train_val_unseen_seed0_r0_w1_20260614_122628",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_203746_train_val_unseen_seed0_r0_w1_20260615_203805",
+    "dest": "logs/harness_traces/ep1/20260615/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_203746_train_val_unseen_seed0_r0_w1_20260615_203805",
+    "episode_group": "ep1",
+    "date": "20260615",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_204351_train_val_unseen_seed0_r0_w1_20260615_204412",
+    "dest": "logs/harness_traces/ep11/20260615/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_204351_train_val_unseen_seed0_r0_w1_20260615_204412",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_221911_train_val_unseen_seed0_r0_w1_20260615_221927",
+    "dest": "logs/harness_traces/ep11/20260615/v2_v4_decision_effect/v24_series_qwen_siglip_local_20260615_221911_train_val_unseen_seed0_r0_w1_20260615_221927",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v4_log_only/v_series_qwen_siglip_local_20260612_221813_train_val_unseen_seed0_r0_w1_20260612_221834",
+    "dest": "logs/harness_traces/ep10/20260612/v4_log_only/v_series_qwen_siglip_local_20260612_221813_train_val_unseen_seed0_r0_w1_20260612_221834",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v4_log_only/v_series_qwen_siglip_local_20260612_233128_train_val_unseen_seed0_r0_w1_20260612_233156",
+    "dest": "logs/harness_traces/ep100/20260612/v4_log_only/v_series_qwen_siglip_local_20260612_233128_train_val_unseen_seed0_r0_w1_20260612_233156",
+    "episode_group": "ep100",
+    "date": "20260612",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "trace",
+    "src": "logs/harness_traces/v4_log_only/v_series_qwen_siglip_local_20260613_100335_train_val_unseen_seed0_r0_w1_20260613_100352",
+    "dest": "logs/harness_traces/ep10/20260613/v4_log_only/v_series_qwen_siglip_local_20260613_100335_train_val_unseen_seed0_r0_w1_20260613_100352",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "trace_file_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train_navigation_20260610_231040.jsonl",
+    "dest": "logs/navigation_records/ep1/20260610/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train_navigation_20260610_231040.jsonl",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train_navigation_20260610_231040.log",
+    "dest": "logs/navigation_records/ep1/20260610/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train_navigation_20260610_231040.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_navigation_20260610_233829.jsonl",
+    "dest": "logs/navigation_records/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_navigation_20260610_233829.jsonl",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_navigation_20260610_233829.log",
+    "dest": "logs/navigation_records/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812_train_navigation_20260610_233829.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_101703_train_navigation_20260612_101731.jsonl",
+    "dest": "logs/navigation_records/ep1/20260612/a1_harness_qwen_siglip_local_20260612_101703_train_navigation_20260612_101731.jsonl",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_101703_train_navigation_20260612_101731.log",
+    "dest": "logs/navigation_records/ep1/20260612/a1_harness_qwen_siglip_local_20260612_101703_train_navigation_20260612_101731.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_105509_train_navigation_20260612_105538.jsonl",
+    "dest": "logs/navigation_records/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105509_train_navigation_20260612_105538.jsonl",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_105509_train_navigation_20260612_105538.log",
+    "dest": "logs/navigation_records/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105509_train_navigation_20260612_105538.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_113326_train_navigation_20260612_113357.jsonl",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_113326_train_navigation_20260612_113357.jsonl",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_113326_train_navigation_20260612_113357.log",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_113326_train_navigation_20260612_113357.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_155446_train_navigation_20260612_155515.jsonl",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_155446_train_navigation_20260612_155515.jsonl",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_155446_train_navigation_20260612_155515.log",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_155446_train_navigation_20260612_155515.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_190827_train_navigation_20260612_190851.jsonl",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_190827_train_navigation_20260612_190851.jsonl",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/a1_harness_qwen_siglip_local_20260612_190827_train_navigation_20260612_190851.log",
+    "dest": "logs/navigation_records/ep10/20260612/a1_harness_qwen_siglip_local_20260612_190827_train_navigation_20260612_190851.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v123_visual_logonly_smoke_20260612_184828_train_navigation_20260612_184854.jsonl",
+    "dest": "logs/navigation_records/ep1/20260612/v123_visual_logonly_smoke_20260612_184828_train_navigation_20260612_184854.jsonl",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v123_visual_logonly_smoke_20260612_184828_train_navigation_20260612_184854.log",
+    "dest": "logs/navigation_records/ep1/20260612/v123_visual_logonly_smoke_20260612_184828_train_navigation_20260612_184854.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v1_visual_evidence_smoke_20260612_182411_train_navigation_20260612_182437.jsonl",
+    "dest": "logs/navigation_records/ep1/20260612/v1_visual_evidence_smoke_20260612_182411_train_navigation_20260612_182437.jsonl",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v1_visual_evidence_smoke_20260612_182411_train_navigation_20260612_182437.log",
+    "dest": "logs/navigation_records/ep1/20260612/v1_visual_evidence_smoke_20260612_182411_train_navigation_20260612_182437.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.jsonl",
+    "dest": "logs/navigation_records/ep10/20260613/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.jsonl",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.log",
+    "dest": "logs/navigation_records/ep10/20260613/v24_series_qwen_siglip_local_20260613_112044_train_navigation_20260613_112112.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260612_221613_train_navigation_20260612_221646.log",
+    "dest": "logs/navigation_records/ep_unknown/20260612/v_series_qwen_siglip_local_20260612_221613_train_navigation_20260612_221646.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260612_221813_train_navigation_20260612_221834.jsonl",
+    "dest": "logs/navigation_records/ep10/20260612/v_series_qwen_siglip_local_20260612_221813_train_navigation_20260612_221834.jsonl",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260612_221813_train_navigation_20260612_221834.log",
+    "dest": "logs/navigation_records/ep10/20260612/v_series_qwen_siglip_local_20260612_221813_train_navigation_20260612_221834.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260612_233128_train_navigation_20260612_233156.jsonl",
+    "dest": "logs/navigation_records/ep100/20260612/v_series_qwen_siglip_local_20260612_233128_train_navigation_20260612_233156.jsonl",
+    "episode_group": "ep100",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260612_233128_train_navigation_20260612_233156.log",
+    "dest": "logs/navigation_records/ep100/20260612/v_series_qwen_siglip_local_20260612_233128_train_navigation_20260612_233156.log",
+    "episode_group": "ep100",
+    "date": "20260612",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260613_100335_train_navigation_20260613_100352.jsonl",
+    "dest": "logs/navigation_records/ep10/20260613/v_series_qwen_siglip_local_20260613_100335_train_navigation_20260613_100352.jsonl",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/1/v_series_qwen_siglip_local_20260613_100335_train_navigation_20260613_100352.log",
+    "dest": "logs/navigation_records/ep10/20260613/v_series_qwen_siglip_local_20260613_100335_train_navigation_20260613_100352.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.jsonl",
+    "dest": "logs/navigation_records/ep10/20260613/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.jsonl",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.log",
+    "dest": "logs/navigation_records/ep10/20260613/v24_series_qwen_siglip_local_20260613_150848_train_navigation_20260613_150914.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_175536_train_navigation_20260613_175605.jsonl",
+    "dest": "logs/navigation_records/ep12/20260613/v24_series_qwen_siglip_local_20260613_175536_train_navigation_20260613_175605.jsonl",
+    "episode_group": "ep12",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_175536_train_navigation_20260613_175605.log",
+    "dest": "logs/navigation_records/ep12/20260613/v24_series_qwen_siglip_local_20260613_175536_train_navigation_20260613_175605.log",
+    "episode_group": "ep12",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.jsonl",
+    "dest": "logs/navigation_records/ep100/20260613/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.jsonl",
+    "episode_group": "ep100",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.log",
+    "dest": "logs/navigation_records/ep100/20260613/v24_series_qwen_siglip_local_20260613_212115_train_navigation_20260613_212143.log",
+    "episode_group": "ep100",
+    "date": "20260613",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260614_101818_train_navigation_20260614_101847.jsonl",
+    "dest": "logs/navigation_records/ep11/20260614/v24_series_qwen_siglip_local_20260614_101818_train_navigation_20260614_101847.jsonl",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260614_101818_train_navigation_20260614_101847.log",
+    "dest": "logs/navigation_records/ep11/20260614/v24_series_qwen_siglip_local_20260614_101818_train_navigation_20260614_101847.log",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.jsonl",
+    "dest": "logs/navigation_records/ep11/20260614/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.jsonl",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.log",
+    "dest": "logs/navigation_records/ep11/20260614/v24_series_qwen_siglip_local_20260614_122559_train_navigation_20260614_122628.log",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260615_204351_train_navigation_20260615_204412.jsonl",
+    "dest": "logs/navigation_records/ep11/20260615/v24_series_qwen_siglip_local_20260615_204351_train_navigation_20260615_204412.jsonl",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260615_204351_train_navigation_20260615_204412.log",
+    "dest": "logs/navigation_records/ep11/20260615/v24_series_qwen_siglip_local_20260615_204351_train_navigation_20260615_204412.log",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260615_221911_train_navigation_20260615_221927.jsonl",
+    "dest": "logs/navigation_records/ep11/20260615/v24_series_qwen_siglip_local_20260615_221911_train_navigation_20260615_221927.jsonl",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "nav_nested",
+    "src": "logs/navigation_records/2/v24_series_qwen_siglip_local_20260615_221911_train_navigation_20260615_221927.log",
+    "dest": "logs/navigation_records/ep11/20260615/v24_series_qwen_siglip_local_20260615_221911_train_navigation_20260615_221927.log",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "jsonl_episode_start_count"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_console.log",
+    "dest": "logs/running_log/ep1/20260610/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_console.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train.log",
+    "dest": "logs/running_log/ep1/20260610/a0_baseline_smoke_qwen_siglip_local_1ep_20260610_231022_train.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_1ep_20260610_233703.pid",
+    "dest": "logs/running_log/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233703.pid",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_1ep_20260610_233703_console.log",
+    "dest": "logs/running_log/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233703_console.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_1ep_20260610_233812.pid",
+    "dest": "logs/running_log/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812.pid",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_1ep_20260610_233812_console.log",
+    "dest": "logs/running_log/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812_console.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_1ep_20260610_233812_train.log",
+    "dest": "logs/running_log/ep1/20260610/a1_harness_qwen_siglip_local_1ep_20260610_233812_train.log",
+    "episode_group": "ep1",
+    "date": "20260610",
+    "inferred_by": "name"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_101703_train.log",
+    "dest": "logs/running_log/ep1/20260612/a1_harness_qwen_siglip_local_20260612_101703_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_103255_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_103255_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_104754_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_104754_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_104920_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_104920_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_105243_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_105243_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_105509_train.log",
+    "dest": "logs/running_log/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105509_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_113326_train.log",
+    "dest": "logs/running_log/ep10/20260612/a1_harness_qwen_siglip_local_20260612_113326_train.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_155446_train.log",
+    "dest": "logs/running_log/ep10/20260612/a1_harness_qwen_siglip_local_20260612_155446_train.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/a1_harness_qwen_siglip_local_20260612_190827_train.log",
+    "dest": "logs/running_log/ep10/20260612/a1_harness_qwen_siglip_local_20260612_190827_train.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v123_visual_logonly_smoke_20260612_184828_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/v123_visual_logonly_smoke_20260612_184828_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v1_visual_evidence_smoke_20260612_182411_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/v1_visual_evidence_smoke_20260612_182411_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260613_112044_train.log",
+    "dest": "logs/running_log/ep10/20260613/v24_series_qwen_siglip_local_20260613_112044_train.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260613_150848_train.log",
+    "dest": "logs/running_log/ep10/20260613/v24_series_qwen_siglip_local_20260613_150848_train.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260613_175536_train.log",
+    "dest": "logs/running_log/ep12/20260613/v24_series_qwen_siglip_local_20260613_175536_train.log",
+    "episode_group": "ep12",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260613_212115_train.log",
+    "dest": "logs/running_log/ep100/20260613/v24_series_qwen_siglip_local_20260613_212115_train.log",
+    "episode_group": "ep100",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260614_101818_train.log",
+    "dest": "logs/running_log/ep11/20260614/v24_series_qwen_siglip_local_20260614_101818_train.log",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260614_122559_train.log",
+    "dest": "logs/running_log/ep11/20260614/v24_series_qwen_siglip_local_20260614_122559_train.log",
+    "episode_group": "ep11",
+    "date": "20260614",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260615_203746_train.log",
+    "dest": "logs/running_log/ep_unknown/20260615/v24_series_qwen_siglip_local_20260615_203746_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260615",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260615_204351_train.log",
+    "dest": "logs/running_log/ep11/20260615/v24_series_qwen_siglip_local_20260615_204351_train.log",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v24_series_qwen_siglip_local_20260615_221911_train.log",
+    "dest": "logs/running_log/ep11/20260615/v24_series_qwen_siglip_local_20260615_221911_train.log",
+    "episode_group": "ep11",
+    "date": "20260615",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260612_221613_train.log",
+    "dest": "logs/running_log/ep_unknown/20260612/v_series_qwen_siglip_local_20260612_221613_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260612_221813_train.log",
+    "dest": "logs/running_log/ep10/20260612/v_series_qwen_siglip_local_20260612_221813_train.log",
+    "episode_group": "ep10",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260612_233128_train.log",
+    "dest": "logs/running_log/ep100/20260612/v_series_qwen_siglip_local_20260612_233128_train.log",
+    "episode_group": "ep100",
+    "date": "20260612",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260613_093035_train.log",
+    "dest": "logs/running_log/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_093035_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260613_095853_train.log",
+    "dest": "logs/running_log/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_095853_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260613_095945_train.log",
+    "dest": "logs/running_log/ep_unknown/20260613/v_series_qwen_siglip_local_20260613_095945_train.log",
+    "episode_group": "ep_unknown",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "runlog_nested",
+    "src": "logs/running_log/1/v_series_qwen_siglip_local_20260613_100335_train.log",
+    "dest": "logs/running_log/ep10/20260613/v_series_qwen_siglip_local_20260613_100335_train.log",
+    "episode_group": "ep10",
+    "date": "20260613",
+    "inferred_by": "eval_index"
+  },
+  {
+    "kind": "eval_unknown_corrected",
+    "src": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_103255",
+    "dest": "logs/eval_results/ep1/20260612/a1_harness_qwen_siglip_local_20260612_103255",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_known"
+  },
+  {
+    "kind": "eval_unknown_corrected",
+    "src": "logs/eval_results/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_105243",
+    "dest": "logs/eval_results/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105243",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_known"
+  },
+  {
+    "kind": "eval_unknown_corrected",
+    "src": "logs/eval_results/ep_unknown/20260612/v123_visual_logonly_smoke_20260612_184828",
+    "dest": "logs/eval_results/ep1/20260612/v123_visual_logonly_smoke_20260612_184828",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "nav_known"
+  },
+  {
+    "kind": "eval_unknown_corrected",
+    "src": "logs/eval_results/ep_unknown/20260612/v1_visual_evidence_smoke_20260612_182411",
+    "dest": "logs/eval_results/ep1/20260612/v1_visual_evidence_smoke_20260612_182411",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "nav_known"
+  },
+  {
+    "kind": "eval_unknown_corrected",
+    "src": "logs/eval_results/ep_unknown/20260615/v24_series_qwen_siglip_local_20260615_203746",
+    "dest": "logs/eval_results/ep1/20260615/v24_series_qwen_siglip_local_20260615_203746",
+    "episode_group": "ep1",
+    "date": "20260615",
+    "inferred_by": "trace_known"
+  },
+  {
+    "kind": "runlog_unknown_corrected",
+    "src": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_103255_train.log",
+    "dest": "logs/running_log/ep1/20260612/a1_harness_qwen_siglip_local_20260612_103255_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_known"
+  },
+  {
+    "kind": "runlog_unknown_corrected",
+    "src": "logs/running_log/ep_unknown/20260612/a1_harness_qwen_siglip_local_20260612_105243_train.log",
+    "dest": "logs/running_log/ep1/20260612/a1_harness_qwen_siglip_local_20260612_105243_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "trace_known"
+  },
+  {
+    "kind": "runlog_unknown_corrected",
+    "src": "logs/running_log/ep_unknown/20260612/v123_visual_logonly_smoke_20260612_184828_train.log",
+    "dest": "logs/running_log/ep1/20260612/v123_visual_logonly_smoke_20260612_184828_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "nav_known"
+  },
+  {
+    "kind": "runlog_unknown_corrected",
+    "src": "logs/running_log/ep_unknown/20260612/v1_visual_evidence_smoke_20260612_182411_train.log",
+    "dest": "logs/running_log/ep1/20260612/v1_visual_evidence_smoke_20260612_182411_train.log",
+    "episode_group": "ep1",
+    "date": "20260612",
+    "inferred_by": "nav_known"
+  },
+  {
+    "kind": "runlog_unknown_corrected",
+    "src": "logs/running_log/ep_unknown/20260615/v24_series_qwen_siglip_local_20260615_203746_train.log",
+    "dest": "logs/running_log/ep1/20260615/v24_series_qwen_siglip_local_20260615_203746_train.log",
+    "episode_group": "ep1",
+    "date": "20260615",
+    "inferred_by": "trace_known"
+  }
+]

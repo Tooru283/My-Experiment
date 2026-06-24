@@ -4,11 +4,39 @@ import torch
 import random
 import argparse
 import numpy as np
+from datetime import datetime
 from habitat import logger
 import habitat_extensions  # noqa: F401
 import vlnce_baselines     # noqa: F401
 from vlnce_baselines.config.default import get_config
 from habitat_baselines.common.baseline_registry import baseline_registry
+
+
+def _episode_group_name(episode_count) -> str:
+    try:
+        value = int(episode_count)
+    except (TypeError, ValueError):
+        return "ep_unknown"
+    if value < 0:
+        return "ep_all"
+    return "ep{}".format(value)
+
+
+def _apply_run_log_layout(base_dir: str, episode_group: str, run_date: str) -> str:
+    return os.path.join(str(base_dir).rstrip(os.sep), episode_group, run_date)
+
+
+def _apply_trace_log_layout(trace_dir: str, episode_group: str, run_date: str) -> str:
+    trace_root = os.path.join("logs", "harness_traces")
+    trace_dir = str(trace_dir).rstrip(os.sep)
+    if trace_dir == trace_root:
+        return os.path.join(trace_root, episode_group, run_date)
+    trace_prefix = trace_root + os.sep
+    if trace_dir.startswith(trace_prefix):
+        variant = trace_dir[len(trace_prefix) :]
+        return os.path.join(trace_root, episode_group, run_date, variant)
+    return os.path.join(trace_dir, episode_group, run_date)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -64,10 +92,23 @@ def run_exp(exp_name: str, exp_config: str,
     config = get_config(exp_config, opts)
     config.defrost()
 
+    run_date = datetime.now().strftime("%Y%m%d")
+    episode_group = _episode_group_name(config.EVAL.EPISODE_COUNT)
+    os.environ["OPENNAV_RUN_DATE"] = run_date
+    os.environ["OPENNAV_EPISODE_GROUP"] = episode_group
+
     config.CHECKPOINT_FOLDER += exp_name
     if os.path.isdir(config.EVAL_CKPT_PATH_DIR):
         config.EVAL_CKPT_PATH_DIR += exp_name
-    config.RESULTS_DIR += exp_name
+    config.RESULTS_DIR = os.path.join(
+        _apply_run_log_layout(config.RESULTS_DIR, episode_group, run_date),
+        exp_name,
+    )
+    config.OPENNAV_HARNESS.TRACE_DIR = _apply_trace_log_layout(
+        config.OPENNAV_HARNESS.TRACE_DIR,
+        episode_group,
+        run_date,
+    )
     config.LOG_FILE = exp_name + '_' + config.LOG_FILE
 
     config.TASK_CONFIG.SEED = 0
@@ -82,7 +123,7 @@ def run_exp(exp_name: str, exp_config: str,
     config.freeze()
     
     # Check if the 'logs/running_log' directory exists; if not, create it
-    log_dir = 'logs/running_log'
+    log_dir = _apply_run_log_layout("logs/running_log", episode_group, run_date)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 

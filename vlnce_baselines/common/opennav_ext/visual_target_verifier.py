@@ -72,9 +72,6 @@ def _candidate_evidence(visual_evidence: Dict[str, Any]) -> List[Dict[str, Any]]
 _DEFAULT_GENERIC_FINAL_TERMS = (
     "area",
     "archway",
-    "bed",
-    "chair",
-    "couch",
     "door",
     "doorway",
     "entry way",
@@ -82,13 +79,11 @@ _DEFAULT_GENERIC_FINAL_TERMS = (
     "floor",
     "hall",
     "hallway",
-    "lamp",
     "room",
     "sink",
     "stair",
     "stairs",
     "staircase",
-    "table",
 )
 
 _STOP_FINAL_TARGET_STOPWORDS = {
@@ -683,7 +678,8 @@ class VisualTargetVerifier:
         ):
             blockers.append("sample_limited")
         if (
-            self.block_generic_final_terms_for_allow
+            source == "completion_gate"
+            and self.block_generic_final_terms_for_allow
             and self._all_final_terms_generic(final_terms)
         ):
             blockers.append(

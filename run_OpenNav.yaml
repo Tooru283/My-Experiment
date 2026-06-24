@@ -34,24 +34,27 @@ MODEL:
     hidden_size: 256
 
 # -----------------------------------------------------------------------------
-# Open-Nav Harness / V-series multimodal visual evidence switches
+# Open-Nav Harness / multimodal visual evidence and U-series switches
 # -----------------------------------------------------------------------------
-# Default here enables the full V-series with V2/V4 decision-effect:
+# Default here enables V2 plus conservative U-series decision-effect:
 #   - V1 extracts visual evidence from candidate images.
 #   - V2 verifies STOP proposals with visual evidence and can reject unsupported
 #     STOP when VISUAL_TARGET_VERIFIER.LOG_ONLY is false.
 #   - V3 aggregates visual evidence into episode memory.
-#   - V4 builds multimodal selector context and feeds it to selector when
-#     MULTIMODAL_SELECTOR_CONTEXT.LOG_ONLY is false.
+#   - V4 builds multimodal selector context for U1/logging but stays log-only.
+#   - U1 can affect route/subgoal selector context.
+#   - U2 allows only verify-phase current-view visual STOP rescue and blocks
+#     unsafe rescue cases.
+#   - U3 only reselects when the current fallback candidate is invalid/blocked.
 #
 # Note: run_OpenNav.bash does not override OPENNAV_HARNESS by default, so this
-# yaml is the single source of truth for V-series switches. Extra command-line
+# yaml is the single source of truth for harness switches. Extra command-line
 # overrides passed after the script command still take precedence.
 OPENNAV_HARNESS:
   ENABLED: True
   ENABLE_HARNESS_LOGGING: True
   ENABLE_DECISION_EFFECT: True
-  TRACE_DIR: logs/harness_traces/v2_v4_decision_effect
+  TRACE_DIR: logs/harness_traces/u_existing_modules_conservative
   TRACE_FORMAT: jsonl
   LOG_IMAGES: False
   FAIL_OPEN: True
@@ -85,7 +88,7 @@ OPENNAV_HARNESS:
     REJECT_ON_UNCERTAIN: True
     MIN_STEPS_BEFORE_ALLOW: 3
     REQUIRE_FULL_COVERAGE_FOR_ALLOW: True
-    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: False
+    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: True
     REQUIRE_COMPLETION_FOR_SELECTOR_STOP: True
     REQUIRE_CURRENT_VIEW_TEXT_CORROBORATION_FOR_ALLOW: False
 
@@ -97,14 +100,18 @@ OPENNAV_HARNESS:
     MAX_NOTES_CHARS: 240
 
   # V4: build compressed visual evidence context for selector candidates.
-  # With LOG_ONLY false and global ENABLE_DECISION_EFFECT true, the augmented
-  # context is fed into move_to_next_vp/test_decisions. Keep episode-level V3
-  # memory out of the selector prompt by default; it remains logged for analysis.
+  # V4 emits raw summaries for logging plus selector-safe summaries with
+  # target/arrival assertions suppressed. U1 owns phase-gated decision-effect,
+  # so V4 remains log-only and only search/approach can receive safe summaries.
   MULTIMODAL_SELECTOR_CONTEXT:
     ENABLED: True
-    LOG_ONLY: false
+    LOG_ONLY: true
     MAX_SUMMARY_CHARS: 180
     INCLUDE_MEMORY_SUFFIX: False
+    DECISION_MODE: phase_gated_u1
+    APPLY_PHASES: [search, approach]
+    SUPPRESS_TARGET_ARRIVAL_FOR_SELECTOR: true
+    MIN_CONFIDENCE_FOR_TARGET_HINT: 0.9
 
   # Low-risk runtime reduction: cap verbose text LLM outputs while keeping the
   # same decision flow and candidate set. Set a value <=0 to disable a cap.
@@ -122,3 +129,34 @@ OPENNAV_HARNESS:
     SHORT_ACTION_COUNT_THRESHOLD: 6
     BLOCK_WEAK_FINAL_TARGET_COMPLETION_STOP: True
     MIN_STEPS_FOR_WEAK_FINAL_TARGET_COMPLETION_STOP: 8
+
+  # Conservative U-series: keep U modules active, but avoid independent modules
+  # competing for the same action unless their evidence is narrow and explicit.
+  U_SERIES:
+    ENABLED: True
+    DECISION_EFFECT_UNIT: combined
+
+    PHASE_EVIDENCE:
+      ENABLED: True
+      LOG_ONLY: false
+      UNKNOWN_CONFIDENCE_THRESHOLD: 0.4
+      LATE_STEP_THRESHOLD: 4
+
+    STOP_EVIDENCE_VERIFIER:
+      ENABLED: True
+      LOG_ONLY: false
+      ENABLE_RESCUE: true
+      ENABLE_RELATION_CHECK: true
+      ENABLE_WEAK_TARGET_ADJUSTMENT: true
+      RESCUE_CONFIDENCE_THRESHOLD: 0.95
+      RESCUE_MIN_STEP: 3
+      RESCUE_MAX_NON_POSITIVE_GAINS: 1
+      RESCUE_REQUIRE_POSITIVE_RECENT_GAIN: true
+      RESCUE_ALLOW_PHASE_VERIFY: true
+
+    FAILURE_RECOVERY:
+      ENABLED: True
+      LOG_ONLY: false
+      ENABLE_RESELECT: true
+      MAX_RECOVERY_PER_EPISODE: 2
+      NEGATIVE_GAIN_WINDOW: 2

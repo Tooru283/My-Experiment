@@ -4,6 +4,9 @@ from vlnce_baselines.common.opennav_ext.agent_state import (
     build_candidate_records,
 )
 from vlnce_baselines.common.opennav_ext.context_builder import ContextBuilder
+from vlnce_baselines.common.opennav_ext.evidence_scaffolder import (
+    PhaseAwareEvidenceScaffolder,
+)
 from vlnce_baselines.common.opennav_ext.geometry_query import GeometryQueryLogger
 from vlnce_baselines.common.opennav_ext.grounder_diagnostic import (
     GrounderDiagnostic,
@@ -15,6 +18,10 @@ from vlnce_baselines.common.opennav_ext.harness_config import (
     harness_logging_enabled,
     module_enabled,
     module_log_only,
+    u_decision_effect_unit,
+    u_module_enabled,
+    u_module_log_only,
+    u_series_enabled,
     validate_a1_harness_config,
 )
 from vlnce_baselines.common.opennav_ext.metrics_logger import MetricsLogger
@@ -41,11 +48,19 @@ from vlnce_baselines.common.opennav_ext.visual_target_verifier import (
 from vlnce_baselines.common.opennav_ext.multimodal_selector_context import (
     MultimodalSelectorContext,
 )
+from vlnce_baselines.common.opennav_ext.phase_evidence import PhaseEvidenceTracker
+from vlnce_baselines.common.opennav_ext.stop_evidence_verifier import (
+    StopEvidenceVerifier,
+)
+from vlnce_baselines.common.opennav_ext.failure_diagnostic import FailureDiagnostic
+from vlnce_baselines.common.opennav_ext.recovery_policy import RecoveryPolicy
+from vlnce_baselines.common.opennav_ext.decision_audit import build_decision_audit
 
 __all__ = [
     "CandidateState",
     "AgentState",
     "ContextBuilder",
+    "PhaseAwareEvidenceScaffolder",
     "GeometryQueryLogger",
     "GrounderDiagnostic",
     "MetricsLogger",
@@ -66,4 +81,13 @@ __all__ = [
     "validate_a1_harness_config",
     "MultimodalSelectorContext",
     "module_log_only",
+    "u_decision_effect_unit",
+    "u_module_enabled",
+    "u_module_log_only",
+    "u_series_enabled",
+    "PhaseEvidenceTracker",
+    "StopEvidenceVerifier",
+    "FailureDiagnostic",
+    "RecoveryPolicy",
+    "build_decision_audit",
 ]
