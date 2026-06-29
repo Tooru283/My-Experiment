@@ -91,6 +91,48 @@ def u_module_log_only(config: Any, module_name: str) -> bool:
     return bool(_cfg_get(section, "LOG_ONLY", True))
 
 
+def arrival_gate_enabled(config: Any) -> bool:
+    harness = _harness_node(config)
+    if harness is None or not harness_logging_enabled(config):
+        return False
+    section = _cfg_get(harness, "ARRIVAL_GATE", None)
+    if section is None:
+        return False
+    return bool(_cfg_get(section, "ENABLED", False))
+
+
+def arrival_gate_config(config: Any) -> dict:
+    harness = _harness_node(config)
+    section = _cfg_get(harness, "ARRIVAL_GATE", None) if harness is not None else None
+    if section is None:
+        return {}
+    return {
+        "dist_threshold": float(_cfg_get(section, "DIST_THRESHOLD", 4.0)),
+        "allowed_phases": list(_cfg_get(section, "ALLOWED_PHASES", ["approach", "verify", "unknown"]) or []),
+        "min_trigger_step": int(_cfg_get(section, "MIN_TRIGGER_STEP", 1)),
+    }
+
+
+def proactive_stop_gate_enabled(config: Any) -> bool:
+    harness = _harness_node(config)
+    if harness is None or not harness_logging_enabled(config):
+        return False
+    section = _cfg_get(harness, "PROACTIVE_STOP_GATE", None)
+    if section is None:
+        return False
+    return bool(_cfg_get(section, "ENABLED", False))
+
+
+def proactive_stop_gate_config(config: Any) -> dict:
+    harness = _harness_node(config)
+    section = _cfg_get(harness, "PROACTIVE_STOP_GATE", None) if harness is not None else None
+    if section is None:
+        return {}
+    return {
+        "dist_threshold": float(_cfg_get(section, "DIST_THRESHOLD", 3.5)),
+    }
+
+
 def validate_a1_harness_config(config: Any) -> None:
     u_node = u_series_node(config)
     u_config_enabled = bool(_cfg_get(u_node, "ENABLED", False))

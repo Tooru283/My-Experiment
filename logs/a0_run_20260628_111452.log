@@ -1,0 +1,816 @@
+LLM preflight OK: /root/models/Qwen3.5-4B at http://127.0.0.1:23333/v1
+Loading 100 episodes...
+************************************************************************
+Platform::WindowlessEglApplication: eglQueryDeviceStringEXT(EGLDevice=0): EGL_NV_device_cuda EGL_EXT_device_drm EGL_EXT_device_drm_render_node EGL_EXT_device_query_name EGL_EXT_device_persistent_id
+Platform::WindowlessEglApplication: found 4 EGL devices, choosing EGL device 0 for CUDA device 0
+Renderer: NVIDIA GeForce RTX 4090/PCIe/SSE2 by NVIDIA Corporation
+OpenGL version: 4.6.0 NVIDIA 550.78
+Using optional features:
+    GL_ARB_ES2_compatibility
+    GL_ARB_direct_state_access
+    GL_ARB_get_texture_sub_image
+    GL_ARB_invalidate_subdata
+    GL_ARB_multi_bind
+    GL_ARB_robustness
+    GL_ARB_separate_shader_objects
+    GL_ARB_texture_filter_anisotropic
+    GL_ARB_texture_storage
+    GL_ARB_texture_storage_multisample
+    GL_ARB_vertex_array_object
+    GL_KHR_debug
+Using driver workarounds:
+    no-forward-compatible-core-context
+    nv-egl-incorrect-gl11-function-pointers
+    no-layout-qualifiers-on-old-glsl
+    nv-zero-context-profile-mask
+    nv-implementation-color-read-format-dsa-broken
+    nv-cubemap-inconsistent-compressed-image-size
+    nv-cubemap-broken-full-compressed-image-query
+    nv-compressed-block-size-in-bits
+local rank: 0 | dataset length: 100
+Initialized LLM client with model: /root/models/Qwen3.5-4B
+2026-06-28 11:15:16 - modeling.py/get_balanced_memory[line:1029] - INFO: We will use 90% of the memory on device 0 for storing the model, and 10% for the buffer to avoid OOM. You can set `max_memory` in to a higher value to use more memory (at your own risk).
+/encoder/layer/0/crossattention/self/query is tied
+/encoder/layer/0/crossattention/self/key is tied
+/encoder/layer/0/crossattention/self/value is tied
+/encoder/layer/0/crossattention/output/dense is tied
+/encoder/layer/0/crossattention/output/LayerNorm is tied
+/encoder/layer/0/intermediate/dense is tied
+/encoder/layer/0/output/dense is tied
+/encoder/layer/0/output/LayerNorm is tied
+/encoder/layer/1/crossattention/self/query is tied
+/encoder/layer/1/crossattention/self/key is tied
+/encoder/layer/1/crossattention/self/value is tied
+/encoder/layer/1/crossattention/output/dense is tied
+/encoder/layer/1/crossattention/output/LayerNorm is tied
+/encoder/layer/1/intermediate/dense is tied
+/encoder/layer/1/output/dense is tied
+/encoder/layer/1/output/LayerNorm is tied
+--------------
+./recognize_anything/pretrained/ram_swin_large_14m.pth
+--------------
+Position interpolate visual_encoder.layers.0.blocks.0.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.0.blocks.1.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.1.blocks.0.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.1.blocks.1.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.0.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.1.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.2.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.3.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.4.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.5.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.6.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.7.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.8.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.9.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.10.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.11.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.12.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.13.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.14.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.15.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.16.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.2.blocks.17.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.3.blocks.0.attn.relative_position_bias_table from 23x23 to 13x13
+Position interpolate visual_encoder.layers.3.blocks.1.attn.relative_position_bias_table from 23x23 to 13x13
+load checkpoint from ./recognize_anything/pretrained/ram_swin_large_14m.pth
+vit: swin_l
+2026-06-28 11:16:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:16:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:16:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:16:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:16:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:17:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:18:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:04 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:19:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:20:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:21:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:22:04 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:22:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:22:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:23:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:23:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:23:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:23:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:23:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:39 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:24:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:25:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:04 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:26:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:27:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:28:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:28:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:28:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:29:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:30:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:30:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:30:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:30:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:31:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:32:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:32:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:32:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:32:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:32:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:33:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:33:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:33:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:33:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:33:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:34:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:35:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:36:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:36:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:36:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:36:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:36:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:37:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:38:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:38:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:38:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:39:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:40:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:40:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:40:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:40:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:40:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:41:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:41:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:41:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:41:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:41:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:42:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:04 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:43:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:44:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:44:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:45:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:46:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:47:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:47:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:47:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:47:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:48:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:49:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:39 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:50:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:51:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:51:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:51:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:51:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:51:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:52:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:39 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:53:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:54:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:54:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:54:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:54:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:54:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+Platform::WindowlessEglApplication: eglQueryDeviceStringEXT(EGLDevice=0): EGL_NV_device_cuda EGL_EXT_device_drm EGL_EXT_device_drm_render_node EGL_EXT_device_query_name EGL_EXT_device_persistent_id
+Platform::WindowlessEglApplication: found 4 EGL devices, choosing EGL device 0 for CUDA device 0
+Renderer: NVIDIA GeForce RTX 4090/PCIe/SSE2 by NVIDIA Corporation
+OpenGL version: 4.6.0 NVIDIA 550.78
+Using optional features:
+    GL_ARB_ES2_compatibility
+    GL_ARB_direct_state_access
+    GL_ARB_get_texture_sub_image
+    GL_ARB_invalidate_subdata
+    GL_ARB_multi_bind
+    GL_ARB_robustness
+    GL_ARB_separate_shader_objects
+    GL_ARB_texture_filter_anisotropic
+    GL_ARB_texture_storage
+    GL_ARB_texture_storage_multisample
+    GL_ARB_vertex_array_object
+    GL_KHR_debug
+Using driver workarounds:
+    no-forward-compatible-core-context
+    nv-egl-incorrect-gl11-function-pointers
+    no-layout-qualifiers-on-old-glsl
+    nv-zero-context-profile-mask
+    nv-implementation-color-read-format-dsa-broken
+    nv-cubemap-inconsistent-compressed-image-size
+    nv-cubemap-broken-full-compressed-image-query
+    nv-compressed-block-size-in-bits
+2026-06-28 11:55:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:50 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:55:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:56:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:57:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:57:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:57:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:57:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:57:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:58:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:59:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:59:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:59:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:59:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 11:59:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:00:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:01:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:02:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:02:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:02:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:02:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:02:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:03:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:03:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:03:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:03:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:03:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:04:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:05:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:06:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:06:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:06:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:06:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:06:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:07:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:07:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:07:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:07:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:07:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:08:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:09:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:09:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:09:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:09:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:09:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:10:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:10:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:10:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:10:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:10:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:11:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:12:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:13:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:14:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:15:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:02 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:16:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:50 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:17:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:18:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:18:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:18:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:18:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:18:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:19:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:20:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:20:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:20:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:20:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:20:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:02 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:21:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:22:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:23:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:23:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:23:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:23:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:23:51 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:22 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:24:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:38 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:25:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:26:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:39 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:27:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:19 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:28:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:39 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:29:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:02 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:30:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:02 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:37 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:31:48 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:32:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:10 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:27 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:29 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:33:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:25 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:34:58 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:32 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:43 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:35:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:12 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:15 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:23 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:36:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:00 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:05 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:07 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:08 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:53 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:37:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:38:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:38:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:38:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:38:33 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:38:35 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:03 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:39:52 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:40:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:40:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:40:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:40:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:40:46 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:41:13 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:41:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:41:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:41:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:41:55 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:01 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:42:59 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:20 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:28 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:41 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:42 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:43:44 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:11 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:18 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:24 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:31 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:34 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:36 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:44:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:14 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:16 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:17 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:40 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:47 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:45:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:02 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:06 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:09 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:45 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:49 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:54 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:56 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:46:57 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:47:21 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:47:26 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+2026-06-28 12:47:30 - _client.py/_send_single_request[line:1038] - INFO: HTTP Request: POST http://127.0.0.1:23333/v1/chat/completions "HTTP/1.1 200 OK"
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+2026-06-28 11:15:02,007 Initializing dataset VLN-CE-v1
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+Users of this version of Gym should be able to simply replace 'import gym' with 'import gymnasium as gym' in the vast majority of cases.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+2026-06-28 11:15:06,056 Initializing dataset VLN-CE-v1
+2026-06-28 11:15:06,103 initializing sim Sim-v1
+WARNING: Logging before InitGoogleLogging() is written to STDERR
+I0628 11:15:06.127278 294417 ManagedContainerBase.cpp:19] ManagedContainerBase::convertFilenameToJSON : Filename : default changed to proposed JSON configuration filename : default.scene_dataset_config.json
+I0628 11:15:06.127349 294417 AttributesManagerBase.h:283] AttributesManager<T>::createFromJsonOrDefaultInternal  (Dataset) : Proposing JSON name : default.scene_dataset_config.json from original name : default | This file  does not exist.
+I0628 11:15:06.127494 294417 AssetAttributesManager.cpp:117] Asset attributes (capsule3DSolid : capsule3DSolid_hemiRings_4_cylRings_1_segments_12_halfLen_0.75_useTexCoords_false_useTangents_false) created and registered.
+I0628 11:15:06.127535 294417 AssetAttributesManager.cpp:117] Asset attributes (capsule3DWireframe : capsule3DWireframe_hemiRings_8_cylRings_1_segments_16_halfLen_1) created and registered.
+I0628 11:15:06.127570 294417 AssetAttributesManager.cpp:117] Asset attributes (coneSolid : coneSolid_segments_12_halfLen_1.25_rings_1_useTexCoords_false_useTangents_false_capEnd_true) created and registered.
+I0628 11:15:06.127599 294417 AssetAttributesManager.cpp:117] Asset attributes (coneWireframe : coneWireframe_segments_32_halfLen_1.25) created and registered.
+I0628 11:15:06.127617 294417 AssetAttributesManager.cpp:117] Asset attributes (cubeSolid : cubeSolid) created and registered.
+I0628 11:15:06.127630 294417 AssetAttributesManager.cpp:117] Asset attributes (cubeWireframe : cubeWireframe) created and registered.
+I0628 11:15:06.127660 294417 AssetAttributesManager.cpp:117] Asset attributes (cylinderSolid : cylinderSolid_rings_1_segments_12_halfLen_1_useTexCoords_false_useTangents_false_capEnds_true) created and registered.
+I0628 11:15:06.127683 294417 AssetAttributesManager.cpp:117] Asset attributes (cylinderWireframe : cylinderWireframe_rings_1_segments_32_halfLen_1) created and registered.
+I0628 11:15:06.127704 294417 AssetAttributesManager.cpp:117] Asset attributes (icosphereSolid : icosphereSolid_subdivs_1) created and registered.
+I0628 11:15:06.127722 294417 AssetAttributesManager.cpp:117] Asset attributes (icosphereWireframe : icosphereWireframe_subdivs_1) created and registered.
+I0628 11:15:06.127740 294417 AssetAttributesManager.cpp:117] Asset attributes (uvSphereSolid : uvSphereSolid_rings_8_segments_16_useTexCoords_false_useTangents_false) created and registered.
+I0628 11:15:06.127756 294417 AssetAttributesManager.cpp:117] Asset attributes (uvSphereWireframe : uvSphereWireframe_rings_16_segments_32) created and registered.
+I0628 11:15:06.127766 294417 AssetAttributesManager.cpp:105] AssetAttributesManager::buildCtorFuncPtrMaps : Built default primitive asset templates : 12
+I0628 11:15:06.128217 294417 SceneDatasetAttributesManager.cpp:23] File (default) not found, so new default dataset attributes created and registered.
+I0628 11:15:06.128226 294417 MetadataMediator.cpp:47] MetadataMediator::createDataset : Dataset default successfully created.
+I0628 11:15:06.131508 294417 AttributesManagerBase.h:283] AttributesManager<T>::createFromJsonOrDefaultInternal  (Physics Manager) : Proposing JSON name : ./data/default.physics_config.json from original name : ./data/default.physics_config.json | This file  does not exist.
+I0628 11:15:06.131556 294417 PhysicsAttributesManager.cpp:27] File (./data/default.physics_config.json) not found, so new default physics manager attributes created and registered.
+I0628 11:15:06.131572 294417 AbstractObjectAttributesManagerBase.h:175] AbstractObjectAttributesManager<T>::createObject  (Stage) : Making attributes with handle : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb
+I0628 11:15:06.131582 294417 ManagedContainerBase.cpp:19] ManagedContainerBase::convertFilenameToJSON : Filename : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb changed to proposed JSON configuration filename : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.stage_config.json
+I0628 11:15:06.131606 294417 AttributesManagerBase.h:283] AttributesManager<T>::createFromJsonOrDefaultInternal  (Stage) : Proposing JSON name : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.stage_config.json from original name : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb | This file  does not exist.
+I0628 11:15:06.131705 294417 AbstractObjectAttributesManagerBase.h:181] AbstractObjectAttributesManager<T>::createObject  (Stage) : Done making attributes with handle : data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb
+I0628 11:15:06.131713 294417 AbstractObjectAttributesManagerBase.h:188] File (data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb) exists but is not a recognized config filename extension, so new default Stage attributes created and registered.
+I0628 11:15:06.131721 294417 Simulator.cpp:156] Loading navmesh from data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.navmesh
+I0628 11:15:06.136545 294417 Simulator.cpp:158] Loaded.
+I0628 11:15:06.136610 294417 SceneGraph.h:93] Created DrawableGroup: 
+I0628 11:15:06.213850 294417 ResourceManager.cpp:234] ResourceManager::loadStage : Not loading semantic mesh
+I0628 11:15:06.213868 294417 ResourceManager.cpp:262] ResourceManager::loadStage : start load render asset data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb.
+I0628 11:15:06.213873 294417 ResourceManager.cpp:569] ResourceManager::loadStageInternal : Attempting to load stage data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.glb 
+I0628 11:15:06.213900 294417 ResourceManager.cpp:1119] Importing Basis files as BC7 for X7HyMhZNoso.glb
+W0628 11:15:08.595242 294417 Simulator.cpp:248] :
+---
+ The active scene does not contain semantic annotations. 
+---
+I0628 11:15:08.688845 294417 simulator.py:213] Loaded navmesh data/scene_datasets/mp3d/X7HyMhZNoso/X7HyMhZNoso.navmesh
+2026-06-28 11:15:08,699 Initializing task VLN-v0
+2026-06-28 11:15:15,581 Finished setting up waypoint_predictor.
+I0628 11:15:16.137696 294417 SceneGraph.h:93] Created DrawableGroup: 
+
+  0%|          | 0/20 [00:00<?, ?it/s]
+  5%|▌         | 1/20 [06:48<2:09:23, 408.59s/it]
+ 10%|█         | 2/20 [13:25<2:00:30, 401.72s/it]
+ 15%|█▌        | 3/20 [21:21<2:03:29, 435.86s/it]
+ 20%|██        | 4/20 [23:46<1:25:30, 320.66s/it]
+ 25%|██▌       | 5/20 [30:35<1:28:08, 352.55s/it]
+ 30%|███       | 6/20 [32:14<1:02:09, 266.39s/it]I0628 11:54:29.752528 294417 PhysicsManager.cpp:33] Deconstructing PhysicsManager
+I0628 11:54:29.752903 294417 SemanticScene.h:41] Deconstructing SemanticScene
+I0628 11:54:29.762745 294417 SceneManager.h:25] Deconstructing SceneManager
+I0628 11:54:29.762766 294417 SceneGraph.h:26] Deconstructing SceneGraph
+I0628 11:54:29.766669 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767128 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767320 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767522 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767704 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767840 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.767995 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.768226 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.768432 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.768621 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.768839 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.769079 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.769325 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.769560 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.769799 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.770022 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.770260 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.770479 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.770679 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.770877 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.771093 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.771313 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.771564 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.771812 294417 Sensor.h:87] Deconstructing Sensor
+I0628 11:54:29.789247 294417 Renderer.cpp:34] Deconstructing Renderer
+I0628 11:54:29.789271 294417 WindowlessContext.h:17] Deconstructing WindowlessContext
+I0628 11:54:29.800472 294417 MetadataMediator.cpp:56] MetadataMediator::setActiveSceneDatasetName : Old active dataset default changed to default successfully.
+I0628 11:54:29.801112 294417 AttributesManagerBase.h:283] AttributesManager<T>::createFromJsonOrDefaultInternal  (Physics Manager) : Proposing JSON name : ./data/default.physics_config.json from original name : ./data/default.physics_config.json | This file  does not exist.
+I0628 11:54:29.801239 294417 PhysicsAttributesManager.cpp:27] File (./data/default.physics_config.json) not found, so new default physics manager attributes created and registered.
+I0628 11:54:29.801298 294417 AbstractObjectAttributesManagerBase.h:175] AbstractObjectAttributesManager<T>::createObject  (Stage) : Making attributes with handle : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb
+I0628 11:54:29.801312 294417 ManagedContainerBase.cpp:19] ManagedContainerBase::convertFilenameToJSON : Filename : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb changed to proposed JSON configuration filename : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.stage_config.json
+I0628 11:54:29.801426 294417 AttributesManagerBase.h:283] AttributesManager<T>::createFromJsonOrDefaultInternal  (Stage) : Proposing JSON name : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.stage_config.json from original name : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb | This file  does not exist.
+I0628 11:54:29.801647 294417 AbstractObjectAttributesManagerBase.h:181] AbstractObjectAttributesManager<T>::createObject  (Stage) : Done making attributes with handle : data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb
+I0628 11:54:29.801654 294417 AbstractObjectAttributesManagerBase.h:188] File (data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb) exists but is not a recognized config filename extension, so new default Stage attributes created and registered.
+I0628 11:54:29.801661 294417 Simulator.cpp:156] Loading navmesh from data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.navmesh
+I0628 11:54:29.804621 294417 Simulator.cpp:158] Loaded.
+I0628 11:54:29.804677 294417 SceneGraph.h:93] Created DrawableGroup: 
+I0628 11:54:29.821744 294417 ResourceManager.cpp:234] ResourceManager::loadStage : Not loading semantic mesh
+I0628 11:54:29.821779 294417 ResourceManager.cpp:262] ResourceManager::loadStage : start load render asset data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb.
+I0628 11:54:29.821816 294417 ResourceManager.cpp:569] ResourceManager::loadStageInternal : Attempting to load stage data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.glb 
+I0628 11:54:29.821931 294417 ResourceManager.cpp:1119] Importing Basis files as BC7 for 2azQ1b91cZZ.glb
+W0628 11:54:35.470449 294417 Simulator.cpp:248] :
+---
+ The active scene does not contain semantic annotations. 
+---
+I0628 11:54:35.688301 294417 simulator.py:213] Loaded navmesh data/scene_datasets/mp3d/2azQ1b91cZZ/2azQ1b91cZZ.navmesh
+I0628 11:54:35.868716 294417 SceneGraph.h:93] Created DrawableGroup: 
+
+ 35%|███▌      | 7/20 [39:19<1:08:59, 318.40s/it]
+ 40%|████      | 8/20 [41:25<51:25, 257.14s/it]  
+ 45%|████▌     | 9/20 [50:04<1:02:08, 338.93s/it]
+ 50%|█████     | 10/20 [58:15<1:04:17, 385.74s/it]
+ 55%|█████▌    | 11/20 [1:06:06<1:01:47, 411.99s/it]
+ 60%|██████    | 12/20 [1:07:40<42:02, 315.31s/it]  
+ 65%|██████▌   | 13/20 [1:11:05<32:52, 281.79s/it]
+ 70%|███████   | 14/20 [1:19:09<34:17, 342.84s/it]
+ 75%|███████▌  | 15/20 [1:22:43<25:20, 304.00s/it]
+ 80%|████████  | 16/20 [1:30:53<24:00, 360.15s/it]已终止
+
+ERROR conda.cli.main_run:execute(125): `conda run bash run_OpenNav.bash` failed. (See above for error)
+

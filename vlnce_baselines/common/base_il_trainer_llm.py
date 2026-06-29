@@ -16,6 +16,7 @@ from vlnce_baselines.common.navigator.spatialNavigator import *
 from vlnce_baselines.common.opennav_ext import (
     ContextBuilder,
     FailureDiagnostic,
+    ArrivalGate,
     GeometryQueryLogger,
     GrounderDiagnostic,
     MetricsLogger,
@@ -30,6 +31,10 @@ from vlnce_baselines.common.opennav_ext import (
     STOP_CURRENT_VIEW_CANDIDATE_ID,
     VisualTargetVerifier,
     VisualGraphMemoryDiagnostic,
+    arrival_gate_config,
+    arrival_gate_enabled,
+    proactive_stop_gate_config,
+    proactive_stop_gate_enabled,
     build_candidate_records,
     decision_effect_enabled,
     fail_open_enabled,
@@ -464,6 +469,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         active_harness_episode_id = None
         active_navigation_episode_id = None
         stop_current_view_candidate_id = STOP_CURRENT_VIEW_CANDIDATE_ID
+        arrival_gate = None
         split = config.TASK_CONFIG.DATASET.SPLIT
         if harness_enabled:
             run_id = "{}_seed{}_r{}_w{}".format(
@@ -669,6 +675,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             "RESCUE_ALLOW_PHASE_VERIFY",
                             False,
                         ),
+                        trajectory_bypass_dist=getattr(
+                            stop_config,
+                            "TRAJECTORY_BYPASS_DIST",
+                            0.0,
+                        ),
                     )
                     stop_evidence_verifier_decision_effect = (
                         decision_effect_enabled(config)
@@ -706,6 +717,18 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             )
                         )
                     )
+            if arrival_gate_enabled(config):
+                _ag_cfg = arrival_gate_config(config)
+                arrival_gate = ArrivalGate(
+                    dist_threshold=_ag_cfg.get("dist_threshold", 4.0),
+                    allowed_phases=_ag_cfg.get("allowed_phases"),
+                    min_trigger_step=_ag_cfg.get("min_trigger_step", 1),
+                )
+            proactive_stop_enabled = proactive_stop_gate_enabled(config)
+            proactive_stop_dist = 0.0
+            if proactive_stop_enabled:
+                _psg_cfg = proactive_stop_gate_config(config)
+                proactive_stop_dist = _psg_cfg.get("dist_threshold", 3.5)
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
@@ -1117,6 +1140,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         nav_history = []
         error_number = 0
         recent_distance_gains = []
+        latest_goal_dist = None
         recovery_budget_remaining = max_recovery_per_episode
         latest_phase_evidence = {}
         latest_failure_signal = {}
@@ -1179,6 +1203,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             if active_navigation_episode_id != current_episode_id:
                 active_navigation_episode_id = current_episode_id
                 recent_distance_gains = []
+                latest_goal_dist = None
                 recovery_budget_remaining = max_recovery_per_episode
                 latest_phase_evidence = {}
                 latest_failure_signal = {}
@@ -1569,6 +1594,26 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         current_step,
                         latest_phase_evidence,
                     )
+                if arrival_gate is not None:
+                    _gate_result = arrival_gate.check(
+                        latest_goal_dist=latest_goal_dist,
+                        current_phase=latest_phase_evidence.get("phase")
+                        if isinstance(latest_phase_evidence, dict)
+                        else None,
+                        current_step=current_step,
+                    )
+                    write_navigation_record(
+                        "arrival_gate",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **_gate_result,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "arrival_gate",
+                            current_step,
+                            _gate_result,
+                        )
                 phase_aware_context_results = run_harness_tool(
                     "phase_aware_context",
                     current_step,
@@ -1789,6 +1834,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         landmarks,
                         estimation,
                         current_step,
+                        latest_goal_dist=latest_goal_dist,
                     )
                     if stop_evidence_verifier is not None:
                         if isinstance(stop_evidence_results, dict):
@@ -2165,6 +2211,40 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         stop_reason,
                         completion_verifier_results,
                     )
+                # M3: proactive stop gate — when near goal with visual evidence,
+                # re-evaluate with stop_flag=True so V2 gives a real verdict.
+                if (
+                    not stop_flag
+                    and proactive_stop_enabled
+                    and latest_goal_dist is not None
+                    and latest_goal_dist < proactive_stop_dist
+                    and bool(completion_verifier_results.get("final_target_visible"))
+                    and bool(completion_verifier_results.get("arrival_evidence"))
+                ):
+                    proactive_reason = (
+                        "Proactive near-goal stop: target visible with arrival evidence "
+                        f"within {proactive_stop_dist}m threshold."
+                    )
+                    proactive_verifier_results = record_visual_target_verifier(
+                        "proactive_stop_gate",
+                        True,
+                        proactive_reason,
+                        selected_candidate=stop_current_view_candidate_id,
+                        stop_evidence_mode="current_pano",
+                    )
+                    record_stop_evidence_verification(
+                        "proactive_stop_gate",
+                        proactive_verifier_results,
+                        stop_gate_metadata,
+                    )
+                    if visual_target_verifier_allows_stop(proactive_verifier_results):
+                        stop_flag = True
+                        stop_reason = proactive_reason
+                        log_visual_stop_allowed(
+                            "proactive_stop_gate",
+                            stop_reason,
+                            proactive_verifier_results,
+                        )
                 if stop_flag:
                     if phase_aware_scaffolder is not None:
                         phase_aware_context_results[
@@ -2531,28 +2611,51 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             selector_visual_rescue_candidate
                             and not u2_rescue_allowed
                         ):
-                            selector_stop_rejection_reason = (
-                                "u2_stop_evidence_blocked_visual_rescue"
-                            )
-                            override_payload = build_decision_audit(
-                                unit_enabled=u_decision_unit,
-                                original_action=STOP_CANDIDATE,
-                                proposed_action=STOP_CANDIDATE,
-                                final_action="movement_fallback",
-                                override_reason=selector_stop_rejection_reason,
-                                expected_failure_addressed="stop_false_positive",
-                                source_stage="selector_stop_gate",
-                                extra={
-                                    "source": "selector_stop_gate",
-                                    "stop_evidence": selector_stop_evidence_results,
-                                },
-                            )
-                            override_payload["effect_type"] = "stop_rescue_block"
-                            override_payload["action_affecting"] = True
-                            record_u_override(override_payload)
-                            nav_logger.info(
-                                "U2 stop evidence blocked visual STOP rescue; fallback to movement."
-                            )
+                            if (
+                                visual_target_verifier_allows_stop(
+                                    selector_verifier_results
+                                )
+                                and selector_stop_evidence_results.get("allow_stop")
+                            ):
+                                stop_flag = True
+                                stop_reason = (
+                                    "Navigator selected STOP; visual verifier "
+                                    "allowed and stop evidence confirmed; "
+                                    "rescue override granted despite gain/phase "
+                                    "conditions."
+                                )
+                                log_visual_stop_allowed(
+                                    "selector_stop_gate",
+                                    old_stop_reason or "Navigator selected STOP.",
+                                    selector_verifier_results,
+                                )
+                                nav_logger.info(
+                                    "V2+U2 both allow STOP; granting rescue despite "
+                                    "gain/phase blocker."
+                                )
+                            else:
+                                selector_stop_rejection_reason = (
+                                    "u2_stop_evidence_blocked_visual_rescue"
+                                )
+                                override_payload = build_decision_audit(
+                                    unit_enabled=u_decision_unit,
+                                    original_action=STOP_CANDIDATE,
+                                    proposed_action=STOP_CANDIDATE,
+                                    final_action="movement_fallback",
+                                    override_reason=selector_stop_rejection_reason,
+                                    expected_failure_addressed="stop_false_positive",
+                                    source_stage="selector_stop_gate",
+                                    extra={
+                                        "source": "selector_stop_gate",
+                                        "stop_evidence": selector_stop_evidence_results,
+                                    },
+                                )
+                                override_payload["effect_type"] = "stop_rescue_block"
+                                override_payload["action_affecting"] = True
+                                record_u_override(override_payload)
+                                nav_logger.info(
+                                    "U2 stop evidence blocked visual STOP rescue; fallback to movement."
+                                )
                         elif visual_target_verifier_allows_stop(
                             selector_verifier_results
                         ):
@@ -2918,6 +3021,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     selected_gain = step_output_summary[0].get(
                         "distance_gain_selected"
                     )
+                    try:
+                        _d = step_output_summary[0].get("distance_to_goal")
+                        if _d is not None:
+                            latest_goal_dist = float(_d)
+                    except (TypeError, ValueError):
+                        pass
                 try:
                     if selected_gain is not None:
                         recent_distance_gains.append(float(selected_gain))

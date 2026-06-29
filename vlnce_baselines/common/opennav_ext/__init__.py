@@ -12,12 +12,16 @@ from vlnce_baselines.common.opennav_ext.grounder_diagnostic import (
     GrounderDiagnostic,
 )
 from vlnce_baselines.common.opennav_ext.harness_config import (
+    arrival_gate_config,
+    arrival_gate_enabled,
     decision_effect_enabled,
     fail_open_enabled,
     get_trace_dir,
     harness_logging_enabled,
     module_enabled,
     module_log_only,
+    proactive_stop_gate_config,
+    proactive_stop_gate_enabled,
     u_decision_effect_unit,
     u_module_enabled,
     u_module_log_only,
@@ -55,6 +59,7 @@ from vlnce_baselines.common.opennav_ext.stop_evidence_verifier import (
 from vlnce_baselines.common.opennav_ext.failure_diagnostic import FailureDiagnostic
 from vlnce_baselines.common.opennav_ext.recovery_policy import RecoveryPolicy
 from vlnce_baselines.common.opennav_ext.decision_audit import build_decision_audit
+from vlnce_baselines.common.opennav_ext.arrival_gate import ArrivalGate
 
 __all__ = [
     "CandidateState",
@@ -71,6 +76,10 @@ __all__ = [
     "VisualEvidenceFallbackRanker",
     "VisualTargetVerifier",
     "build_candidate_records",
+    "arrival_gate_config",
+    "arrival_gate_enabled",
+    "proactive_stop_gate_config",
+    "proactive_stop_gate_enabled",
     "decision_effect_enabled",
     "fail_open_enabled",
     "get_trace_dir",
@@ -90,4 +99,5 @@ __all__ = [
     "FailureDiagnostic",
     "RecoveryPolicy",
     "build_decision_audit",
+    "ArrivalGate",
 ]

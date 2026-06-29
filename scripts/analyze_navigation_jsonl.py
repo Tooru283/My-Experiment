@@ -39,6 +39,8 @@ class EpisodeSummary:
     action_overrides: List[Dict[str, Any]] = field(default_factory=list)
     failure_types: Counter = field(default_factory=Counter)
     recover_reasons: Counter = field(default_factory=Counter)
+    had_weak_target: bool = False
+    abstain_steps: List[int] = field(default_factory=list)
 
     def final_distance(self) -> Number:
         value = self.metrics.get("distance_to_goal")
@@ -102,6 +104,11 @@ class AnalysisState:
     fallback_trusted_count: int = 0
     recovery_applied_count: int = 0
     action_override_count: int = 0
+    abstain_count: int = 0
+    abstain_weak_target_count: int = 0
+    arrival_gate_total: int = 0
+    arrival_gate_triggered: int = 0
+    arrival_gate_triggered_episodes: set = field(default_factory=set)
     schema_errors: Counter = field(default_factory=Counter)
     schema_warnings: Counter = field(default_factory=Counter)
     parse_errors: Counter = field(default_factory=Counter)
@@ -269,6 +276,13 @@ def process_stop_verification(
         state.stop_rescue_by_source[source] += 1
     for reason in payload.get("reject_reasons") or []:
         state.stop_reject_reasons[str(reason)] += 1
+    if payload.get("weak_target"):
+        ep.had_weak_target = True
+    if payload.get("abstain"):
+        state.abstain_count += 1
+        ep.abstain_steps.append(step)
+        if payload.get("weak_target"):
+            state.abstain_weak_target_count += 1
 
 
 def process_current_view(
@@ -399,6 +413,13 @@ def process_event(
         if payload.get("action_affecting"):
             state.action_override_count += 1
 
+    elif ep is not None and event == "arrival_gate":
+        state.arrival_gate_total += 1
+        if payload.get("triggered"):
+            state.arrival_gate_triggered += 1
+            if episode_id is not None:
+                state.arrival_gate_triggered_episodes.add(str(episode_id))
+
     elif ep is not None and event == "stop_verification":
         process_stop_verification(state, ep, step, payload)
 
@@ -448,6 +469,38 @@ def load_stats(path: Path, state: AnalysisState) -> None:
         state.aggregate_stats.update(data)
 
 
+def classify_near_goal_failure(ep: EpisodeSummary, radius: float) -> str:
+    """Classify the failure mode of an OSR=1, SR=0 episode.
+
+    Categories (ordered by diagnostic priority):
+      stop-blocked    — a STOP was requested and rejected near the closest approach
+      walk-through    — episode ended at step limit without any explicit STOP
+      premature-stop  — agent stopped before reaching its closest-to-goal point
+      near-goal-drift — got within radius, then drifted >1.5 m before stopping
+      off-goal-stop   — stopped outside radius with no other distinguishing signal
+    """
+    min_dist, min_step = ep.min_distance()
+    near_window = 3
+    if min_step is not None:
+        near_rejections = [s for s in ep.stop_rejections if abs(s - min_step) <= near_window]
+    else:
+        near_rejections = list(ep.stop_rejections)
+    if near_rejections:
+        return "stop-blocked"
+    if not ep.final_stop_steps:
+        return "walk-through"
+    final_dist = ep.final_distance()
+    final_stop_step = min(ep.final_stop_steps)
+    if min_step is not None and final_stop_step < min_step:
+        return "premature-stop"
+    drift = (final_dist - min_dist) if (min_dist is not None and final_dist is not None) else None
+    if drift is not None and drift > 1.5:
+        return "near-goal-drift"
+    if ep.had_weak_target:
+        return "weak-target-miss"
+    return "off-goal-stop"
+
+
 def mean(values: Iterable[Number]) -> Number:
     filtered = [value for value in values if value is not None]
     if not filtered:
@@ -488,6 +541,7 @@ def build_summary(state: AnalysisState, radius: float) -> Dict[str, Any]:
         "oracle_success_count": oracle_success_count,
         "sr": success_count / len(metric_eps) if metric_eps else None,
         "osr": oracle_success_count / len(oracle_known) if oracle_known else None,
+        "osr_sr_conversion_rate": success_count / oracle_success_count if oracle_success_count else None,
         "spl": mean(metric_value(ep, "spl") for ep in metric_eps),
         "ndtw": mean(metric_value(ep, "ndtw") for ep in metric_eps),
         "final_distance": mean(ep.final_distance() for ep in metric_eps),
@@ -550,6 +604,10 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
         "  OSR-SR gap: "
         f"{summary['oracle_success_count'] - summary['success_count']} episodes"
     )
+    print(
+        "  OSR→SR conversion: "
+        f"{pct(summary['success_count'], summary['oracle_success_count'])}"
+    )
     print(f"  SPL: {fmt_number(summary['spl'])}")
     print(f"  nDTW: {fmt_number(summary['ndtw'])}")
     print(f"  final_distance: {fmt_number(summary['final_distance'])}")
@@ -563,6 +621,7 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
 
     osr_not_sr = []
     drift_rows = []
+    taxonomy_counts: Counter = Counter()
     for ep in sorted(
         state.episodes.values(),
         key=lambda item: (0, int(item.episode_id)) if item.episode_id.isdigit() else (1, item.episode_id),
@@ -572,6 +631,9 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
         min_dist, min_step = ep.min_distance()
         final_dist = ep.final_distance()
         drift = None if min_dist is None or final_dist is None else final_dist - min_dist
+        near_goal_label = classify_near_goal_failure(ep, radius) if (oracle and not success) else None
+        if near_goal_label:
+            taxonomy_counts[near_goal_label] += 1
         row = (
             ep.episode_id,
             fmt_number(min_dist),
@@ -579,7 +641,7 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
             fmt_number(final_dist),
             fmt_number(drift),
             ep.last_phase() or "-",
-            ",".join(key for key, _ in ep.failure_types.most_common(2)) or "-",
+            near_goal_label or (",".join(key for key, _ in ep.failure_types.most_common(2)) or "-"),
         )
         if oracle and not success:
             osr_not_sr.append(row)
@@ -600,6 +662,27 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
         top,
     )
 
+    osr_gap = summary["oracle_success_count"] - summary["success_count"]
+    print(f"\nNear-Goal Failure Taxonomy  (OSR=1, SR=0 — {osr_gap} episodes)")
+    if taxonomy_counts:
+        for label, count in taxonomy_counts.most_common():
+            print(f"  {label}: {count}/{osr_gap} ({pct(count, osr_gap)})")
+    else:
+        print("  - (no OSR=1, SR=0 episodes or no distance data)")
+
+    print("\nArrival Gate")
+    if state.arrival_gate_total > 0:
+        trig_eps = len(state.arrival_gate_triggered_episodes)
+        total_eps = summary["episode_count"]
+        print(f"  total_gate_checks: {state.arrival_gate_total}")
+        print(
+            f"  triggered_steps: {state.arrival_gate_triggered}/{state.arrival_gate_total} "
+            f"({pct(state.arrival_gate_triggered, state.arrival_gate_total)})"
+        )
+        print(f"  triggered_episodes: {trig_eps}/{total_eps} ({pct(trig_eps, total_eps)})")
+    else:
+        print("  (no arrival_gate events — gate disabled or run predates M1)")
+
     print("\nSTOP Summary")
     selector_stop_requests = sum(len(set(ep.stop_requests)) for ep in state.episodes.values())
     print(f"  selector_stop_requests: {selector_stop_requests}")
@@ -614,6 +697,8 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
     print_counter("  stop_allowed_by_source", state.stop_allowed_by_source, top)
     print_counter("  stop_rejected_by_source", state.stop_rejected_by_source, top)
     print_counter("  stop_reject_reasons", state.stop_reject_reasons, top)
+    print(f"  abstain_count: {state.abstain_count}")
+    print(f"  abstain_weak_target_count: {state.abstain_weak_target_count}")
 
     print("\nCurrent-view Visual Evidence")
     print(f"  current_view_samples: {state.current_view_total}")
@@ -651,6 +736,10 @@ def print_report(state: AnalysisState, radius: float, current_view_threshold: fl
 
 def write_json_summary(path: Path, state: AnalysisState, radius: float) -> None:
     summary = build_summary(state, radius)
+    near_goal_taxonomy: Counter = Counter()
+    for ep in state.episodes.values():
+        if ep.oracle_success(radius) and not ep.success(radius):
+            near_goal_taxonomy[classify_near_goal_failure(ep, radius)] += 1
     summary.update(
         {
             "event_counts": dict(state.event_counts),
@@ -660,6 +749,9 @@ def write_json_summary(path: Path, state: AnalysisState, radius: float) -> None:
             "stop_rejected_by_source": dict(state.stop_rejected_by_source),
             "stop_reject_reasons": dict(state.stop_reject_reasons),
             "failure_types": dict(state.failure_types),
+            "near_goal_taxonomy": dict(near_goal_taxonomy),
+            "abstain_count": state.abstain_count,
+            "abstain_weak_target_count": state.abstain_weak_target_count,
             "recover_reasons": dict(state.recover_reasons),
             "schema_errors": dict(state.schema_errors),
             "schema_warnings": dict(state.schema_warnings),

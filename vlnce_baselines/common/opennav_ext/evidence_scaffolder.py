@@ -25,7 +25,11 @@ def _phase_mode(phase: str) -> str:
 
 
 def _eligible_for_application(phase: str, mode: str, apply_phases: set) -> bool:
-    return phase in apply_phases and mode in {"route_overview", "subgoal_candidate"}
+    return phase in apply_phases and mode in {
+        "route_overview",
+        "subgoal_candidate",
+        "stop_verify",
+    }
 
 
 class PhaseAwareEvidenceScaffolder:

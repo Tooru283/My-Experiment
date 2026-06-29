@@ -80,7 +80,6 @@ _DEFAULT_GENERIC_FINAL_TERMS = (
     "hall",
     "hallway",
     "room",
-    "sink",
     "stair",
     "stairs",
     "staircase",

@@ -1,0 +1,12 @@
+2026-06-29 14:21:37 - base_il_trainer_llm.py/_eval_llm[line:430] - INFO: Navigation text log: logs/navigation_records/ep100/20260629/ep100_m3_20260629_train_navigation_20260629_142137.log
+2026-06-29 14:21:37 - base_il_trainer_llm.py/_eval_llm[line:431] - INFO: Navigation JSONL record: logs/navigation_records/ep100/20260629/ep100_m3_20260629_train_navigation_20260629_142137.jsonl
+2026-06-29 14:22:23 - base_il_trainer_llm.py/_eval_llm[line:1189] - INFO: ==================== The current episode id is 244 ====================
+2026-06-29 14:22:23 - base_il_trainer_llm.py/_eval_llm[line:1190] - INFO: Instruction: Go through the door and turn left. Go to the left of the stairs. Stop in the doorway to the left of the white double doors. 
+2026-06-29 14:22:23 - base_il_trainer_llm.py/_eval_llm[line:1201] - INFO: Actions: Go through the door, turn left, Go to the left of the stairs, Stop in the doorway, turn left
+
+2026-06-29 14:22:23 - base_il_trainer_llm.py/_eval_llm[line:1202] - INFO: Landmarks: door
+stairs
+doorway
+
+2026-06-29 14:22:23 - base_il_trainer_llm.py/_eval_llm[line:1252] - INFO: -------------------- Step 1 --------------------
+2026-06-29 14:22:25 - base_il_trainer_llm.py/_eval_llm[line:1307] - INFO: ========== Get Observation ==========

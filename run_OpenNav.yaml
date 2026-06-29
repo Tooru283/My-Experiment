@@ -54,7 +54,7 @@ OPENNAV_HARNESS:
   ENABLED: True
   ENABLE_HARNESS_LOGGING: True
   ENABLE_DECISION_EFFECT: True
-  TRACE_DIR: logs/harness_traces/u_existing_modules_conservative
+  TRACE_DIR: logs/harness_traces/max_config
   TRACE_FORMAT: jsonl
   LOG_IMAGES: False
   FAIL_OPEN: True
@@ -74,11 +74,7 @@ OPENNAV_HARNESS:
     METADATA_OBSERVATION_CHARS: 300
     COMPACT_JSON: True
 
-  # V2: visual verification for STOP proposals. With LOG_ONLY false and global
-  # ENABLE_DECISION_EFFECT true, STOP is allowed only when verdict=allow. The
-  # allow path uses STOP-only current-view evidence. Current-view text
-  # corroboration is logged as a warning by default; turning it into a hard
-  # blocker was too conservative for valid near-goal STOPs.
+  # V2: decision-effect active — gates STOP based on visual verification.
   VISUAL_TARGET_VERIFIER:
     ENABLED: True
     LOG_ONLY: false
@@ -99,17 +95,15 @@ OPENNAV_HARNESS:
     MAX_HISTORY: 64
     MAX_NOTES_CHARS: 240
 
-  # V4: build compressed visual evidence context for selector candidates.
-  # V4 emits raw summaries for logging plus selector-safe summaries with
-  # target/arrival assertions suppressed. U1 owns phase-gated decision-effect,
-  # so V4 remains log-only and only search/approach can receive safe summaries.
+  # V4: log-only — U1 decision-effect requires V4 to stay log-only (harness constraint).
+  # V4 output still feeds into U1 phase-aware context as input.
   MULTIMODAL_SELECTOR_CONTEXT:
     ENABLED: True
     LOG_ONLY: true
     MAX_SUMMARY_CHARS: 180
     INCLUDE_MEMORY_SUFFIX: False
     DECISION_MODE: phase_gated_u1
-    APPLY_PHASES: [search, approach]
+    APPLY_PHASES: [search, approach, verify]
     SUPPRESS_TARGET_ARRIVAL_FOR_SELECTOR: true
     MIN_CONFIDENCE_FOR_TARGET_HINT: 0.9
 
@@ -130,18 +124,40 @@ OPENNAV_HARNESS:
     BLOCK_WEAK_FINAL_TARGET_COMPLETION_STOP: True
     MIN_STEPS_FOR_WEAK_FINAL_TARGET_COMPLETION_STOP: 8
 
-  # Conservative U-series: keep U modules active, but avoid independent modules
-  # competing for the same action unless their evidence is narrow and explicit.
+  # M1: arrival_gate log-only. Fires when goal dist <= threshold and phase is ok.
+  # Set ENABLED: False to disable without removing config.
+  ARRIVAL_GATE:
+    ENABLED: True
+    DIST_THRESHOLD: 4.0
+    ALLOWED_PHASES:
+      - approach
+      - verify
+      - recover
+      - unknown
+    MIN_TRIGGER_STEP: 1
+
+  # M3: proactive stop gate. When dist < threshold and final_target_visible=True
+  # and arrival_evidence=True, re-run V2 with stop_flag=True to force a real verdict.
+  # Only fires if navigator did NOT propose stop. Set ENABLED: False to disable.
+  PROACTIVE_STOP_GATE:
+    ENABLED: True
+    DIST_THRESHOLD: 3.5
+
+  # Max config: all U-series units active with decision effect.
+  # DECISION_EFFECT_UNIT=combined activates U1+U2+U3 simultaneously.
   U_SERIES:
     ENABLED: True
     DECISION_EFFECT_UNIT: combined
 
+    # U1: phase-aware evidence scaffolding — injects phase-gated context into selector.
     PHASE_EVIDENCE:
       ENABLED: True
       LOG_ONLY: false
       UNKNOWN_CONFIDENCE_THRESHOLD: 0.4
       LATE_STEP_THRESHOLD: 4
 
+    # U2: evidence-grounded STOP verifier — can rescue a blocked STOP when
+    # visual evidence is strong enough (complements V2 gating).
     STOP_EVIDENCE_VERIFIER:
       ENABLED: True
       LOG_ONLY: false
@@ -153,7 +169,12 @@ OPENNAV_HARNESS:
       RESCUE_MAX_NON_POSITIVE_GAINS: 1
       RESCUE_REQUIRE_POSITIVE_RECENT_GAIN: true
       RESCUE_ALLOW_PHASE_VERIFY: true
+      # Downgrade trajectory_incomplete from hard-reject to unknown when the agent
+      # is already within this distance of the goal. Set 0.0 to disable.
+      TRAJECTORY_BYPASS_DIST: 3.5
 
+    # U3: failure-conditioned recovery — reselects candidates after confirmed failure.
+    # ENABLE_RESELECT required for decision effect.
     FAILURE_RECOVERY:
       ENABLED: True
       LOG_ONLY: false

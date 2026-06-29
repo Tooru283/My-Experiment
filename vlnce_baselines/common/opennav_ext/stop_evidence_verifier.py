@@ -105,6 +105,7 @@ class StopEvidenceVerifier:
         rescue_max_non_positive_gains: int = 1,
         rescue_require_positive_recent_gain: bool = True,
         rescue_allow_phase_verify: bool = False,
+        trajectory_bypass_dist: float = 0.0,
     ) -> None:
         self.enable_rescue = bool(enable_rescue)
         self.enable_relation_check = bool(enable_relation_check)
@@ -119,6 +120,11 @@ class StopEvidenceVerifier:
             rescue_require_positive_recent_gain
         )
         self.rescue_allow_phase_verify = bool(rescue_allow_phase_verify)
+        # When > 0, downgrade trajectory_support from "no" to "unknown" if the
+        # latest goal distance is within this threshold. Prevents the agent from
+        # being blocked by trajectory_incomplete when already inside the success
+        # radius.
+        self.trajectory_bypass_dist = max(0.0, float(trajectory_bypass_dist))
 
     def verify(
         self,
@@ -131,6 +137,7 @@ class StopEvidenceVerifier:
         landmarks: str,
         estimation: str,
         current_step: int,
+        latest_goal_dist: Optional[float] = None,
     ) -> Dict[str, Any]:
         visual = visual_verifier_results or {}
         stop_gate = stop_gate_metadata or {}
@@ -194,6 +201,21 @@ class StopEvidenceVerifier:
         else:
             trajectory_support = "unknown"
 
+        # Distance bypass: when the agent is already within trajectory_bypass_dist
+        # of the goal, downgrade trajectory_support from "no" to "unknown" so that
+        # a clear visual signal can still allow the stop. This prevents the agent
+        # from being trapped by trajectory_incomplete when it is physically inside
+        # the success radius.
+        trajectory_dist_bypassed = False
+        if (
+            trajectory_support == "no"
+            and self.trajectory_bypass_dist > 0
+            and latest_goal_dist is not None
+            and latest_goal_dist < self.trajectory_bypass_dist
+        ):
+            trajectory_support = "unknown"
+            trajectory_dist_bypassed = True
+
         weak_target_adjustment = "none"
         weak_target_blocked = False
         if weak_target and self.enable_weak_target_adjustment:
@@ -255,6 +277,20 @@ class StopEvidenceVerifier:
             and not rescue_blockers
         )
 
+        # Abstain: evidence is insufficient to decide either way.
+        # Triggered when intrinsic visibility is unknown and no hard blockers
+        # exist to clearly reject. In future S3 this will trigger re-observation;
+        # for now it surfaces as a logged third state alongside allow/reject.
+        abstain = bool(
+            not allow_stop
+            and not reject_reasons
+            and not hard_blockers
+            and intrinsic_support == "unknown"
+        )
+        abstain_reason = (
+            "intrinsic_visibility_unknown_no_hard_blockers" if abstain else ""
+        )
+
         confidence = 0.0
         if intrinsic_support == "yes":
             confidence += 0.35
@@ -276,6 +312,7 @@ class StopEvidenceVerifier:
             "relation_required": relation_required,
             "relation_support": relation_support,
             "trajectory_support": trajectory_support,
+            "trajectory_dist_bypassed": trajectory_dist_bypassed,
             "weak_target_adjustment": weak_target_adjustment,
             "visual_verdict": visual.get("verdict"),
             "selected_candidate_verdict": selected_verdict.get("verdict"),
@@ -287,6 +324,8 @@ class StopEvidenceVerifier:
             "hard_blockers": hard_blockers,
             "allow_stop": allow_stop,
             "allow_rescue": allow_rescue,
+            "abstain": abstain,
+            "abstain_reason": abstain_reason,
             "reject_reasons": reject_reasons,
             "confidence": round(min(confidence, 1.0), 3),
             "config": {
