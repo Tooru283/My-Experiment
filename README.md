@@ -20,84 +20,106 @@
 
 ## 项目框架流程图
 
-下图按当前代码主链整理，重点展示 Open-Nav 原始导航闭环如何被本项目的 controlled navigation harness 包裹。`external/habitat-lab-v0.1.7`、`recognize_anything`、`SpatialBot` 等外部依赖或候选模型资源不展开到内部实现。
+下图按当前代码主链整理，展示从 Habitat 环境到 STOP/动作决策的完整数据流，以及 V/U 系列 harness 的介入位置。
 
 ```mermaid
 flowchart TD
-  A["运行入口<br/>run_OpenNav.bash"] --> B["run.py<br/>加载 run_OpenNav.yaml / vlnce_task.yaml"]
-  B --> C["baseline_registry<br/>schedulesampler-OPENNAV"]
-  C --> D["SSTrainer<br/>BaseVLNCETrainerLLM.eval"]
+  A["运行入口\nrun_OpenNav.bash"] --> B["run.py\n加载 run_OpenNav.yaml / vlnce_task.yaml"]
+  B --> C["baseline_registry\nschedulesampler-OPENNAV"]
+  C --> D["SSTrainer\nBaseVLNCETrainerLLM.eval"]
 
-  subgraph Inputs["输入与外部依赖"]
-    I1["R2R / VLN-CE 数据集<br/>Habitat Simulator / MP3D 场景"]
-    I2["预训练导航组件<br/>PolicyViewSelectionCMA + TRM waypoint predictor"]
-    I3["本地 OpenAI-compatible LLM/VLM 服务<br/>Qwen/Qwen-VL 等"]
+  subgraph Inputs["外部依赖（本地部署，不提交至仓库）"]
+    I1["R2R / VLN-CE 数据集 + MP3D 场景\nHabitat Simulator 运行环境"]
+    I2["WaypointBert（BinaryDistPredictor_TRM）\n本地预训练 Transformer，参数冻结\n输出：top-k 候选航点（角度 + 距离）"]
+    I3["Qwen3.5-4B（lmdeploy 本地服务）\n文字 LLM（selector / completion）\n多模态 VLM（V1 / V2 视觉证据）两用"]
+    I4["SpatialBot3B（本地 3B VLM）\n内嵌 SigLIP-so400m 作为视觉编码器\n输出：空间场景描述（含距离估计）"]
+    I5["RAM（Recognize Anything，SwinL）\n输出：物体 tag 列表"]
   end
 
   I1 --> D
-  I2 --> D
-  I3 --> D
 
-  D --> E["Episode start<br/>instruction -> actions / landmarks cache"]
-  E --> F["候选生成<br/>RGB-D observation -> waypoint candidates"]
-  F --> G["候选观察<br/>Open_Nav.observe_environment"]
+  D --> E["Episode start\ninstruction → 动作列表 / 地标缓存（Qwen 文字）"]
+  E --> F["候选生成\n全景 RGB+Depth → WaypointBert\n→ top-k 候选航点"]
 
-  subgraph Harness["OpenNav Harness / V 系列"]
-    H1["V1 VisualEvidenceLogger<br/>候选级视觉证据抽取"]
-    H2["V3 VisualEvidenceMemory<br/>episode 内证据聚合"]
-    H3["V4 MultimodalSelectorContext<br/>视觉摘要注入 selector 输入"]
-    H4["V2 VisualTargetVerifier<br/>STOP proposal 验证"]
-    H5["VisualEvidenceFallbackRanker<br/>空预测或拒绝 STOP 后排序 fallback"]
+  F --> G["感知层（每候选各一次，输出纯文字）\nRGB → RAM → 物体 tag\nRGB+Depth → SpatialBot3B(SigLIP) → 空间描述\n合并 → 候选观测文字"]
+
+  subgraph Harness["V / U 系列 Harness"]
+    V1["V1 VisualEvidenceLogger\n候选 RGB base64 → Qwen 多模态\n→ {final_target_visible, arrival_evidence, confidence}"]
+    V2["V2 VisualTargetVerifier\n全景拼图 base64 → Qwen 多模态\n→ {verdict: allow/reject, reason}"]
+    U1["U1 PhaseAwareEvidenceScaffolder（纯 Python）\nV1 证据 → 阶段归类（search/approach/verify/recover）\n→ 候选文字追加阶段 suffix 和 V4 视觉摘要"]
+    U2["U2 StopEvidenceVerifier（纯 Python）\nV1+V2+U1 结构化证据 → 最终 allow/blocked 裁决\nM2a：dist<3.5m 时将 trajectory_incomplete 降级为软拒绝"]
+    U3["U3 RecoveryPolicy（纯 Python）\n失败检测 → 备用候选重选（每集 ≤2 次）"]
+    M3["M3 ProactiveStopGate（纯 Python）\ndist<3.5m + 上步 final_target_visible=True\n→ 强制触发 V2 → 若 allow 则强制 STOP"]
   end
 
-  G --> H1
-  H1 --> H2
-  H2 --> H3
+  G --> V1
+  V1 --> U1
+  G --> J
 
-  G --> J["历史回顾 + completion estimation"]
-  J --> K{"completion gate<br/>是否提议 STOP?"}
-  K -- "是" --> H4
-  K -- "否" --> L["LLM selector<br/>move_to_next_vp"]
-  H3 --> L
+  U1 --> J["完成度估计\n历史 + 动作 + 地标 → Qwen 文字 LLM → 已执行动作"]
+  J --> K{"completion gate\n提议 STOP?"}
 
-  H4 -- "allow" --> S["STOP action"]
-  H4 -- "reject / uncertain" --> H5
-  H5 --> L
+  K -- "否，dist<3.5m\n且 final_target_visible" --> M3
+  K -- "否" --> L
+  K -- "是" --> V2
+  M3 --> V2
 
-  L --> M["thought_fusion + test_decisions"]
-  M --> N{"selector 输出"}
-  N -- "候选 waypoint" --> O["环境动作<br/>action=4, angle + distance"]
-  N -- "STOP" --> H4
-  N -- "空预测 / 无效候选" --> H5
+  V2 --> U2
+  U2 -- "allow" --> S["STOP action"]
+  U2 -- "blocked" --> U3
+  U3 --> L
 
-  O --> P["envs.step<br/>更新位置、碰撞、history"]
+  L["Selector（Qwen 文字 LLM）\n候选 ID + 指令 + 历史 + U1 注入文字 → 候选 ID 或 STOP"]
+  L -- "候选 waypoint" --> O["环境动作\naction=4, angle + distance"]
+  L -- "STOP" --> V2
+  L -- "空预测 / 无效" --> U3
+
+  O --> P["envs.step\n更新位置、碰撞、history"]
   P --> Q{"episode 结束?"}
   Q -- "否" --> F
-  Q -- "是" --> R["episode metrics<br/>SR / SPL / nDTW / TL 等"]
+  Q -- "是" --> R["episode metrics\nSR / SPL / nDTW / TL 等"]
   S --> R
 
-  R --> T["输出记录<br/>navigation_records / harness_traces / eval_results / running_log"]
+  R --> T["输出记录\nnavigation_records / harness_traces\neval_results / running_log"]
+
+  I2 --> F
+  I3 --> J
+  I3 --> L
+  I3 --> V1
+  I3 --> V2
+  I4 --> G
+  I5 --> G
 ```
 
 关键读法:
 
-- `run_OpenNav.yaml` 是当前 V 系列开关的主要来源；`ENABLE_DECISION_EFFECT=true` 且对应模块 `LOG_ONLY=false` 时，V2/V4 才会真实改变导航决策。
-- V1 负责把候选 RGB 视角转成结构化视觉证据；V3 把证据聚合成 episode 内记忆；V4 把候选级视觉摘要追加到 selector 输入；V2 对 completion gate 或 selector 提出的 STOP 做保守验证。
-- 原始 Open-Nav 的 `move_to_next_vp -> thought_fusion -> test_decisions -> envs.step` 闭环保留，harness 主要在候选证据、STOP gate、fallback、trace 日志四个位置介入。
+- **感知层**：候选生成后，每个候选方向经 RAM（物体 tag）和 SpatialBot3B 处理，输出纯文字给 selector。SpatialBot3B 内嵌 SigLIP-so400m 作为视觉编码器（`mm_vision_tower`），随模型一起加载，不是独立外部模块。图片本身不进入 selector 的 API 调用。
+- **两条决策链**：routing（候选选择）由 Qwen **文字** LLM 完成，看到的是 SpatialBot3B / RAM 生成的文字；stop gate（STOP 是否允许）由 Qwen **多模态** VLM 完成，图片以 base64 直接发送。
+- **U 系列零模型调用**：U1/U2/U3 是纯 Python 规则层，读取 V1/V2 的结构化 JSON 做决策，不额外调用任何模型，推理成本为零。
+- **M3 主动触发**：completion gate 每步检查距离阈值和上步 V2 的 `final_target_visible` 信号，条件满足时以 `stop_flag=True` 重跑 V2，填补"selector 未发 STOP"的盲区。
+- `run_OpenNav.yaml` 控制各模块的 `LOG_ONLY` / decision-effect 模式；V4（MultimodalSelectorContext）当前保持 `LOG_ONLY`，其输出由 U1 经阶段门控后注入 selector 观测，避免双重注入。
 
 ## 当前状态
 
-更新时间: 2026-06-15
+更新时间: 2026-06-29
 
-当前主线: V 系列多模态视觉证据 + V2/V4 decision-effect 修正。
+当前主线: U 系列门控（U1 阶段感知 + U2 STOP 核查 + U3 恢复）+ M3 主动 STOP 触发。
+
+核心指标（100 集 val_unseen）:
+
+| 配置 | SR | OSR | OSR→SR | SPL | nDTW |
+|---|---:|---:|---:|---:|---:|
+| A0 baseline（2026-06-28） | 16% | 25% | 64.0% | 0.1015 | 0.4458 |
+| max_config（2026-06-28） | **21%** | 26% | **80.8%** | **0.1424** | 0.4111 |
+
+max_config 首次稳定超越原文 Open-Nav-GPT4（SR=19%，OSR=23%），M3 已验证修复 ep11（SPL=1.0，仅 4 步）。
 
 核心判断:
 
-- V1 visual evidence schema 问题已经修复，裸数组输出会被规范化为 `{"candidates": [...]}`。
-- V4 selector context 和 visual ranked fallback 已经能消费候选级视觉证据。
-- 小样本中 V2/V4 有正向信号，但 100 episode 结果还不能作为稳定改进结论。
-- 当前主要风险从“视觉证据未被消费”转为 “V2 STOP allow 过宽”，尤其是泛化目标词和 `completion_gate` 来源的 STOP。
-- 下一步应先跑 10 到 12 episode 小样本验证 STOP 修复，不应直接跑 100 episode。
+- **主失败模式已迁移**：A0 中 walk-through 占 OSR-SR gap 的 77.8%；max_config 激活 U2 stop verifier 后，walk-through 降至 40%，主因转为 stop-blocked（60%，STOP 被门控过度拒绝）。
+- **残余 4 集**均指向近距离目标识别失败（`final_target_not_visible`），SpatialBot3B/V2 在极近距离时无法正确识别已进入视野的目标。
+- **M3 ep100 验证正在运行**（exp: `ep100_series_qwen_siglip_local_20260629_215656`，预计 SR ≥ 22%）。
+- 下阶段优先修复 RC3（M2b 距离衰减或 arrival_evidence 替代方案），待 SR ≥ 24% 后再加 7B/8B backbone 对照。
 
 ## 阶段划分
 
@@ -132,16 +154,25 @@ A 阶段用于保证可比性。B/C 阶段主要产生日志和诊断证据。D/
 - D/E/F 的收益必须分别看 selector 变化、STOP allow/reject case、fallback 后 distance gain。
 - G/H 必须单独做对照，避免把运行策略或模型升级收益混入 V2/V4。
 
-## V 系列模块
+## V / U 系列模块
+
+**V 系列**（调用 Qwen 多模态，输出结构化证据 JSON）:
 
 | 模块 | 代码入口 | 当前作用 |
 |------|----------|----------|
-| V1 VisualEvidenceLogger | `vlnce_baselines/common/opennav_ext/visual_evidence.py` | 对候选 RGB 视角抽取结构化视觉证据 |
-| V2 VisualTargetVerifier | `vlnce_baselines/common/opennav_ext/visual_target_verifier.py` | 验证 STOP proposal，拦截或放行 STOP |
-| V3 VisualEvidenceMemory | `vlnce_baselines/common/opennav_ext/visual_evidence_memory.py` | 聚合 episode 内视觉证据 |
-| V4 MultimodalSelectorContext | `vlnce_baselines/common/opennav_ext/multimodal_selector_context.py` | 将候选级视觉摘要注入 selector 输入 |
-| Visual fallback | `vlnce_baselines/common/opennav_ext/visual_fallback.py` | selector 空预测时用视觉证据排序候选 |
+| V1 VisualEvidenceLogger | `vlnce_baselines/common/opennav_ext/visual_evidence.py` | 每步对候选 RGB base64 → Qwen 多模态 → `{final_target_visible, arrival_evidence, confidence}` |
+| V2 VisualTargetVerifier | `vlnce_baselines/common/opennav_ext/visual_target_verifier.py` | STOP 提案时触发；全景拼图 → Qwen 多模态 → `{verdict: allow/reject, reason}` |
+| V4 MultimodalSelectorContext | `vlnce_baselines/common/opennav_ext/multimodal_selector_context.py` | V1 JSON → 候选级视觉摘要文字；当前 LOG_ONLY，输出交 U1 阶段门控后注入 selector |
 | Schema tools | `vlnce_baselines/common/opennav_ext/visual_evidence_schema.py` | 统一兼容 dict/list 形式的 V1 输出 |
+
+**U 系列**（纯 Python 规则逻辑，零模型调用）:
+
+| 模块 | 代码入口 | 当前作用 |
+|------|----------|----------|
+| U1 PhaseAwareEvidenceScaffolder | `vlnce_baselines/common/opennav_ext/` | V1 证据 → 阶段归类（search/approach/verify/recover）→ 候选文字 suffix 注入 |
+| U2 StopEvidenceVerifier | `vlnce_baselines/common/opennav_ext/` | V1+V2+U1 → allow/blocked 最终裁决；含 M2a trajectory_bypass（dist<3.5m 时降级轨迹拒绝） |
+| U3 RecoveryPolicy | `vlnce_baselines/common/opennav_ext/` | selector 空预测 / STOP 误触发 / 连续负距离 → 备用候选重选（每集 ≤2 次） |
+| M3 ProactiveStopGate | `vlnce_baselines/common/base_il_trainer_llm.py` | completion gate 每步检查 dist<3.5m + final_target_visible → 强制触发 V2 → 若 allow 则强制 STOP |
 
 ## 数据集与日志
 
@@ -200,12 +231,10 @@ A 阶段用于保证可比性。B/C 阶段主要产生日志和诊断证据。D/
 
 优先级从高到低:
 
-1. 跑 10 到 12 episode 小样本，验证 `completion_gate` 来源的泛化 STOP 不再被 V2 误放行。
-2. 检查 `visual_stop_allowed` case study，确认 allow 必须有更强的 final target / arrival evidence。
-3. 统计 `selector_empty_prediction_fallback.changed` 和 fallback 后的 distance gain。
-4. 补充 schema warning: 合法 JSON 但非预期结构时，日志必须区分 parse error、schema error、empty evidence。
-5. 在 V2/V4 稳定后，再恢复 R4 adaptive candidate sampling。
-6. 最后再重跑 100 episode，不把小样本正向信号直接写成最终结论。
+1. **等待 M3 ep100 结果**（`ep100_series_qwen_siglip_local_20260629_215656`，预计 SR ≥ 22%）；重点观测 M3 误停率和 ep377 的 V2 行为。
+2. **RC3 修复（M2b）**：统计 100 集 harness trace 中 `final_target_visible` 与距离的分布（2m 内有多少集目标实际可见），决定距离衰减阈值或 arrival_evidence 替代方案。
+3. **跨 backbone 对照**（SR ≥ 24% 后启动）：加一组 7B/8B 本地模型对照，验证 OSR→SR 转化率提升与 backbone 规模是否解耦。
+4. **V4 decision-effect 准备**：将 U1 切换为"V4 已应用时跳过视觉摘要注入"模式，避免双重计数后再开启 V4 独立效果消融。
 
 ## 待改进事项
 

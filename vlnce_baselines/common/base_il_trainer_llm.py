@@ -1139,6 +1139,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         current_step = 0
         nav_history = []
         error_number = 0
+        step_error_count = 0
+        last_errored_step = -1
         recent_distance_gains = []
         latest_goal_dist = None
         recovery_budget_remaining = max_recovery_per_episode
@@ -3079,10 +3081,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     instruction, images_list = self.generate_input(observations[-1])
                     error_number = 0 
                     # finish navigation
-                    if current_step == step_length:
+                    if current_step >= step_length:
                         if not dones[0]:
                             termination_reasons[0] = "step_length_limit"
-                        dones[0] = True 
+                        dones[0] = True
                     else:
                         for j, ob in enumerate(observations):
                             envs.call_at(j, 
@@ -3130,7 +3132,18 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     nDTW = np.exp(-dtw_distance / (len(gt_con_path) * config.TASK_CONFIG.TASK.SUCCESS_DISTANCE))
 
                     metric['ndtw'] = nDTW
-                    stats_episodes[current_episodes[i].episode_id] = metric 
+                    stats_episodes[current_episodes[i].episode_id] = metric
+                    step_error_count = 0
+                    last_errored_step = -1
+                    try:
+                        os.makedirs(config.RESULTS_DIR, exist_ok=True)
+                        ckpt_path = os.path.join(config.RESULTS_DIR, "checkpoint_stats_episodes.json")
+                        ckpt_tmp = ckpt_path + ".tmp"
+                        with open(ckpt_tmp, "w") as _ckpt_f:
+                            json.dump(stats_episodes, _ckpt_f, indent=4)
+                        os.replace(ckpt_tmp, ckpt_path)
+                    except Exception as _ckpt_exc:
+                        nav_logger.info(f"Checkpoint write failed: {_ckpt_exc}")
                     write_navigation_record(
                         "episode_termination",
                         episode_id=ep_id,
@@ -3249,7 +3262,21 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     step=locals().get("current_step"),
                     error=repr(e),
                 )
-                current_step -= 1
+                failed_step = locals().get("current_step", 0)
+                if failed_step == last_errored_step:
+                    step_error_count += 1
+                else:
+                    last_errored_step = failed_step
+                    step_error_count = 1
+                if step_error_count >= 3:
+                    nav_logger.info(
+                        f"Step {failed_step} failed {step_error_count} consecutive times; "
+                        "skipping retry to prevent infinite loop."
+                    )
+                    step_error_count = 0
+                    last_errored_step = -1
+                else:
+                    current_step -= 1
         envs.close()
         if config.use_pbar:
             pbar.close()

@@ -351,7 +351,14 @@ V1（图片→Qwen→JSON）→ V4（JSON→文字摘要，计算但不直接应
 
 ### 6.5 关于 SigLIP 的说明
 
-实验目录名中出现的 `qwen_siglip_local` 是历史命名约定，**SigLIP 当前未被任何代码调用**。`OPENNAV_SIGLIP_PATH` 环境变量仅在 `run_OpenNav.bash` 中导出，但没有 Python 模块读取它。当前图像理解能力由 SpatialBot3B（场景描述）、RAM（物体标注）和 Qwen3.5-4B 多模态（V1/V2 视觉证据）三者分工承担。
+实验目录名中出现的 `qwen_siglip_local` 准确反映了当前架构：**SigLIP-so400m 是 SpatialBot3B 的内嵌视觉编码器**，通过 `SpatialBot3B/config.json` 中的 `mm_vision_tower: "google/siglip-so400m-patch14-384"` 配置，随 SpatialBot3B 一起加载，每步调用 `spatialbot_description()` 时均经过 SigLIP 提取图像特征。
+
+没有独立使用的只是 `OPENNAV_SIGLIP_PATH` 这个环境变量——它指向一个单独的 SigLIP 下载路径，`run_OpenNav.bash` 导出了它但没有 Python 模块读取，这是一个废弃的历史遗留变量。SigLIP 本身通过 SpatialBot3B 的 checkpoint 完整参与了感知层的推理。
+
+当前图像理解能力分工：
+- **SpatialBot3B（内嵌 SigLIP-so400m）**：RGB + Depth → 空间场景描述（含距离估计），每步每候选各调用一次
+- **RAM（SwinL）**：RGB → 物体 tag 列表，每步每候选各调用一次
+- **Qwen3.5-4B 多模态（V1/V2）**：候选 RGB base64 → 结构化视觉证据 JSON（V1）；全景拼图 → STOP allow/reject 裁决（V2）
 
 ---
 
