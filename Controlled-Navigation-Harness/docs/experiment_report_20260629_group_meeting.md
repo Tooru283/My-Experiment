@@ -179,9 +179,13 @@ M3 的 ep100 评测正在运行，预期 SR ≥ 22%（ep11 稳定贡献 +1pp）�
 
 ```
 Habitat 环境
-  └─ 每步输出 12 个候选方向的 RGB（224×224）+ Depth（256×256）图
+  └─ 每步输出全景 12 方向的 RGB（224×224）+ Depth（256×256）图
 
-感知路径（图像→文字）
+候选航点生成（WaypointBert，本地预训练 Transformer，参数冻结）
+  └─ RGB 特征 + Depth 特征 → 120角度×12距离 概率热图
+       → top-k 候选航点（每个候选：角度 + 距离 + 对应图像）
+
+感知路径（图像→文字，每候选各跑一次）
   ├─ RAM（本地 SwinL）: RGB → 物体 tag 列表
   └─ SpatialBot3B（本地 3B VLM）: RGB + Depth → 空间场景文字描述
        合并 → "Direction 3: Scene Description: ... Scene Objects: chair, table..."
@@ -204,6 +208,17 @@ U 系列门控（纯 Python 逻辑，无模型调用）
 ```
 
 ### 6.2 逐模块说明
+
+**第零层：WaypointBert 候选生成（本地预训练神经网络）**
+
+在所有 VLM 调用之前，首先要解决"能走到哪里"的问题。Habitat 提供的是连续 3D 空间，不是离散图节点，所以需要一个候选航点生成器：
+
+- **模型**：`BinaryDistPredictor_TRM`（WaypointBert，Transformer 2层，参数冻结，不参与训练）
+- **输入**：全景 12 方向的 RGB 特征（ResNet，2048×7×7）+ Depth 特征（128×4×4）
+- **输出**：120个角度 × 12个距离 的概率热图，每个位置表示"此方向此距离是否为可行航点"
+- **结果**：从热图中提取 top-k 候选航点，每个候选有角度 + 距离，映射到对应的图像（候选0~11，对应 0°~330° 每 30° 一个扇区）
+
+**这一步决定了 selector 能选择的候选集合。** 后续所有模块（SpatialBot、V1、NAVIGATOR）都是对这 12 个候选航点进行描述、分析和选择，没有这一步就没有"候选"的概念。
 
 **第一层：Habitat Simulator**
 
