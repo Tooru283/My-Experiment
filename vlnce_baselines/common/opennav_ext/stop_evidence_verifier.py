@@ -106,6 +106,8 @@ class StopEvidenceVerifier:
         rescue_require_positive_recent_gain: bool = True,
         rescue_allow_phase_verify: bool = False,
         trajectory_bypass_dist: float = 0.0,
+        e3_arrival_override_dist: float = 0.0,
+        e3_abstain_dist: float = 0.0,
     ) -> None:
         self.enable_rescue = bool(enable_rescue)
         self.enable_relation_check = bool(enable_relation_check)
@@ -125,6 +127,14 @@ class StopEvidenceVerifier:
         # being blocked by trajectory_incomplete when already inside the success
         # radius.
         self.trajectory_bypass_dist = max(0.0, float(trajectory_bypass_dist))
+        # E3-B: When dist < e3_arrival_override_dist and arrival_evidence=True,
+        # treat arrival_evidence as a substitute for final_target_visible and allow
+        # STOP even when VLM reports not_visible (near-distance occlusion artifact).
+        self.e3_arrival_override_dist = max(0.0, float(e3_arrival_override_dist))
+        # E3-A/C: When dist < e3_abstain_dist and final_target_visible=False,
+        # demote the hard-reject to an abstain so the agent continues approaching
+        # rather than being indefinitely blocked at near distance.
+        self.e3_abstain_dist = max(0.0, float(e3_abstain_dist))
 
     def verify(
         self,
@@ -138,6 +148,8 @@ class StopEvidenceVerifier:
         estimation: str,
         current_step: int,
         latest_goal_dist: Optional[float] = None,
+        carry_forward_visible: bool = False,
+        persistent_visual_confirm: bool = False,
     ) -> Dict[str, Any]:
         visual = visual_verifier_results or {}
         stop_gate = stop_gate_metadata or {}
@@ -201,17 +213,22 @@ class StopEvidenceVerifier:
         else:
             trajectory_support = "unknown"
 
-        # Distance bypass: when the agent is already within trajectory_bypass_dist
-        # of the goal, downgrade trajectory_support from "no" to "unknown" so that
-        # a clear visual signal can still allow the stop. This prevents the agent
-        # from being trapped by trajectory_incomplete when it is physically inside
-        # the success radius.
+        # Visual bypass: when observable arrival evidence (or recent carry-forward
+        # visibility of the target) is present, downgrade trajectory_support from
+        # "no" to "unknown" so that a clear visual signal can still allow the stop.
+        # This prevents the agent from being trapped by trajectory_incomplete when
+        # the target is visually confirmed at hand.
+        # ORACLE REMOVED (20260704): previously gated on latest_goal_dist <
+        # trajectory_bypass_dist (simulator geodesic goal distance = GT leakage).
+        # Unified rule: distance conjunct -> persistent (>=2 consecutive steps) visual
+        # confirmation (same guard as #2 e3_arrival_override and #5 PSG commit).
+        # trajectory_bypass_dist > 0 kept only as the enable toggle. Verdict key name
+        # retained for trace compatibility.
         trajectory_dist_bypassed = False
         if (
             trajectory_support == "no"
             and self.trajectory_bypass_dist > 0
-            and latest_goal_dist is not None
-            and latest_goal_dist < self.trajectory_bypass_dist
+            and persistent_visual_confirm
         ):
             trajectory_support = "unknown"
             trajectory_dist_bypassed = True
@@ -244,6 +261,53 @@ class StopEvidenceVerifier:
             reject_reasons.append(weak_target_adjustment)
         reject_reasons.extend(hard_blockers)
 
+        # E3: near-distance visibility unreliability corrections.
+        # E3 pre-analysis shows final_target_visible is only 11-45% accurate within
+        # 3m even when the agent has truly arrived, due to target filling the frame
+        # or partial occlusion. Two instances below correct for this.
+        # ORACLE REMOVED (20260704): E3 gates previously required latest_goal_dist <
+        # threshold (simulator geodesic goal distance = GT leakage) to identify the
+        # near-distance zone where VLM visibility detection is unreliable. That
+        # distance conjunct is deleted; E3 now keys purely on observable visual signals.
+        e3_intrinsic_absent = intrinsic_support == "no"
+        # E3-B: visual arrival override — allow STOP despite not_visible only when the
+        # target has been persistently confirmed (>=2 consecutive steps of
+        # final_target_visible). This is the STOP-enabling gate, so it takes the
+        # hardened persistence guard rather than a single-frame arrival_evidence or the
+        # any-of-3 carry_forward signal: a lone false-positive frame at range must not
+        # trip a stop (unified rule with #4 trajectory_bypass and #5 PSG commit).
+        e3_arrival_override = bool(
+            self.e3_arrival_override_dist > 0
+            and e3_intrinsic_absent
+            and persistent_visual_confirm
+        )
+        # E3-A: abstain — when the target is not intrinsically visible and there is no
+        # arrival_evidence, demote not_visible from hard-reject to abstain so the agent
+        # continues approaching rather than being blocked. (abstain never sets
+        # allow_stop, so this cannot manufacture a false stop.)
+        e3_abstain = bool(
+            not e3_arrival_override
+            and self.e3_abstain_dist > 0
+            and e3_intrinsic_absent
+            and (arrival_evidence is not True)
+        )
+        # E3-C: carry-forward abstain — target was visible in recent k steps but
+        # not now (occlusion or viewpoint shift). Tagged alongside E3-A for analysis;
+        # fires whenever E3-A fires AND recent history confirms prior visibility.
+        e3_carry_forward_abstain = bool(
+            e3_abstain
+            and carry_forward_visible
+        )
+
+        if e3_arrival_override or e3_abstain or e3_carry_forward_abstain:
+            reject_reasons = [r for r in reject_reasons if r != "final_target_not_visible"]
+        # E3-B also demotes relation_contradiction: at dist < e3_arrival_override_dist the
+        # VLM spatial-relation check is unreliable for the same near-distance perception
+        # reasons as final_target_not_visible (target fills frame, partial occlusion).
+        # trajectory_incomplete and other hard_blockers are intentionally kept.
+        if e3_arrival_override:
+            reject_reasons = [r for r in reject_reasons if r != "relation_contradiction"]
+
         visual_allow = visual.get("verdict") == "allow" or (
             selected_verdict.get("verdict") == "allow"
             and intrinsic_support == "yes"
@@ -255,6 +319,12 @@ class StopEvidenceVerifier:
             and relation_support != "no"
             and not reject_reasons
         )
+        # E3-B force-allow: arrival_evidence is the visual substitute; bypass the
+        # intrinsic_support=="yes" and visual_allow requirements.
+        # relation_contradiction already removed from reject_reasons above when
+        # e3_arrival_override fires, so no separate relation_support guard needed.
+        if e3_arrival_override and not reject_reasons:
+            allow_stop = True
         rescue_blockers = self._rescue_blockers(
             source=source,
             visual=visual,
@@ -279,17 +349,23 @@ class StopEvidenceVerifier:
 
         # Abstain: evidence is insufficient to decide either way.
         # Triggered when intrinsic visibility is unknown and no hard blockers
-        # exist to clearly reject. In future S3 this will trigger re-observation;
-        # for now it surfaces as a logged third state alongside allow/reject.
+        # exist to clearly reject, OR when E3 demotes not_visible to abstain.
         abstain = bool(
             not allow_stop
             and not reject_reasons
             and not hard_blockers
-            and intrinsic_support == "unknown"
+            and (intrinsic_support == "unknown" or e3_abstain or e3_carry_forward_abstain)
         )
-        abstain_reason = (
-            "intrinsic_visibility_unknown_no_hard_blockers" if abstain else ""
-        )
+        if e3_arrival_override and allow_stop:
+            abstain_reason = ""
+        elif e3_carry_forward_abstain:
+            abstain_reason = "e3_carry_forward_abstain"
+        elif e3_abstain:
+            abstain_reason = "e3_intrinsic_absent_abstain"
+        elif abstain:
+            abstain_reason = "intrinsic_visibility_unknown_no_hard_blockers"
+        else:
+            abstain_reason = ""
 
         confidence = 0.0
         if intrinsic_support == "yes":
@@ -318,6 +394,13 @@ class StopEvidenceVerifier:
             "selected_candidate_verdict": selected_verdict.get("verdict"),
             "final_target_visible": intrinsic_visible,
             "arrival_evidence": arrival_evidence,
+            "e3": {
+                "arrival_override": e3_arrival_override,
+                "abstain": e3_abstain,
+                "carry_forward_abstain": e3_carry_forward_abstain,
+                "carry_forward_visible": carry_forward_visible,
+                "latest_goal_dist": latest_goal_dist,
+            },
             "allow_blockers": allow_blockers,
             "allow_warnings": allow_warnings,
             "contradictions": contradictions,

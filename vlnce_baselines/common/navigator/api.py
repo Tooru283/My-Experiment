@@ -71,16 +71,16 @@ class llmClient:
     def _completion_with_backoff(self, **kwargs):
         return self.client.chat.completions.create(**kwargs)
 
-    def gpt_infer(self, system_prompt, user_prompt, num_output=1, max_tokens=None):
+    def gpt_infer(self, system_prompt, user_prompt, num_output=1, max_tokens=None, temperature=0):
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ]
-        
+
         request_params = {
             "model": self.model,
             "messages": messages,
-            "temperature": 0
+            "temperature": temperature  # default 0 = greedy (unchanged); P1 passes >0 for sampling diversity
         }
         if max_tokens is not None and int(max_tokens) > 0:
             request_params["max_tokens"] = int(max_tokens)

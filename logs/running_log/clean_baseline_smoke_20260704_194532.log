@@ -1,0 +1,11 @@
+LLM preflight OK: /root/models/Qwen3.5-9B at http://127.0.0.1:23333/v1
+Traceback (most recent call last):
+  File "/root/wjj/Open-Nav/run.py", line 8, in <module>
+    from habitat import logger
+  File "/root/wjj/Open-Nav/external/habitat-lab-v0.1.7/habitat/__init__.py", line 7, in <module>
+    from habitat.config import Config, get_config
+  File "/root/wjj/Open-Nav/external/habitat-lab-v0.1.7/habitat/config/__init__.py", line 123, in <module>
+    from habitat.config.default import Config, get_config
+  File "/root/wjj/Open-Nav/external/habitat-lab-v0.1.7/habitat/config/default.py", line 9, in <module>
+    import yacs.config
+ModuleNotFoundError: No module named 'yacs'

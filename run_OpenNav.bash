@@ -7,7 +7,7 @@ HABITAT_LAB_DIR="${HABITAT_LAB_DIR:-${PROJECT_ROOT}/external/habitat-lab-v0.1.7}
 cd "$PROJECT_ROOT"
 
 EPISODE_COUNT="${EPISODE_COUNT:-100}"
-EXP_NAME="${EXP_NAME:-ep${EPISODE_COUNT}_series_qwen_siglip_local_$(date +%Y%m%d_%H%M%S)}"
+EXP_NAME="${EXP_NAME:-ep${EPISODE_COUNT}_series_m4$(date +%Y%m%d_%H%M%S)}"
 
 if [[ -d "${HABITAT_LAB_DIR}/habitat" ]]; then
   export PYTHONPATH="${HABITAT_LAB_DIR}:${PROJECT_ROOT}:${PYTHONPATH:-}"
@@ -21,7 +21,10 @@ export HABITAT_SIM_LOG="${HABITAT_SIM_LOG:-verbose}"
 export EGL_DEVICE_ID="${EGL_DEVICE_ID:-0}"
 export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
 export OPENNAV_LLM_BASE_URL="${OPENNAV_LLM_BASE_URL:-http://127.0.0.1:23333/v1}"
-export OPENNAV_LLM_MODEL="${OPENNAV_LLM_MODEL:-/root/models/Qwen3.5-4B}"
+# 4B (RTX 3090 / ~12GB VRAM):
+# export OPENNAV_LLM_MODEL="${OPENNAV_LLM_MODEL:-/root/models/Qwen3.5-4B}"
+# 9B (RTX 4090 / ~24GB VRAM):
+export OPENNAV_LLM_MODEL="${OPENNAV_LLM_MODEL:-/root/models/Qwen3.5-9B}"
 export OPENNAV_SIGLIP_PATH="${OPENNAV_SIGLIP_PATH:-/root/models/google-siglip-so400m-patch14-384}"
 export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-1}"
 export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-1}"
@@ -80,10 +83,16 @@ print(f"LLM preflight OK: {model} at {base_url}")
 PY
 fi
 
+# LLM identifier passed to run.py for logging/naming.
+# Must match the model loaded by the lmdeploy service (OPENNAV_LLM_MODEL above).
+# 4B (RTX 3090 / ~12GB):  LLM_NAME="Qwen/Qwen3.5-4B"
+# 9B (RTX 4090 / ~24GB):  LLM_NAME="Qwen/Qwen3.5-9B"
+LLM_NAME="Qwen/Qwen3.5-9B"
+
 python run.py \
   --exp_name "$EXP_NAME" \
   --exp-config run_OpenNav.yaml \
-  --llm Qwen/Qwen3.5-4B \
+  --llm "$LLM_NAME" \
   --api_key not-needed \
   SIMULATOR_GPU_IDS "[0]" \
   TORCH_GPU_ID 0 \

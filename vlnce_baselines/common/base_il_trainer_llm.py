@@ -335,11 +335,25 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     print("Overwriting previous results...")
                 
 
+        # Smoke/debug episode whitelist (env-gated, no-op when unset): restrict the
+        # eval to a comma/space-separated list of episode ids in OPENNAV_EPISODE_IDS,
+        # intersected with the normal val trajectory set. Used to run a handful of
+        # path-covering episodes for the clean-baseline smoke. MUST be unset for the
+        # full run (leaves episodes_allowed == self.traj -> zero behavior difference).
+        _episodes_allowed = self.traj
+        _episode_whitelist = os.environ.get("OPENNAV_EPISODE_IDS", "").strip()
+        if _episode_whitelist:
+            _wl = {tok.strip() for tok in _episode_whitelist.replace(",", " ").split() if tok.strip()}
+            _episodes_allowed = [e for e in self.traj if str(e) in _wl]
+            print(
+                f"[OPENNAV_EPISODE_IDS] restricting eval to {len(_episodes_allowed)} "
+                f"episode(s): {_episodes_allowed}"
+            )
         envs = construct_envs(
             config, get_env_class(config.ENV_NAME),
             auto_reset_done=False,
-            episodes_allowed=self.traj
-        ) 
+            episodes_allowed=_episodes_allowed
+        )
 
         #envs.number_of_episodes = [1] # set the number of episodes
         dataset_length = sum(envs.number_of_episodes) 
@@ -680,6 +694,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             "TRAJECTORY_BYPASS_DIST",
                             0.0,
                         ),
+                        e3_arrival_override_dist=getattr(
+                            stop_config,
+                            "E3_ARRIVAL_OVERRIDE_DIST",
+                            0.0,
+                        ),
+                        e3_abstain_dist=getattr(
+                            stop_config,
+                            "E3_ABSTAIN_DIST",
+                            0.0,
+                        ),
                     )
                     stop_evidence_verifier_decision_effect = (
                         decision_effect_enabled(config)
@@ -726,9 +750,37 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 )
             proactive_stop_enabled = proactive_stop_gate_enabled(config)
             proactive_stop_dist = 0.0
+            proactive_stop_commit_dist = 0.0
             if proactive_stop_enabled:
                 _psg_cfg = proactive_stop_gate_config(config)
                 proactive_stop_dist = _psg_cfg.get("dist_threshold", 3.5)
+                # E3-for-M3: inner commit zone. V2 re-evaluation fires for any
+                # dist < dist_threshold, but STOP is only committed when dist <
+                # commit_dist_threshold (inside success radius). When 0, falls back
+                # to old behavior (commit anywhere inside dist_threshold).
+                proactive_stop_commit_dist = _psg_cfg.get("commit_dist_threshold", 0.0)
+                if proactive_stop_commit_dist <= 0:
+                    proactive_stop_commit_dist = proactive_stop_dist
+            # Distance guard for the U2 visual-STOP rescue/override paths. Without it,
+            # a confident navigator STOP + a generic "doorway"-style visual match can
+            # commit a stop far from the goal (observed: ep244 stopped at 6.2m / step 3
+            # via "rescue override granted despite gain/phase conditions"). When set,
+            # rescue/override STOP is blocked while latest_goal_dist exceeds this value.
+            # 0 disables the guard (original behavior). See docs/current_task.md E5.
+            rescue_max_goal_dist = 0.0
+            _u_series_cfg = getattr(config.OPENNAV_HARNESS, "U_SERIES", None)
+            if _u_series_cfg is not None:
+                _sev_cfg = getattr(_u_series_cfg, "STOP_EVIDENCE_VERIFIER", None)
+                if _sev_cfg is not None:
+                    rescue_max_goal_dist = getattr(
+                        _sev_cfg, "RESCUE_MAX_GOAL_DIST", 0.0
+                    )
+            # P0 switch: inject WaypointBert sensor distance into navigator observations.
+            # When False, observe_environment receives distance_dict=None and injection
+            # is skipped (clean baseline for P0 ablation). Default True.
+            geometry_injection_enabled = bool(
+                getattr(config.OPENNAV_HARNESS, "GEOMETRY_INJECTION", True)
+            )
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
@@ -1146,6 +1198,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         recovery_budget_remaining = max_recovery_per_episode
         latest_phase_evidence = {}
         latest_failure_signal = {}
+        recent_ftv_window: List[bool] = []
         while envs.num_envs > 0 and len(stats_episodes) < episodes_to_eval:
             current_episodes = envs.current_episodes()
             positions = []; headings = []
@@ -1209,6 +1262,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 recovery_budget_remaining = max_recovery_per_episode
                 latest_phase_evidence = {}
                 latest_failure_signal = {}
+                recent_ftv_window: List[bool] = []
                 write_navigation_record(
                     "episode_start",
                     episode_id=current_episode_id,
@@ -1307,7 +1361,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     },
                 )
             nav_logger.info("========== Get Observation ==========")
-            observation, observe_dict = navigator.observe_environment(nav_logger, current_step, images_dict)
+            observation, observe_dict = navigator.observe_environment(
+                nav_logger,
+                current_step,
+                images_dict,
+                distance_dict if geometry_injection_enabled else None,
+            )
             selector_observation = observation
             selector_observe_dict = observe_dict
             multimodal_selector_context_results = {}
@@ -1820,6 +1879,17 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     verifier_results,
                     stop_gate_context,
                 ):
+                    _carry_forward = any(recent_ftv_window[-3:]) if recent_ftv_window else False
+                    # Unified persistence guard (ORACLE REMOVED 20260704): the removed
+                    # geodesic-distance conjuncts are replaced everywhere by >=2
+                    # consecutive steps of observable final_target_visible. This is the
+                    # single choke point for every verify() call (selector stop gate,
+                    # completion gate, proactive stop gate), so #2 e3_arrival_override
+                    # and #4 trajectory_bypass all consume the same signal that #5 PSG
+                    # commit already uses.
+                    _persistent_visual = (
+                        len(recent_ftv_window) >= 2 and all(recent_ftv_window[-2:])
+                    )
                     stop_evidence_results = run_harness_tool(
                         "stop_evidence_verifier",
                         current_step,
@@ -1837,6 +1907,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         estimation,
                         current_step,
                         latest_goal_dist=latest_goal_dist,
+                        carry_forward_visible=_carry_forward,
+                        persistent_visual_confirm=_persistent_visual,
                     )
                     if stop_evidence_verifier is not None:
                         if isinstance(stop_evidence_results, dict):
@@ -2194,6 +2266,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     selected_candidate=stop_current_view_candidate_id,
                     stop_evidence_mode="current_pano",
                 )
+                # E3 carry-forward: track per-step final_target_visible signal.
+                # Window size 3 — used by stop_evidence_verifier for E3-C abstain.
+                if isinstance(completion_verifier_results, dict):
+                    _ftv = bool(completion_verifier_results.get("final_target_visible"))
+                    recent_ftv_window.append(_ftv)
+                    if len(recent_ftv_window) > 10:
+                        recent_ftv_window.pop(0)
                 record_stop_evidence_verification(
                     "completion_gate",
                     completion_verifier_results,
@@ -2215,17 +2294,44 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     )
                 # M3: proactive stop gate — when near goal with visual evidence,
                 # re-evaluate with stop_flag=True so V2 gives a real verdict.
+                # E3-for-M3: V2 re-evaluation fires for dist < dist_threshold, but
+                # STOP is only committed when dist < commit_dist_threshold (inner
+                # zone, inside success radius). This prevents premature commitment
+                # in the [commit_dist, dist_threshold] uncertain outer zone.
+                # E3-C carry-forward PSG: when target was visible in recent steps but
+                # current frame shows not_visible (target fills frame at <2m), fire PSG
+                # anyway if dist < commit_dist. U2 E3-B then commits via carry-forward.
+                _carry_forward_psg = any(recent_ftv_window[-3:]) if recent_ftv_window else False
+                # PSG persistence guard: >=2 consecutive steps of final_target_visible
+                # substitutes for the removed near-distance commit zone (spatial
+                # resolution -> temporal consistency). See ORACLE REMOVED note below.
+                _persistent_visual_confirm = (
+                    len(recent_ftv_window) >= 2 and all(recent_ftv_window[-2:])
+                )
+                # ORACLE REMOVED (20260704): PSG previously gated entry on
+                # latest_goal_dist < proactive_stop_dist and the carry-forward branch on
+                # latest_goal_dist < proactive_stop_commit_dist (simulator geodesic goal
+                # distance = GT leakage). Distance conjuncts deleted; entry keys purely
+                # on observable visual arrival evidence. proactive_stop_* kept as toggles.
                 if (
                     not stop_flag
                     and proactive_stop_enabled
-                    and latest_goal_dist is not None
-                    and latest_goal_dist < proactive_stop_dist
-                    and bool(completion_verifier_results.get("final_target_visible"))
-                    and bool(completion_verifier_results.get("arrival_evidence"))
+                    and (
+                        (
+                            bool(completion_verifier_results.get("final_target_visible"))
+                            and bool(completion_verifier_results.get("arrival_evidence"))
+                        )
+                        or _carry_forward_psg
+                    )
                 ):
                     proactive_reason = (
                         "Proactive near-goal stop: target visible with arrival evidence "
                         f"within {proactive_stop_dist}m threshold."
+                        if (bool(completion_verifier_results.get("final_target_visible"))
+                            and bool(completion_verifier_results.get("arrival_evidence")))
+                        else
+                        f"Proactive near-goal stop: carry-forward visual evidence within "
+                        f"{proactive_stop_commit_dist}m commit zone."
                     )
                     proactive_verifier_results = record_visual_target_verifier(
                         "proactive_stop_gate",
@@ -2234,12 +2340,28 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         selected_candidate=stop_current_view_candidate_id,
                         stop_evidence_mode="current_pano",
                     )
-                    record_stop_evidence_verification(
+                    proactive_stop_evidence = record_stop_evidence_verification(
                         "proactive_stop_gate",
                         proactive_verifier_results,
                         stop_gate_metadata,
                     )
-                    if visual_target_verifier_allows_stop(proactive_verifier_results):
+                    # ORACLE REMOVED (20260704): commit previously required
+                    # _within_commit_zone = latest_goal_dist < proactive_stop_commit_dist
+                    # (simulator geodesic goal distance = GT leakage). Replaced by the
+                    # >=2-step visual persistence guard (temporal consistency in place of
+                    # spatial resolution).
+                    # E3-B commit: carry_forward arrival_evidence (observable) substitutes
+                    # for V2 allow; e3.arrival_override is now itself gated on pure visual
+                    # evidence inside stop_evidence_verifier.
+                    _e3_b_allow = bool(
+                        isinstance(proactive_stop_evidence, dict)
+                        and proactive_stop_evidence.get("allow_stop")
+                        and proactive_stop_evidence.get("e3", {}).get("arrival_override")
+                    )
+                    if (
+                        (_persistent_visual_confirm and visual_target_verifier_allows_stop(proactive_verifier_results))
+                        or _e3_b_allow
+                    ):
                         stop_flag = True
                         stop_reason = proactive_reason
                         log_visual_stop_allowed(
@@ -2326,7 +2448,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         )
                     nav_logger.info("========== Next Action Prediction ==========")
                     selector_start_time = time.perf_counter()
-                    predictions, thoughts, break_flag = navigator.move_to_next_vp(
+                    predictions, thoughts, break_flag, navigator_prompt = navigator.move_to_next_vp(
                         nav_logger,
                         current_step,
                         instruction,
@@ -2337,6 +2459,20 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         selector_observation,
                         selector_observe_dict,
                         max_tokens=positive_token_cap(navigator_max_tokens),
+                        return_prompt=True,
+                    )
+                    # P1 (Path B): log the exact assembled navigator prompt so offline
+                    # dispersion calibration can replay it verbatim (zero reconstruction).
+                    # Use log_fallback_event so it lands in the harness trace (event_type/
+                    # step_id schema) that p1_dispersion_calib.py reads, not just nav_jsonl.
+                    log_fallback_event(
+                        "navigator_prompt",
+                        current_episode_id,
+                        current_step,
+                        {
+                            "prompt": navigator_prompt,
+                            "candidate_ids": [str(key) for key in selector_observe_dict.keys()],
+                        },
                     )
                     record_runtime_latency(
                         "navigator_move_to_next_vp",
@@ -2579,6 +2715,24 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             u2_rescue_allowed = bool(
                                 selector_stop_evidence_results.get("allow_rescue")
                             )
+                        # E5: block visual-STOP rescue/override when the target has
+                        # never been visually confirmed this episode (guards against
+                        # far false stops such as ep244).
+                        # ORACLE REMOVED (20260704): previously gated on latest_goal_dist
+                        # > rescue_max_goal_dist (simulator geodesic goal distance = GT
+                        # leakage). Replaced by the observable "target never visible"
+                        # signal from recent_ftv_window. rescue_max_goal_dist > 0 kept
+                        # only as the enable toggle; variable name retained downstream.
+                        _never_visually_confirmed = not any(recent_ftv_window)
+                        _rescue_dist_blocked = (
+                            rescue_max_goal_dist > 0
+                            and _never_visually_confirmed
+                        )
+                        if _rescue_dist_blocked:
+                            nav_logger.info(
+                                "E5: rescue/override STOP blocked, target never "
+                                "visually confirmed this episode."
+                            )
                         if old_stop_flag and visual_target_verifier_allows_stop(
                             selector_verifier_results
                         ):
@@ -2596,6 +2750,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         elif (
                             selector_visual_rescue_candidate
                             and u2_rescue_allowed
+                            and not _rescue_dist_blocked
                         ):
                             stop_flag = True
                             stop_reason = (
@@ -2618,6 +2773,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                     selector_verifier_results
                                 )
                                 and selector_stop_evidence_results.get("allow_stop")
+                                and not _rescue_dist_blocked
                             ):
                                 stop_flag = True
                                 stop_reason = (
@@ -2679,6 +2835,53 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             )
                             selector_stop_rejection_reason = (
                                 "visual_target_verifier_rejected_stop"
+                            )
+                        # E3-B standalone override: V2 rejected but U2 confirms
+                        # carry-forward arrival evidence at near-goal distance.
+                        # Only fires when stop_evidence_verifier has decision effect.
+                        if (
+                            not stop_flag
+                            and stop_evidence_verifier_decision_effect
+                            and isinstance(selector_stop_evidence_results, dict)
+                            and selector_stop_evidence_results.get("allow_stop")
+                            and isinstance(
+                                selector_stop_evidence_results.get("e3"), dict
+                            )
+                            and selector_stop_evidence_results["e3"].get(
+                                "arrival_override"
+                            )
+                        ):
+                            stop_flag = True
+                            stop_reason = (
+                                "U2 E3-B carry-forward arrival override: target visible "
+                                "in recent steps; STOP allowed at near-goal distance."
+                            )
+                            selector_stop_rejection_reason = ""
+                            e3b_payload = {
+                                "source": "selector_stop_gate",
+                                "original_stop_reason": old_stop_reason or "Navigator selected STOP.",
+                                "e3": selector_stop_evidence_results.get("e3"),
+                                "allow_stop": True,
+                                "v2_verdict": selector_verifier_results.get("verdict"),
+                                "latest_goal_dist": (
+                                    selector_stop_evidence_results.get("e3") or {}
+                                ).get("latest_goal_dist"),
+                            }
+                            write_navigation_record(
+                                "visual_stop_e3b_override",
+                                episode_id=current_episode_id,
+                                step=current_step,
+                                **e3b_payload,
+                            )
+                            if harness_enabled and harness_logger is not None:
+                                harness_logger.log_event(
+                                    "visual_stop_e3b_override",
+                                    current_step,
+                                    e3b_payload,
+                                )
+                            nav_logger.info(
+                                "U2 E3-B carry-forward override: committing STOP "
+                                "despite V2 not_visible rejection."
                             )
                         if stop_flag:
                             if not stop_reason:

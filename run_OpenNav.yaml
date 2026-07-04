@@ -54,10 +54,19 @@ OPENNAV_HARNESS:
   ENABLED: True
   ENABLE_HARNESS_LOGGING: True
   ENABLE_DECISION_EFFECT: True
-  TRACE_DIR: logs/harness_traces/max_config
+  TRACE_DIR: logs/harness_traces/clean_baseline_smoke
   TRACE_FORMAT: jsonl
   LOG_IMAGES: False
   FAIL_OPEN: True
+
+  # P0 ablation switch: inject WaypointBert sensor distance into navigator
+  # observations ([Waypoint distance: X m]). Set False for the clean baseline
+  # (tuned-9B without P0) to isolate P0's effect. See docs/architecture_optimization_20260701.md.
+  # Run1 (baseline): False | Run2 (P0): True
+  # P1 collection: MUST be False — calibration distribution must bind to P1's
+  # actual deployment config (geometry off); do not leak P0 contamination into
+  # the calibration data. (McNemar 20260702: P0 no significant benefit, p=0.21.)
+  GEOMETRY_INJECTION: False
 
   # V1: send candidate RGB views to local Qwen-VL service and log structured
   # visual evidence. Required by V3 and V4.
@@ -65,7 +74,8 @@ OPENNAV_HARNESS:
     ENABLED: True
     LOG_ONLY: True
     BASE_URL: http://127.0.0.1:23333/v1
-    MODEL: /root/models/Qwen3.5-4B
+    # MODEL: /root/models/Qwen3.5-4B  # 4B (RTX 3090 / ~12GB VRAM)
+    MODEL: /root/models/Qwen3.5-9B    # 9B (RTX 4090 / ~24GB VRAM)
     MAX_CANDIDATES: 5
     MAX_IMAGE_EDGE: 384
     MAX_TOKENS: 768
@@ -109,9 +119,14 @@ OPENNAV_HARNESS:
 
   # Low-risk runtime reduction: cap verbose text LLM outputs while keeping the
   # same decision flow and candidate set. Set a value <=0 to disable a cap.
+  # NOTE: token caps are model-dependent. 9B produces longer CoT and gets
+  # truncated before emitting "Prediction: X" at the 4B-tuned caps (empty-pred
+  # fallback 22.4% vs 4B 6.9%). See model_switch_guide.md "LLM_RUNTIME 参数".
   LLM_RUNTIME:
-    COMPLETION_MAX_TOKENS: 512
-    NAVIGATOR_MAX_TOKENS: 1024
+    # 4B:  COMPLETION_MAX_TOKENS: 512
+    COMPLETION_MAX_TOKENS: 768   # 9B
+    # 4B:  NAVIGATOR_MAX_TOKENS: 1024
+    NAVIGATOR_MAX_TOKENS: 2048    # 9B (fixes 22.4% empty-pred fallback from truncation)
     THOUGHT_FUSION_MAX_TOKENS: 256
     DECISION_MAX_TOKENS: 64
 
@@ -139,9 +154,14 @@ OPENNAV_HARNESS:
   # M3: proactive stop gate. When dist < threshold and final_target_visible=True
   # and arrival_evidence=True, re-run V2 with stop_flag=True to force a real verdict.
   # Only fires if navigator did NOT propose stop. Set ENABLED: False to disable.
+  # E3-for-M3: COMMIT_DIST_THRESHOLD adds an inner zone — V2 re-evaluation always
+  # fires when dist < DIST_THRESHOLD, but STOP is committed only when dist <
+  # COMMIT_DIST_THRESHOLD. Prevents premature stops in the [commit, outer] band.
+  # Set COMMIT_DIST_THRESHOLD: 0 to restore original behavior (commit anywhere).
   PROACTIVE_STOP_GATE:
     ENABLED: True
     DIST_THRESHOLD: 3.5
+    COMMIT_DIST_THRESHOLD: 2.0
 
   # Max config: all U-series units active with decision effect.
   # DECISION_EFFECT_UNIT=combined activates U1+U2+U3 simultaneously.
@@ -166,12 +186,33 @@ OPENNAV_HARNESS:
       ENABLE_WEAK_TARGET_ADJUSTMENT: true
       RESCUE_CONFIDENCE_THRESHOLD: 0.95
       RESCUE_MIN_STEP: 3
-      RESCUE_MAX_NON_POSITIVE_GAINS: 1
-      RESCUE_REQUIRE_POSITIVE_RECENT_GAIN: true
+      # ORACLE REMOVED (20260704): these two gates make the E5 rescue decision branch
+      # on recent_distance_gains (= simulator geodesic goal distance delta = GT leakage).
+      # Audit found them 0-decisive (594 firings, always co-occur with a non-oracle
+      # blocker, so removing them flips no decision) but they must be OFF for the
+      # oracle-free baseline. 99 disables the count blocker; false disables the
+      # require-positive blocker. recent_distance_gains now only feeds logging.
+      RESCUE_MAX_NON_POSITIVE_GAINS: 99
+      RESCUE_REQUIRE_POSITIVE_RECENT_GAIN: false
       RESCUE_ALLOW_PHASE_VERIFY: true
       # Downgrade trajectory_incomplete from hard-reject to unknown when the agent
       # is already within this distance of the goal. Set 0.0 to disable.
       TRAJECTORY_BYPASS_DIST: 3.5
+      # E3: near-distance visibility unreliability corrections (E3 pre-analysis
+      # shows final_target_visible is only 11-45% accurate within 3m due to
+      # occlusion and target filling the frame).
+      # E3-B: arrival_evidence override — when dist < this and arrival_evidence=True
+      # (or carry_forward from recent k steps), allow STOP despite not_visible.
+      # Set 0.0 to disable. Raised to 3.0m to cover ep824's nearest-approach distance.
+      E3_ARRIVAL_OVERRIDE_DIST: 3.0
+      # E3-A/C: abstain zone — when dist < this and not_visible (no arrival_evidence),
+      # demote hard-reject to abstain so agent continues approaching. Set 0.0 to disable.
+      E3_ABSTAIN_DIST: 3.0
+      # E5: distance guard on the visual-STOP rescue/override paths. Blocks a
+      # rescue/override STOP when latest_goal_dist exceeds this (agent too far to
+      # plausibly be at the target). Fixes far false stops (ep244 stopped at 6.2m).
+      # Set 0.0 to disable. 4.0m aligns with ARRIVAL_GATE.DIST_THRESHOLD.
+      RESCUE_MAX_GOAL_DIST: 4.0
 
     # U3: failure-conditioned recovery — reselects candidates after confirmed failure.
     # ENABLE_RESELECT required for decision effect.

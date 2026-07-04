@@ -1,5 +1,7 @@
 import re
+import math
 import random
+from collections import Counter
 from vlnce_baselines.common.navigator.api import *
 from vlnce_baselines.common.navigator.prompts import *
 from vlnce_baselines.common.opennav_ext.landmark_matching import (
@@ -9,6 +11,7 @@ from vlnce_baselines.common.opennav_ext.landmark_matching import (
     split_landmark_terms,
     term_present,
 )
+from vlnce_baselines.common.opennav_ext.backtrack_policy import MOVE_BACK_CANDIDATE
 
 STOP_CANDIDATE = "STOP"
 STOP_WORDS = ("stop", "wait", "stay", "stand", "pause")
@@ -50,15 +53,37 @@ class Open_Nav():
     # =============================
     # ===== Visual Perception =====
     # =============================
-    def observe_environment(self, logger, current_step, images_list):        
+    def observe_environment(self, logger, current_step, images_list, distance_dict=None):
         observe_results = []
         observe_dict = {}
-        for direction_idx, direction_image in images_list.items(): 
+        for direction_idx, direction_image in images_list.items():
             observe_result = self.spatial.observe_view(logger, current_step, direction_idx, direction_image)
+            observe_result = self._inject_waypoint_distance(observe_result, direction_idx, distance_dict)
             logger.info(observe_result)
-            observe_results.append(observe_result) 
+            observe_results.append(observe_result)
             observe_dict[direction_idx] = observe_result
         return observe_results, observe_dict
+
+    def _inject_waypoint_distance(self, observe_result, direction_idx, distance_dict):
+        # P0: inject the WaypointBert sensor-measured distance to this direction's waypoint
+        # so the navigator grounds on a measured value instead of the VLM-estimated distances
+        # in the Scene Description (which are unreliable). The heading is already conveyed by
+        # the direction id (see NAVIGATOR prompt), so only distance is added here.
+        # See docs/architecture_optimization_20260701.md.
+        if not distance_dict or direction_idx not in distance_dict:
+            return observe_result
+        try:
+            wp_dist = round(float(distance_dict[direction_idx]), 1)
+        except (TypeError, ValueError):
+            return observe_result
+        geo = f"[Waypoint distance: {wp_dist} m] "
+        # Insert before "Scene Description" so the measured distance leads and the
+        # "Scene Description" split used in save_history keeps working.
+        marker = "Scene Description"
+        if marker in observe_result:
+            head, _, tail = observe_result.partition(marker)
+            return f"{head}{geo}{marker}{tail}"
+        return observe_result + " " + geo.strip()
     
     # ===================================
     # ===== Progress Estimation =========
@@ -481,6 +506,14 @@ class Open_Nav():
         normalized_prediction = re.sub(r"[^A-Za-z0-9]+", " ", prediction_text).strip().upper()
         if normalized_prediction == STOP_CANDIDATE:
             return STOP_CANDIDATE
+        # Backtracking: accept MOVE_BACK only when it was offered this step (present in
+        # candidate_ids). Normalization turns the underscore into a space, so restore it
+        # before comparing. When not offered, MOVE_BACK is absent -> unchanged behavior.
+        if (
+            normalized_prediction.replace(" ", "_") == MOVE_BACK_CANDIDATE
+            and MOVE_BACK_CANDIDATE in candidate_ids
+        ):
+            return MOVE_BACK_CANDIDATE
         match = re.search(r"\d+", prediction_text)
         if not match:
             return None
@@ -554,35 +587,66 @@ class Open_Nav():
         observation,
         observe_dict,
         max_tokens=None,
+        k=1,
+        temperature=0,
+        return_prompt=False,
+        offer_move_back=False,
     ):
+        # P1: k>1 draws multiple samples so the (dormant) thought_fusion can arbitrate;
+        # temperature>0 gives diversity. k=1, temperature=0 -> byte-identical to prior behavior.
         break_flag = True
         effective_prediction, thought_list = [], []
         candidate_ids = [str(key) for key in observe_dict.keys()]
         candidate_list = candidate_ids + [STOP_CANDIDATE]
-        decision_reasoning = self.llm.gpt_infer(
-            NAVIGATOR['system'],
-            NAVIGATOR['user'].format(
-                ", ".join(candidate_list),
-                current_step,
-                instruction,
-                actions,
-                landmarks,
-                history_traj,
-                estimation,
-                observation,
-            ),
-            max_tokens=max_tokens,
-        )
-        logger.info(decision_reasoning)
-        if "Prediction:" in decision_reasoning:
-            pred_thought = decision_reasoning.split("Prediction:")[0].strip()
-            pred_vp = self._parse_prediction(decision_reasoning.split("Prediction:")[1], candidate_ids)
-            if pred_vp is None:
-                logger.info("Ignore invalid predicted viewpoint")
-            else:
-                effective_prediction.append(pred_vp)
-                thought_list.append(pred_thought)
+        # Backtracking (default off -> byte-identical to prior behavior): when the trainer
+        # offers a backtrack this step, expose MOVE_BACK as an extra action (candidate list,
+        # parse whitelist, and a neutral prompt line). offer_move_back=False leaves all three
+        # untouched, so the prompt and accepted-action set are unchanged.
+        parse_candidate_ids = candidate_ids
+        move_back_hint = ""
+        if offer_move_back:
+            candidate_list = candidate_list + [MOVE_BACK_CANDIDATE]
+            parse_candidate_ids = candidate_ids + [MOVE_BACK_CANDIDATE]
+            move_back_hint = MOVE_BACK_PROMPT_LINE
+        user_prompt = NAVIGATOR['user'].format(
+            ", ".join(candidate_list),
+            current_step,
+            instruction,
+            actions,
+            landmarks,
+            history_traj,
+            estimation,
+            observation,
+        ) + move_back_hint
+        for _ in range(max(1, k)):
+            decision_reasoning = self.llm.gpt_infer(
+                NAVIGATOR['system'],
+                user_prompt,
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+            logger.info(decision_reasoning)
+            if "Prediction:" in decision_reasoning:
+                pred_thought = decision_reasoning.split("Prediction:")[0].strip()
+                pred_vp = self._parse_prediction(decision_reasoning.split("Prediction:")[1], parse_candidate_ids)
+                if pred_vp is None:
+                    logger.info("Ignore invalid predicted viewpoint")
+                else:
+                    effective_prediction.append(pred_vp)
+                    thought_list.append(pred_thought)
+        if return_prompt:
+            return effective_prediction, thought_list, break_flag, user_prompt
         return effective_prediction, thought_list, break_flag
+
+    @staticmethod
+    def vote_dispersion(preds):
+        # Normalized vote entropy in [0,1]. 0 = unanimous, 1 = all k samples differ. denom=log(k).
+        if not preds:
+            return None
+        n = len(preds)
+        counts = Counter(preds)
+        H = -sum((v / n) * math.log(v / n) for v in counts.values())
+        return H / math.log(n) if n > 1 else 0.0
     
     # =========================
     # ===== Test Decision =====

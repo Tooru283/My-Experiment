@@ -130,6 +130,7 @@ def proactive_stop_gate_config(config: Any) -> dict:
         return {}
     return {
         "dist_threshold": float(_cfg_get(section, "DIST_THRESHOLD", 3.5)),
+        "commit_dist_threshold": float(_cfg_get(section, "COMMIT_DIST_THRESHOLD", 0.0)),
     }
 
 

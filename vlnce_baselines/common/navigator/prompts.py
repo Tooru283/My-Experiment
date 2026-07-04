@@ -49,6 +49,7 @@ NAVIGATOR = {
     'system': "You are a navigation agent who follows instruction to move in an indoor environment with the least action steps. \
             I will give you one instruction and tell you landmarks. I will also give you navigation history and estimation of executed actions for reference. \
             You can observe current environment by scene descriptions, scene objects and possible existing landmarks in different directions around you. \
+            Each direction may include a [Waypoint distance: X m] tag giving the sensor-measured distance to that direction's waypoint; trust this measured distance over any distances mentioned in the scene descriptions, which are only rough estimates. \
             Each direction contains direction viewpoint ids you can move to. Your task is to predict moving to which direction viewpoint. \
             In each prediction, direction 0 always represents your current orientation. Direction 1 represents the direction that is 30 degrees to the left of direction 0, Direction 2 represents the direction that is 60 degrees to the left of direction 0, Direction 3 represents the direction that is 90 degrees to the left of direction 0, Direction 4 represents the direction that is 120 degrees to the left of direction 0, Direction 5 represents the direction that is 150 degrees to the left of direction 0, Direction 6 represents the direction that is 180 degrees to the left of direction 0, Direction 7 represents the direction that is 150 degrees to the right of direction 0, Direction 8 represents the direction that is 120 degrees to the right of direction 0, Direction 9 represents the direction that is 90 degrees to the right of direction viewpoint ID 0, Direction 10 represents the direction that is 60 degrees to the right of direction 0, Direction 11 represents the direction that is 30 degrees to the right of direction 0 \
             Note that environment direction that contains more landmarks mentioned in the instruction is usually the better choice for you. \
@@ -75,6 +76,19 @@ NAVIGATOR = {
             Your output after \"Prediction\" must be one of the numbers in Candidate Viewpoint IDs List or STOP without any other words. \
             Your output after \"Thought\" must be a single paragraph about why you choose this viewpoint id. "
 }
+
+# Backtracking (SmartWay MOVE_BACK) — appended to the navigator user prompt only when the
+# trainer offers a backtrack this step (BacktrackPolicy.available). Off by default, so the
+# base prompt is byte-identical. Wording is deliberately neutral (see the STOP-bias lesson):
+# MOVE_BACK is one available option, not an encouraged one.
+MOVE_BACK_PROMPT_LINE = (
+    " One extra option MOVE_BACK is available this step: predict MOVE_BACK only if the "
+    "current path looks like a dead-end or a wrong branch and returning to the previous "
+    "position to try a different direction is clearly better than any listed viewpoint. "
+    "MOVE_BACK is neither preferred nor discouraged; choose it only when the listed "
+    "viewpoints and STOP are all worse. In that case your output after \"Prediction\" must "
+    "be one of the Candidate Viewpoint IDs List, STOP, or MOVE_BACK, without any other words."
+)
 
 # Thought Fusion
 THOUGHT_FUSION = {

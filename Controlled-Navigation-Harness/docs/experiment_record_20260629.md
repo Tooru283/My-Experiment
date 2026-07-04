@@ -202,9 +202,66 @@ M2a trajectory_bypass 验证后发现：bypass 生效（trajectory_incomplete �
 
 ep11 完全修复（0.46m最近，step 4 M3触发，SPL=1.0）。ep1084/ep1106 需 M2b/RC3 方案。
 
-## 八、下一步
+## 八、下一步（更新于 2026-06-29 日报末尾）
 
 1. **立即**：恢复100集数据集，跑 ep100 M3 评测，预期 SR ≥ 22%
 2. **分析**：ep11 能否在100集中稳定（random seed 无关），trajectory_bypass 是否带来额外改善
 3. **ep377**：M3 在 step 10 允许停止但 dist=3.317m（比max_config的4.362m改善），需研究为何早期（1.78m最近点）V2拒绝而晚期允许
 4. **M2b/RC3**：ep1084、ep1106、ep824 的 `final_target_not_visible` 问题，考虑距离衰减或 arrival_evidence 替代
+
+---
+
+## 九、M3 ep100 完整评测结果与失误分析（2026-06-30 补录）
+
+**Run**：`ep100_series_qwen_siglip_local_20260629_215656`，val_unseen，100 episodes  
+**Config**：max_config + M3 ProactiveStopGate（DIST_THRESHOLD=3.5m）
+
+### 9.1 指标汇总
+
+| 指标 | A0 | max_config | **M3** | 对比 max_config |
+|---|---|---|---|---|
+| SR | 16% | 21% | **20%** | **↓1pp** |
+| OSR | 25% | 26% | **24%** | **↓2pp** |
+| OSR→SR 转化率 | 64% | 80.8% | **83.3%** | +2.5pp |
+| SPL | 0.1015 | 0.1424 | 0.1366 | — |
+| nDTW | 0.4458 | 0.4111 | 0.4180 | — |
+
+SR 与 OSR 均**低于** max_config，M3 净效果为负。转化率小幅提升，但 OSR 下降说明错误 STOP 增多。
+
+### 9.2 集级别增减分析
+
+| episode | max_config 状态 | M3 状态 | 净变化 |
+|---|---|---|---|
+| **ep11** | SR=0（step 2 min_steps 被拒） | **SR=1，SPL=1.0（step 4 M3触发，0.46m）** | **+SR +SPL** |
+| **ep259** | SR=0，OSR=0（未入成功圈） | **SR=0，OSR=0（M3在3.34m提前停，原可达2.11m）** | **−OSR** |
+| **ep321** | SR=0，OSR=1（经过目标3.15m最近） | **SR=0，OSR=0（M3在3.15m停，原最近1.91m未到）** | **−OSR** |
+
+**收益**：ep11 +1 SR  
+**损失**：ep259 −1 OSR，ep321 −1 OSR  
+**净结果**：SR +1−0=+1（但基准ep中ep11在max_config也是SR=0），OSR −2
+
+### 9.3 失误根因
+
+**ep259 / ep321 根因：M3 触发阈值 3.5m > 成功半径 3.0m**
+
+M3 条件：`dist < 3.5m AND final_target_visible=True AND arrival_evidence=True`
+
+- ep259：agent 在 dist=3.34m 时 V1 报 ftv=True、arrival_evidence=True → M3 触发 → V2 返回 allow → 执行 STOP。但 3.34m 在 3m 成功圈外，任务失败。若继续，dist 可降至 2.11m（成功圈内）。
+- ep321：类似场景，dist=3.15m 时提前停，最近可达 1.91m。
+
+**共同机制**：M3 在 [3.0m, 3.5m] 这个"外圈过渡带"提前提交 STOP，导致 OSR 归零（原来至少会走到更近的位置被计入 OSR）。
+
+**非临时补丁问题**：简单缩小阈值到 2.5m 虽可避开当前两集，但本质上是在一维距离上猜参数，不具泛化性。正确方案见第十节 E3。
+
+### 9.4 M3 对 RC3 失败集无效
+
+ep824/ep1084/ep1106（`final_target_not_visible` 导致 V2 拒绝）：M3 同样依赖 `final_target_visible=True AND arrival_evidence=True` 才触发。这三集的 ftv 全程为 False，M3 对其完全无效，是 RC3 的独立问题。
+
+### 9.5 结论
+
+| 问题 | 现象 | 根因 | 方向 |
+|---|---|---|---|
+| M3 过早提交 | ep259/ep321 在 3.0–3.5m 停止 | commit_dist > success_radius | E3-A：abstain zone [2.5m, 3.5m]，不提交 |
+| RC3 近距 ftv 失准 | ep824/ep1084/ep1106 被 not_visible 拒绝 | 目标充满视野/被遮挡，VLM 无法标 visible | E3-B：arrival_evidence 替代 + 距离衰减 |
+
+下一步：实施 E3 abstain+re-observe 机制（见 experiment_record_20260630.md）。
