@@ -896,7 +896,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     depth_veto_center_frac,
                 )
                 vetoed = reading is not None and reading > depth_veto_dist
-                log_u_event(
+                # Use the UNCONDITIONAL logger (not log_u_event, which early-returns
+                # unless u_series_active): the depth-veto trace is the only offline
+                # channel to measure hit / false-veto rate, and it must survive an
+                # A/B run that enables DEPTH_STOP_VETO alone with U_SERIES off.
+                log_fallback_event(
                     "depth_stop_veto",
                     current_episode_id,
                     current_step,
