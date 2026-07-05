@@ -1,0 +1,1002 @@
+{
+    "244": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 4.479089260101318,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.9999989168138805,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.6279580953072905
+    },
+    "218": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 7.95150089263916,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.628242746636945,
+        "collisions": 0.10526315789473684,
+        "spl": 0.0,
+        "ndtw": 0.3305293677197793
+    },
+    "226": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 5.600184917449951,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.7499992460966265,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5408237524944635
+    },
+    "371": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 1.4210515022277832,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 8.451442992385967,
+        "collisions": 0.0,
+        "spl": 1.0,
+        "ndtw": 0.898862950715132
+    },
+    "602": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 6.062026500701904,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.000000540868119,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5437205311168115
+    },
+    "1092": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 4.964938163757324,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.9490440084025638,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.6321432083890962
+    },
+    "748": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 11.098428726196289,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 9.560234055147541,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2728978969783948
+    },
+    "116": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 6.220574378967285,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 1.0758274741154095,
+        "collisions": 1.0,
+        "spl": 0.0,
+        "ndtw": 0.4471918887611245
+    },
+    "513": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 0.6129226088523865,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 5.703030994271222,
+        "collisions": 0.043478260869565216,
+        "spl": 0.7614886661186033,
+        "ndtw": 0.8937866404655616
+    },
+    "11": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 10.295912742614746,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 3.750007270703099,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2501592196212941
+    },
+    "70": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 14.915155410766602,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 8.976030303481904,
+        "collisions": 0.2619047619047619,
+        "spl": 0.0,
+        "ndtw": 0.1278194948906453
+    },
+    "1087": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 5.087065696716309,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.9963931173798515,
+        "collisions": 0.08333333333333333,
+        "spl": 0.0,
+        "ndtw": 0.5250184054173895
+    },
+    "330": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 9.5947265625,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 7.503619954640084,
+        "collisions": 0.037037037037037035,
+        "spl": 0.0,
+        "ndtw": 0.3113914463212278
+    },
+    "804": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 7.668300628662109,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 8.4999979792666,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.4444791284323972
+    },
+    "265": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 6.089199542999268,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.626266098952439,
+        "collisions": 0.07407407407407407,
+        "spl": 0.0,
+        "ndtw": 0.4272787379155218
+    },
+    "140": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 14.40461254119873,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 5.750002062850436,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.14943387730652777
+    },
+    "810": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 4.947359085083008,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.209911378067609,
+        "collisions": 0.2222222222222222,
+        "spl": 0.0,
+        "ndtw": 0.587948624548102
+    },
+    "721": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 3.9140477180480957,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 14.500001704132917,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.3902799927471094
+    },
+    "166": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 10.60678768157959,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.985971059691174,
+        "collisions": 0.022727272727272728,
+        "spl": 0.0,
+        "ndtw": 0.06292315587100547
+    },
+    "643": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 11.560431480407715,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 19.085894225433037,
+        "collisions": 0.013157894736842105,
+        "spl": 0.0,
+        "ndtw": 0.10057280152906292
+    },
+    "403": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 9.497076988220215,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.750001283227491,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2913928227388409
+    },
+    "156": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 10.824536323547363,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 16.364763187496703,
+        "collisions": 0.21621621621621623,
+        "spl": 0.0,
+        "ndtw": 0.23499982535614572
+    },
+    "670": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 9.284622192382812,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.250001595648884,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.3816163760185731
+    },
+    "546": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 2.8703725337982178,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 3.2500019621853586,
+        "collisions": 0.0,
+        "spl": 1.0,
+        "ndtw": 0.755255132838869
+    },
+    "13": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 7.5279927253723145,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 5.499999084873538,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.46249824987500815
+    },
+    "1085": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 4.1143927574157715,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 1.7371661967855945,
+        "collisions": 0.2857142857142857,
+        "spl": 0.0,
+        "ndtw": 0.6529906396270022
+    },
+    "821": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 3.795142650604248,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.4961342566873927,
+        "collisions": 0.25,
+        "spl": 0.0,
+        "ndtw": 0.6844355177396809
+    },
+    "247": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 8.059354782104492,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 3.2500014630845713,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.30207627739900567
+    },
+    "387": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 1.0846524238586426,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 18.418534520097857,
+        "collisions": 0.17567567567567569,
+        "spl": 0.562502293516431,
+        "ndtw": 0.6679638315818744
+    },
+    "447": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 14.909623146057129,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 16.677731593437947,
+        "collisions": 0.5735294117647058,
+        "spl": 0.0,
+        "ndtw": 0.09917021732536473
+    },
+    "1084": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 3.3945980072021484,
+        "success": 0.0,
+        "oracle_success": 1.0,
+        "path_length": 15.750002525713537,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.1911481022496771
+    },
+    "362": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 10.193122863769531,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.998624589746026,
+        "collisions": 0.23809523809523808,
+        "spl": 0.0,
+        "ndtw": 0.34945478232832305
+    },
+    "1071": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 5.232346534729004,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 8.491128137481619,
+        "collisions": 0.058823529411764705,
+        "spl": 0.0,
+        "ndtw": 0.6725234164161075
+    },
+    "743": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 11.414459228515625,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.49999214887597,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.3232544629122338
+    },
+    "42": {
+        "steps_taken": 8.0,
+        "distance_to_goal": 10.278579711914062,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 13.760993114031251,
+        "collisions": 0.05357142857142857,
+        "spl": 0.0,
+        "ndtw": 0.2734951932381683
+    },
+    "715": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 10.420721054077148,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.5000044626999935,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2605368625751791
+    },
+    "40": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 6.954700946807861,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 15.744006773891924,
+        "collisions": 0.015873015873015872,
+        "spl": 0.0,
+        "ndtw": 0.5308052727173969
+    },
+    "439": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 2.850618362426758,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 7.3316154046626725,
+        "collisions": 0.22580645161290322,
+        "spl": 0.7860426417953585,
+        "ndtw": 0.6839677080861345
+    },
+    "655": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 6.643671035766602,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 12.453325405404115,
+        "collisions": 0.09433962264150944,
+        "spl": 0.0,
+        "ndtw": 0.43465206659347694
+    },
+    "52": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 5.413776397705078,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 16.51633660598842,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5653048664718939
+    },
+    "516": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 3.1819748878479004,
+        "success": 0.0,
+        "oracle_success": 1.0,
+        "path_length": 10.450706076182387,
+        "collisions": 0.07142857142857142,
+        "spl": 0.0,
+        "ndtw": 0.8124626686439591
+    },
+    "94": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 13.986360549926758,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.529612432928857,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.14832879089480328
+    },
+    "1142": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 6.806515693664551,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 7.559920242014347,
+        "collisions": 0.03333333333333333,
+        "spl": 0.0,
+        "ndtw": 0.3876812012940622
+    },
+    "842": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 15.399660110473633,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.499998000233892,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.15360960146842767
+    },
+    "150": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 4.709943771362305,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.437280012777797,
+        "collisions": 0.4074074074074074,
+        "spl": 0.0,
+        "ndtw": 0.6366251138966548
+    },
+    "609": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 10.120080947875977,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 12.280726882767144,
+        "collisions": 0.02040816326530612,
+        "spl": 0.0,
+        "ndtw": 0.19690750014298783
+    },
+    "1061": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 11.684259414672852,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 6.753047116070024,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2524135828293363
+    },
+    "1139": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 4.882814884185791,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.749999827541606,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5964892076226126
+    },
+    "454": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 15.632528305053711,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 12.011818166547108,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.08266244608109265
+    },
+    "176": {
+        "steps_taken": 9.0,
+        "distance_to_goal": 5.160239219665527,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 8.997400402690966,
+        "collisions": 0.027777777777777776,
+        "spl": 0.0,
+        "ndtw": 0.43821836523123814
+    },
+    "739": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 11.593287467956543,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.9999989583002495,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.23097184782037253
+    },
+    "1106": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 10.493448257446289,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 18.999999523004693,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.09192069815250827
+    },
+    "423": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 18.63467025756836,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 11.502569546133653,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.04738768548385744
+    },
+    "568": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 3.4621334075927734,
+        "success": 0.0,
+        "oracle_success": 1.0,
+        "path_length": 9.499999577479771,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.8735113296718526
+    },
+    "191": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 6.3137006759643555,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 19.234815353797156,
+        "collisions": 0.025974025974025976,
+        "spl": 0.0,
+        "ndtw": 0.25639153026233164
+    },
+    "190": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 10.745729446411133,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 7.781469773685388,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2647265010806574
+    },
+    "677": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 1.5587832927703857,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 7.762889481495651,
+        "collisions": 0.0,
+        "spl": 0.7407199152313867,
+        "ndtw": 0.9128569278706783
+    },
+    "171": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 8.838029861450195,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 17.484419101341654,
+        "collisions": 0.04285714285714286,
+        "spl": 0.0,
+        "ndtw": 0.3129515030800181
+    },
+    "1406": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 9.237770080566406,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.503951999431682,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.4670115111631489
+    },
+    "308": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 8.039701461791992,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.2499985927915302,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.36307551722737885
+    },
+    "181": {
+        "steps_taken": 12.0,
+        "distance_to_goal": 11.07201862335205,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 18.79168453888655,
+        "collisions": 0.06756756756756757,
+        "spl": 0.0,
+        "ndtw": 0.09875846473941753
+    },
+    "259": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 2.1055476665496826,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 3.750002211591359,
+        "collisions": 0.0,
+        "spl": 1.0,
+        "ndtw": 0.869181948758522
+    },
+    "1307": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 7.700077056884766,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 14.189678056619837,
+        "collisions": 0.017857142857142856,
+        "spl": 0.0,
+        "ndtw": 0.2176091472566202
+    },
+    "1284": {
+        "steps_taken": 9.0,
+        "distance_to_goal": 7.778512954711914,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 8.815159437442754,
+        "collisions": 0.02857142857142857,
+        "spl": 0.0,
+        "ndtw": 0.19186153294174407
+    },
+    "411": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 7.375175476074219,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 7.17550043330298,
+        "collisions": 0.06666666666666667,
+        "spl": 0.0,
+        "ndtw": 0.3148400487958391
+    },
+    "338": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 4.276080131530762,
+        "success": 0.0,
+        "oracle_success": 1.0,
+        "path_length": 11.036143667411759,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.592800400232944
+    },
+    "1077": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 5.786729335784912,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 14.910418818671662,
+        "collisions": 0.01694915254237288,
+        "spl": 0.0,
+        "ndtw": 0.6194718683468428
+    },
+    "377": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 5.4231719970703125,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.7499995639129464,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5480473494322324
+    },
+    "275": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 15.84363079071045,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.297383998026708,
+        "collisions": 0.2558139534883721,
+        "spl": 0.0,
+        "ndtw": 0.14699015910826302
+    },
+    "531": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 2.5017080307006836,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 6.074911617954601,
+        "collisions": 0.041666666666666664,
+        "spl": 0.8679628472206516,
+        "ndtw": 0.7755107256949174
+    },
+    "698": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 2.319202184677124,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 6.749999227301245,
+        "collisions": 0.0,
+        "spl": 0.907057689374063,
+        "ndtw": 0.7458593317420762
+    },
+    "1117": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 5.76784086227417,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.903073792663223,
+        "collisions": 0.25,
+        "spl": 0.0,
+        "ndtw": 0.5260119926113338
+    },
+    "187": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 6.786240100860596,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.750000048155313,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.4020667368998387
+    },
+    "312": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 4.364012241363525,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.446041941777017,
+        "collisions": 0.1,
+        "spl": 0.0,
+        "ndtw": 0.6457751366124953
+    },
+    "1051": {
+        "steps_taken": 9.0,
+        "distance_to_goal": 8.12253189086914,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.758826287194326,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2869500468907271
+    },
+    "7": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 5.686884880065918,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 5.153074023474697,
+        "collisions": 0.14285714285714285,
+        "spl": 0.0,
+        "ndtw": 0.5585108259654095
+    },
+    "1056": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 9.515396118164062,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 3.4999998131456413,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.2671695598500176
+    },
+    "559": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 15.502901077270508,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 18.574366179055794,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.023599243884849557
+    },
+    "432": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 14.34134292602539,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.615878144604226,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.14179427541647144
+    },
+    "705": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 4.3974456787109375,
+        "success": 0.0,
+        "oracle_success": 1.0,
+        "path_length": 16.932093112863484,
+        "collisions": 0.12162162162162163,
+        "spl": 0.0,
+        "ndtw": 0.5554349672615556
+    },
+    "207": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 6.923457622528076,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.550976424970685,
+        "collisions": 0.023809523809523808,
+        "spl": 0.0,
+        "ndtw": 0.6258810091564148
+    },
+    "586": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 0.988315761089325,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 9.127768598479278,
+        "collisions": 0.0,
+        "spl": 0.5861024197427566,
+        "ndtw": 0.706306271410536
+    },
+    "469": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 14.522655487060547,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.750001588252233,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.11808153078406977
+    },
+    "1133": {
+        "steps_taken": 2.0,
+        "distance_to_goal": 9.819133758544922,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.250004090205414,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.30489036544964565
+    },
+    "576": {
+        "steps_taken": 6.0,
+        "distance_to_goal": 16.189922332763672,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 11.26629402160046,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.1336318671555577
+    },
+    "824": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 0.8087061643600464,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 16.4944004383568,
+        "collisions": 0.0,
+        "spl": 0.3962750148706138,
+        "ndtw": 0.18522412153466078
+    },
+    "550": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 21.996112823486328,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 19.55359810788474,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.03000570879677837
+    },
+    "1301": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 4.637031078338623,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 15.434313190286954,
+        "collisions": 0.15151515151515152,
+        "spl": 0.0,
+        "ndtw": 0.5544795438036565
+    },
+    "479": {
+        "steps_taken": 8.0,
+        "distance_to_goal": 1.5944852828979492,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 10.831070047095263,
+        "collisions": 0.0,
+        "spl": 0.6768224939648732,
+        "ndtw": 0.6434854833600059
+    },
+    "232": {
+        "steps_taken": 10.0,
+        "distance_to_goal": 9.763187408447266,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 10.139702174910372,
+        "collisions": 0.10256410256410256,
+        "spl": 0.0,
+        "ndtw": 0.40542693680707553
+    },
+    "787": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 8.023709297180176,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.655108358148827,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.29868649989622253
+    },
+    "321": {
+        "steps_taken": 8.0,
+        "distance_to_goal": 2.188922166824341,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 7.768401605461221,
+        "collisions": 0.0625,
+        "spl": 0.6126495646134348,
+        "ndtw": 0.3207506537268787
+    },
+    "765": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 1.626160979270935,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 6.788275953603193,
+        "collisions": 0.0,
+        "spl": 0.9293329441449782,
+        "ndtw": 0.7832104058189514
+    },
+    "526": {
+        "steps_taken": 4.0,
+        "distance_to_goal": 0.6998389959335327,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 5.440757898584666,
+        "collisions": 0.18181818181818182,
+        "spl": 1.0,
+        "ndtw": 0.9013940705209067
+    },
+    "755": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 10.45556926727295,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 3.2704478300471584,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.24818303373081393
+    },
+    "620": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 5.2791972160339355,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.5000004131288804,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.5185087063906318
+    },
+    "781": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 1.2269123792648315,
+        "success": 1.0,
+        "oracle_success": 1.0,
+        "path_length": 4.498997401034713,
+        "collisions": 0.16666666666666666,
+        "spl": 1.0,
+        "ndtw": 0.9028115942879331
+    },
+    "461": {
+        "steps_taken": 5.0,
+        "distance_to_goal": 5.656500816345215,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 4.778127115855167,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.33907068170646343
+    },
+    "348": {
+        "steps_taken": 7.0,
+        "distance_to_goal": 11.242127418518066,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 2.7101196901298423,
+        "collisions": 0.7727272727272727,
+        "spl": 0.0,
+        "ndtw": 0.23870521760037955
+    },
+    "1148": {
+        "steps_taken": 3.0,
+        "distance_to_goal": 7.703230857849121,
+        "success": 0.0,
+        "oracle_success": 0.0,
+        "path_length": 3.7500004536664093,
+        "collisions": 0.0,
+        "spl": 0.0,
+        "ndtw": 0.30893475342560495
+    }
+}
