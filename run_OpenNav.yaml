@@ -54,7 +54,7 @@ OPENNAV_HARNESS:
   ENABLED: True
   ENABLE_HARNESS_LOGGING: True
   ENABLE_DECISION_EFFECT: True
-  TRACE_DIR: logs/harness_traces/clean_baseline_smoke
+  TRACE_DIR: logs/harness_traces/clean_baseline_v1
   TRACE_FORMAT: jsonl
   LOG_IMAGES: False
   FAIL_OPEN: True

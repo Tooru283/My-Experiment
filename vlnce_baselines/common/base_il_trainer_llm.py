@@ -2324,14 +2324,18 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         or _carry_forward_psg
                     )
                 ):
+                    # ORACLE REMOVED (20260704): reason strings no longer claim a
+                    # distance threshold (the geodesic gate is gone; PSG now keys on
+                    # visual evidence + the >=2-step persistence guard). Stating a
+                    # distance here would misdescribe stops that commit far from goal.
                     proactive_reason = (
-                        "Proactive near-goal stop: target visible with arrival evidence "
-                        f"within {proactive_stop_dist}m threshold."
+                        "Proactive stop: target visible with arrival evidence "
+                        "(persistent visual confirmation)."
                         if (bool(completion_verifier_results.get("final_target_visible"))
                             and bool(completion_verifier_results.get("arrival_evidence")))
                         else
-                        f"Proactive near-goal stop: carry-forward visual evidence within "
-                        f"{proactive_stop_commit_dist}m commit zone."
+                        "Proactive stop: carry-forward visual evidence "
+                        "(persistent visual confirmation)."
                     )
                     proactive_verifier_results = record_visual_target_verifier(
                         "proactive_stop_gate",
