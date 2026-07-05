@@ -150,6 +150,7 @@ class StopEvidenceVerifier:
         latest_goal_dist: Optional[float] = None,
         carry_forward_visible: bool = False,
         persistent_visual_confirm: bool = False,
+        depth_confirm: bool = True,
     ) -> Dict[str, Any]:
         visual = visual_verifier_results or {}
         stop_gate = stop_gate_metadata or {}
@@ -224,11 +225,15 @@ class StopEvidenceVerifier:
         # confirmation (same guard as #2 e3_arrival_override and #5 PSG commit).
         # trajectory_bypass_dist > 0 kept only as the enable toggle. Verdict key name
         # retained for trace compatibility.
+        # v2 depth veto (default no-op: depth_confirm defaults True): the claimed
+        # target direction must also read within the metric depth threshold, else the
+        # bypass is withheld (the trajectory stays "no"). Same conjunct on #2 below.
         trajectory_dist_bypassed = False
         if (
             trajectory_support == "no"
             and self.trajectory_bypass_dist > 0
             and persistent_visual_confirm
+            and depth_confirm
         ):
             trajectory_support = "unknown"
             trajectory_dist_bypassed = True
@@ -280,6 +285,7 @@ class StopEvidenceVerifier:
             self.e3_arrival_override_dist > 0
             and e3_intrinsic_absent
             and persistent_visual_confirm
+            and depth_confirm
         )
         # E3-A: abstain — when the target is not intrinsically visible and there is no
         # arrival_evidence, demote not_visible from hard-reject to abstain so the agent

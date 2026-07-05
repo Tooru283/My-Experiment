@@ -98,6 +98,20 @@ OPENNAV_HARNESS:
     REQUIRE_COMPLETION_FOR_SELECTOR_STOP: True
     REQUIRE_CURRENT_VIEW_TEXT_CORROBORATION_FOR_ALLOW: False
 
+    # v2 DEPTH STOP VETO (default OFF -> clean baseline byte-identical). When ENABLED,
+    # a STOP-enabling gate (#2 arrival_override / #4 trajectory_bypass / #5 PSG commit)
+    # additionally requires the metric depth of the claimed target direction (center
+    # region of the current forward view) to be within MAX_TARGET_DIST_M. Uses the RGB-D
+    # depth sensor (legal for all VLN-CE methods; zero oracle exposure). Fail-open when
+    # depth is unavailable. HONEST SCOPE: measures center-of-view distance, not the
+    # target's distance -- vetoes the "staring at a distant opening = arrival" lie
+    # (ep377 @ 5.42 m), not every confident lie. Raw depth logged (event depth_stop_veto)
+    # so the A/B run can measure hit / false-veto rate. Run separately from BACKTRACK.
+    DEPTH_STOP_VETO:
+      ENABLED: False
+      MAX_TARGET_DIST_M: 3.0    # == TASK.SUCCESS_DISTANCE
+      CENTER_FRAC: 0.25
+
   # V3: aggregate V1 visual evidence across the current episode.
   VISUAL_EVIDENCE_MEMORY:
     ENABLED: True
@@ -162,6 +176,20 @@ OPENNAV_HARNESS:
     ENABLED: True
     DIST_THRESHOLD: 3.5
     COMMIT_DIST_THRESHOLD: 2.0
+
+  # Backtracking (hunk 4, default OFF -> clean baseline byte-identical). When ENABLED,
+  # MOVE_BACK is offered to the navigator only on an observable ego displacement stall
+  # OR a waypoint dead-end (len(radius_dict)==0); selecting it retraces the last move
+  # (turn 180, same distance). Oracle-free: triggers read only the agent's own odometry
+  # / candidate exhaustion, never goal distance. Anti-oscillation: budget-capped, never
+  # two in a row, last_executed_move cleared after a backtrack. Run separately from
+  # DEPTH_STOP_VETO (do not flip both at once -- attribution).
+  BACKTRACK:
+    ENABLED: False
+    MAX_BACKTRACKS_PER_EPISODE: 2
+    STALL_WINDOW: 3
+    DISP_EPS: 1.0
+    DISP_RATIO: 0.35
 
   # Max config: all U-series units active with decision effect.
   # DECISION_EFFECT_UNIT=combined activates U1+U2+U3 simultaneously.

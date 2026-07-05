@@ -685,10 +685,17 @@ class Open_Nav():
         error_number,
         observe_dict,
         max_tokens=None,
+        offer_move_back=False,
     ):
         try:
             valid_candidates = {str(key) for key in observe_dict.keys()}
             valid_candidates.add(STOP_CANDIDATE)
+            # Backtracking: MOVE_BACK is not an observe_dict key, so keep it in the
+            # valid set when it was offered this step -- otherwise the pop below would
+            # silently drop a navigator-selected backtrack and the mechanism is dead.
+            # offer_move_back=False leaves behavior byte-identical.
+            if offer_move_back:
+                valid_candidates.add(MOVE_BACK_CANDIDATE)
             for fused_key in list(fused_pred_thought.keys()):
                 if fused_key not in valid_candidates:
                     fused_pred_thought.pop(fused_key)

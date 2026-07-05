@@ -51,6 +51,11 @@ from vlnce_baselines.common.opennav_ext import (
     u_series_enabled,
     validate_a1_harness_config,
 )
+from vlnce_baselines.common.opennav_ext.backtrack_policy import (
+    BacktrackPolicy,
+    MOVE_BACK_CANDIDATE,
+)
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -96,6 +101,80 @@ from ..utils import get_camera_orientations
 from ..models.utils import (
     length2mask, dir_angle_feature, dir_angle_feature_with_ele,
 )
+
+
+# ----------------------------------------------------------------------------
+# v2 DEPTH STOP VETO (default OFF) helpers.
+#
+# Motivation (20260705): the >=2-step persistence guard cannot stop a VLM that
+# is *confidently and consistently* wrong about arrival (ep377: conf-1.00 "final
+# target visible" @ 5.42 m for >=2 steps). A metric depth reading of the claimed
+# target direction is an observable veto that geometry can enforce where the VLM
+# cannot self-correct. All VLN-CE methods legally use the depth sensor -> zero
+# oracle exposure (unlike info["position"]["distance"] which is GT geodesic).
+#
+# HONEST SCOPE (do NOT overclaim in paper/docs): this reads the *center region
+# of the current forward view*, NOT "the distance to the target". Two blind
+# spots, accepted and to be quantified from the trace (raw depth is logged so the
+# A/B run can measure hit/false-veto rate):
+#   (1) target off-center: a target at the frame edge is not measured; the center
+#       may read a nearer wall (false veto) or a farther opening (missed veto).
+#   (2) line-of-sight euclidean vs success's geodesic: a 2.8 m euclidean reading
+#       through a wall that is 5 m geodesic would be (wrongly) let through.
+# So this vetoes the "staring at a distant open area and calling it arrival" lie
+# (ep377), it does NOT catch every confident lie. Wording must stay specific.
+# ----------------------------------------------------------------------------
+def _current_view_depth_array(observations):
+    """Raw current-view (front) depth map from the sim observation, or None.
+
+    Prefers the exact front sensor uuid ('depth'); falls back to any '*depth*'
+    key. Returns the raw numpy array BEFORE generate_input's per-frame min-max
+    renormalization (which destroys metric meaning) -- so metric meters are
+    recoverable. Fail-open: any structural surprise returns None (=> no veto).
+    """
+    try:
+        obs0 = observations[0] if isinstance(observations, (list, tuple)) else observations
+        if not isinstance(obs0, dict):
+            return None
+        if "depth" in obs0:
+            return obs0["depth"]
+        for key in obs0.keys():
+            if "depth" in str(key).lower():
+                return obs0[key]
+    except Exception:
+        return None
+    return None
+
+
+def _metric_depth_center_median(depth_array, min_depth, max_depth, normalize, center_frac):
+    """Median metric depth (m) of the center patch, or None if unusable (fail-open).
+
+    depth_array: HxW or HxWx1. When ``normalize`` (habitat NORMALIZE_DEPTH), values
+    are in [0,1] and metric = v*(max-min)+min; otherwise values are already meters.
+    Zero/near-zero pixels are dropped (invalid depth returns). Median is robust to
+    the holes typical of depth sensors.
+    """
+    try:
+        arr = np.asarray(depth_array, dtype=np.float32)
+        if arr.ndim == 3 and arr.shape[-1] == 1:
+            arr = arr[..., 0]
+        if arr.ndim != 2 or arr.size == 0:
+            return None
+        h, w = arr.shape
+        cf = float(center_frac)
+        half_h = max(1, int(h * cf / 2.0))
+        half_w = max(1, int(w * cf / 2.0))
+        cy, cx = h // 2, w // 2
+        patch = arr[cy - half_h:cy + half_h, cx - half_w:cx + half_w]
+        vals = patch[patch > 1e-6]
+        if vals.size == 0:
+            return None
+        median_val = float(np.median(vals))
+        if normalize:
+            return median_val * (float(max_depth) - float(min_depth)) + float(min_depth)
+        return median_val
+    except Exception:
+        return None
 
 
 def _episode_group_name(episode_count) -> str:
@@ -781,6 +860,77 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             geometry_injection_enabled = bool(
                 getattr(config.OPENNAV_HARNESS, "GEOMETRY_INJECTION", True)
             )
+            # v2 DEPTH STOP VETO (default OFF -> byte-identical baseline). When on,
+            # a STOP-enabling gate additionally requires the metric depth of the
+            # claimed target direction to be within MAX_TARGET_DIST_M. Read metric
+            # scale from the sim depth sensor config (habitat defaults 0..10 m,
+            # NORMALIZE_DEPTH True). See _metric_depth_center_median.
+            depth_veto_enabled = False
+            depth_veto_dist = 3.0
+            depth_veto_center_frac = 0.25
+            _depth_sensor_cfg = getattr(config.SIMULATOR, "DEPTH_SENSOR", None)
+            depth_veto_min = float(getattr(_depth_sensor_cfg, "MIN_DEPTH", 0.0)) if _depth_sensor_cfg is not None else 0.0
+            depth_veto_max = float(getattr(_depth_sensor_cfg, "MAX_DEPTH", 10.0)) if _depth_sensor_cfg is not None else 10.0
+            depth_veto_normalize = bool(getattr(_depth_sensor_cfg, "NORMALIZE_DEPTH", True)) if _depth_sensor_cfg is not None else True
+            _vtv_cfg = getattr(config.OPENNAV_HARNESS, "VISUAL_TARGET_VERIFIER", None)
+            if _vtv_cfg is not None:
+                _dveto_cfg = getattr(_vtv_cfg, "DEPTH_STOP_VETO", None)
+                if _dveto_cfg is not None:
+                    depth_veto_enabled = bool(getattr(_dveto_cfg, "ENABLED", False))
+                    depth_veto_dist = float(getattr(_dveto_cfg, "MAX_TARGET_DIST_M", 3.0))
+                    depth_veto_center_frac = float(getattr(_dveto_cfg, "CENTER_FRAC", 0.25))
+
+            def _depth_stop_ok(source_label):
+                """Observable depth veto for a STOP-enabling gate. Returns (ok, reading).
+
+                ok=True means "not vetoed" (depth within threshold, OR unavailable ->
+                fail-open, OR feature disabled). Logs raw depth + view + verdict every
+                call: this trace is the ONLY channel to measure hit / false-veto rate
+                offline, so it is emitted even when disabled=False is NOT the case.
+                """
+                if not depth_veto_enabled:
+                    return True, None
+                reading = _metric_depth_center_median(
+                    _current_view_depth_array(observations),
+                    depth_veto_min, depth_veto_max, depth_veto_normalize,
+                    depth_veto_center_frac,
+                )
+                vetoed = reading is not None and reading > depth_veto_dist
+                log_u_event(
+                    "depth_stop_veto",
+                    current_episode_id,
+                    current_step,
+                    {
+                        "enabled": True,
+                        "source": source_label,
+                        "depth_reading_m": reading,
+                        "view_id": stop_current_view_candidate_id,
+                        "threshold_m": depth_veto_dist,
+                        "center_frac": depth_veto_center_frac,
+                        "vetoed": bool(vetoed),
+                        "fail_open_unavailable": reading is None,
+                    },
+                )
+                return (not vetoed), reading
+
+            # Backtracking activation (hunk 4, default OFF -> baseline byte-identical).
+            # The policy module is oracle-free (ego dead-reckoning / dead-end only).
+            backtrack_enabled = False
+            backtrack_max_per_episode = 2
+            _bt_cfg = getattr(config.OPENNAV_HARNESS, "BACKTRACK", None)
+            if _bt_cfg is not None:
+                backtrack_enabled = bool(getattr(_bt_cfg, "ENABLED", False))
+                backtrack_max_per_episode = int(getattr(_bt_cfg, "MAX_BACKTRACKS_PER_EPISODE", 2))
+            backtrack_policy = (
+                BacktrackPolicy(
+                    max_backtracks_per_episode=backtrack_max_per_episode,
+                    stall_window=int(getattr(_bt_cfg, "STALL_WINDOW", 3)) if _bt_cfg is not None else 3,
+                    disp_eps=float(getattr(_bt_cfg, "DISP_EPS", 1.0)) if _bt_cfg is not None else 1.0,
+                    disp_ratio=float(getattr(_bt_cfg, "DISP_RATIO", 0.35)) if _bt_cfg is not None else 0.35,
+                )
+                if backtrack_enabled
+                else None
+            )
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
@@ -1199,6 +1349,15 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         latest_phase_evidence = {}
         latest_failure_signal = {}
         recent_ftv_window: List[bool] = []
+        # Backtracking (hunk 4) episode-scoped state. Initialized pre-loop so the
+        # per-step position append cannot NameError on an episode's first step
+        # (the per-episode reset block runs later in the loop body). Reset again
+        # per episode below.
+        recent_positions_history: List[Any] = []
+        last_executed_move: Optional[Dict[str, float]] = None
+        backtrack_budget_remaining = backtrack_max_per_episode
+        backtrack_blocked_headings: set = set()
+        just_backtracked = False
         while envs.num_envs > 0 and len(stats_episodes) < episodes_to_eval:
             current_episodes = envs.current_episodes()
             positions = []; headings = []
@@ -1207,6 +1366,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "get_agent_info", {})
                 positions.append(agent_state_i['position'])
                 headings.append(agent_state_i['heading'])
+            # Backtracking (hunk 4): roll the ego pose history (window+1 poses) for the
+            # observable displacement-stall trigger. Uses only the agent's own pose
+            # differences (odometry-equivalent) -- no goal distance, no oracle.
+            if backtrack_enabled and positions:
+                recent_positions_history.append(positions[0])
+                if len(recent_positions_history) > backtrack_policy.stall_window + 1:
+                    recent_positions_history.pop(0)
             current_episode_id = str(current_episodes[0].episode_id)
             if (
                 harness_enabled
@@ -1263,6 +1429,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 latest_phase_evidence = {}
                 latest_failure_signal = {}
                 recent_ftv_window: List[bool] = []
+                # Backtracking per-episode reset (guarantees no cross-episode leakage
+                # into a firing decision; a firing needs a full fresh pose window).
+                recent_positions_history = []
+                last_executed_move = None
+                backtrack_budget_remaining = backtrack_max_per_episode
+                backtrack_blocked_headings = set()
+                just_backtracked = False
                 write_navigation_record(
                     "episode_start",
                     episode_id=current_episode_id,
@@ -1369,6 +1542,30 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             )
             selector_observation = observation
             selector_observe_dict = observe_dict
+            # Backtracking (hunk 4): decide whether MOVE_BACK is on the menu this step,
+            # from observable signals only (ego displacement stall OR waypoint dead-end).
+            # dead_end := len(radius_dict) == 0 (NO forward candidate). This is a
+            # deliberate tightening from an earlier <= 1 draft: a single remaining
+            # candidate is no longer treated as a dead-end (avoids offering backtrack
+            # when a real forward move still exists). offer_move_back=False keeps the
+            # navigator/test_decisions path byte-identical.
+            offer_move_back = False
+            backtrack_offer_info = None
+            if backtrack_enabled and backtrack_policy is not None:
+                backtrack_offer_info = backtrack_policy.available(
+                    last_move=last_executed_move,
+                    recent_positions=recent_positions_history,
+                    budget_remaining=backtrack_budget_remaining,
+                    just_backtracked=just_backtracked,
+                    dead_end=(len(radius_dict) == 0),
+                )
+                offer_move_back = bool(backtrack_offer_info.get("offered"))
+                log_fallback_event(
+                    "backtrack_offer",
+                    current_episode_id,
+                    current_step,
+                    backtrack_offer_info,
+                )
             multimodal_selector_context_results = {}
             phase_aware_context_results = {}
             phase_context_applied = False
@@ -1890,6 +2087,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     _persistent_visual = (
                         len(recent_ftv_window) >= 2 and all(recent_ftv_window[-2:])
                     )
+                    # v2 depth veto (default OFF): additional observable conjunct on the
+                    # STOP-enabling gates (#2 arrival_override / #4 trajectory_bypass) inside
+                    # verify(). _depth_ok=True when disabled or unavailable (fail-open), so
+                    # byte-identical when off. See _depth_stop_ok / _metric_depth_center_median.
+                    _depth_ok, _ = _depth_stop_ok(source)
                     stop_evidence_results = run_harness_tool(
                         "stop_evidence_verifier",
                         current_step,
@@ -1909,6 +2111,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         latest_goal_dist=latest_goal_dist,
                         carry_forward_visible=_carry_forward,
                         persistent_visual_confirm=_persistent_visual,
+                        depth_confirm=_depth_ok,
                     )
                     if stop_evidence_verifier is not None:
                         if isinstance(stop_evidence_results, dict):
@@ -2362,9 +2565,16 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         and proactive_stop_evidence.get("allow_stop")
                         and proactive_stop_evidence.get("e3", {}).get("arrival_override")
                     )
+                    # v2 depth veto (default OFF): PSG commit (#5) also requires the
+                    # claimed target direction to be within depth threshold. _psg_depth_ok
+                    # is True when disabled/unavailable (fail-open) -> byte-identical off.
+                    _psg_depth_ok, _ = _depth_stop_ok("proactive_stop_gate_commit")
                     if (
-                        (_persistent_visual_confirm and visual_target_verifier_allows_stop(proactive_verifier_results))
-                        or _e3_b_allow
+                        _psg_depth_ok
+                        and (
+                            (_persistent_visual_confirm and visual_target_verifier_allows_stop(proactive_verifier_results))
+                            or _e3_b_allow
+                        )
                     ):
                         stop_flag = True
                         stop_reason = proactive_reason
@@ -2464,6 +2674,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         selector_observe_dict,
                         max_tokens=positive_token_cap(navigator_max_tokens),
                         return_prompt=True,
+                        offer_move_back=offer_move_back,
                     )
                     # P1 (Path B): log the exact assembled navigator prompt so offline
                     # dispersion calibration can replay it verbatim (zero reconstruction).
@@ -2643,6 +2854,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         error_number,
                         selector_observe_dict,
                         max_tokens=positive_token_cap(decision_max_tokens),
+                        offer_move_back=offer_move_back,
                     )
                     record_runtime_latency(
                         "test_decision",
@@ -2907,6 +3119,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 error_number,
                                 selector_observe_dict,
                                 max_tokens=positive_token_cap(decision_max_tokens),
+                                offer_move_back=offer_move_back,
                             )
                             record_runtime_latency(
                                 "test_decision_after_stop_rejection",
@@ -3094,8 +3307,62 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             try:
                 termination_reasons = [None for _ in range(envs.num_envs)]
                 env_actions = []
+                # Backtracking (hunk 4) apply hook: when the navigator selected MOVE_BACK,
+                # emit the reverse move directly (it bypasses radius_dict/distance_dict, which
+                # do not contain the synthetic MOVE_BACK id). Runs before the normal action
+                # builder and sets backtrack_reverse_emitted so the builder is skipped.
+                backtrack_reverse_emitted = False
+                if (not stop_flag) and backtrack_enabled and next_vp == MOVE_BACK_CANDIDATE:
+                    bt_apply = backtrack_policy.apply(
+                        MOVE_BACK_CANDIDATE,
+                        last_executed_move,
+                        backtrack_budget_remaining,
+                        last_move_heading=(headings[0] if headings else None),
+                        blocked_headings=backtrack_blocked_headings,
+                    )
+                    log_fallback_event(
+                        "backtrack_apply",
+                        current_episode_id,
+                        current_step,
+                        bt_apply,
+                    )
+                    if bt_apply.get("applied"):
+                        env_actions.append(
+                            {"action": {"action": 4, "action_args": bt_apply["action_args"]}}
+                        )
+                        backtrack_budget_remaining = bt_apply["budget_after"]
+                        backtrack_blocked_headings = set(bt_apply["blocked_headings"])
+                        backtrack_reverse_emitted = True
+                    else:
+                        # rev2 fix #1/#3: a non-appliable backtrack (no reversible move / budget
+                        # exhausted) must resolve to the best REAL candidate, never leave the
+                        # MOVE_BACK placeholder to cascade into stop_last_resort. None-guard the
+                        # ranked fallback (it can return None when nothing ranks).
+                        bt_fb = rank_movement_fallback(
+                            "backtrack_apply_failed",
+                            current_step,
+                            observe_dict,
+                            visual_evidence_results,
+                            instruction,
+                            actions,
+                            landmarks,
+                            source_stage="backtrack_apply",
+                            reason=bt_apply.get("reason", "backtrack_not_applied"),
+                        )
+                        bt_fb_vp = bt_fb.get("selected_candidate") if isinstance(bt_fb, dict) else None
+                        if bt_fb_vp is not None and bt_fb_vp in radius_dict and bt_fb_vp in distance_dict:
+                            next_vp = bt_fb_vp
+                        elif radius_dict:
+                            next_vp = list(radius_dict.keys())[0]
+                        else:
+                            stop_flag = True
+                            stop_reason = "Backtrack unavailable and no movement candidates remained."
+                            next_vp = STOP_CANDIDATE
                 if stop_flag:
                     env_actions.append({"action": {"action": 0, "action_args": None}})
+                elif backtrack_reverse_emitted:
+                    # Reverse move already emitted by the apply hook; skip normal builder.
+                    pass
                 else:
                     if next_vp not in radius_dict or next_vp not in distance_dict:
                         fallback_results = rank_movement_fallback(
@@ -3176,6 +3443,27 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 'distance': distance_dict[next_vp],
                             }}})
 
+                # Backtracking (hunk 4) capture (rev2 fix #2): record what was actually
+                # sent, keyed off the single grep-verified action-4 emitter (env_actions[0]),
+                # so it is robust to whichever upstream path (selector / E5 fallback / U3
+                # recovery) finalized next_vp. There is exactly ONE action-4 emission site in
+                # this loop, so this single capture covers every movement; any future emitter
+                # that bypasses this site MUST also update last_executed_move (or set it None).
+                if backtrack_enabled and env_actions:
+                    _sent = (
+                        env_actions[0].get("action", {})
+                        if isinstance(env_actions[0], dict)
+                        else {}
+                    )
+                    if backtrack_reverse_emitted:
+                        # After a backtrack, the reverse-of-the-reverse would just undo it ->
+                        # clear last_executed_move so no MOVE_BACK is offered next step.
+                        last_executed_move = None
+                        just_backtracked = True
+                    elif _sent.get("action") == 4 and isinstance(_sent.get("action_args"), dict):
+                        last_executed_move = dict(_sent["action_args"])
+                        just_backtracked = False
+                    # action 0 (STOP): leave state as-is; the episode terminates on STOP.
                 nav_logger.info(f"The final env action: {env_actions}")
                 decision_audit_payload = build_action_decision_audit(
                     next_vp,
