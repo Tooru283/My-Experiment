@@ -1,0 +1,599 @@
+{"kind":"deck","id":"pr/rcfbxu","name":"Deck"}
+{"kind":"layout","layoutId":"9f2cf0f8-3e89-4f2c-83de-6edae93abb66","name":"Master","type":"master"}
+{"kind":"layout","layoutId":"8bad5bd3-e176-41e9-87d1-375b5b291807","name":"Title Slide","type":"title"}
+{"kind":"slide","id":"sl/3eufc0","slide":1,"title":"REALM","textShapes":7}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":1,"text":"REALM","textPreview":"REALM","textChars":5,"textLines":1,"bbox":[42,44,400,74]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":1,"text":"From Region Arrival to Instance-Level Grounding\nin Vision-and-Language Navigation","textPreview":"From Region Arrival to Instance-Level Grounding | in Vision-and-Language Navigation","textChars":81,"textLines":2,"bbox":[42,160,830,168]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":1,"text":"论文讲解 | 30 分钟组会版","textPreview":"论文讲解 | 30 分钟组会版","textChars":15,"textLines":1,"bbox":[42,360,520,44]}
+{"kind":"textbox","id":"sh/re1w7mp0","slide":1,"text":"核心问题：一个导航轨迹“到达”了区域，是否真的看见并能定位目标实例？","textPreview":"核心问题：一个导航轨迹“到达”了区域，是否真的看见并能定位目标实例？","textChars":34,"textLines":1,"bbox":[42,500,820,72]}
+{"kind":"shape","id":"sh/2t83itgf","slide":1,"bbox":[930,42,308,636]}
+{"kind":"textbox","id":"sh/9knih4by","slide":1,"text":"Region\nArrival\n\n!=\n\nInstance\nGrounding","textPreview":"Region | Arrival |  | != |  | Instance | Grounding","textChars":38,"textLines":7,"bbox":[960,112,250,480]}
+{"kind":"textbox","id":"sh/kzupwb2h","slide":1,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/ra5gbq1o","slide":1,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/3eufc0","slide":1,"text":""}
+{"kind":"slide","id":"sl/oqfvcp","slide":2,"title":"导览","textShapes":16}
+{"kind":"textbox","id":"sh/fepkzupw","slide":2,"text":"导览","textPreview":"导览","textChars":2,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/4zidonyd","slide":2,"text":"这篇论文要解决的不是“怎么导航”，而是“停得算不算数”","textPreview":"这篇论文要解决的不是“怎么导航”，而是“停得算不算数”","textChars":27,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":2,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/f6dcbulw","slide":2,"bbox":[120,205,980,58]}
+{"kind":"shape","id":"sh/4r65wjud","slide":2,"bbox":[120,263,980,1]}
+{"kind":"textbox","id":"sh/xc3ylc7u","slide":2,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[130,212,70,50]}
+{"kind":"textbox","id":"sh/m94fu18j","slide":2,"text":"评测漏洞：为什么 3m 内停止会产生虚假成功","textPreview":"评测漏洞：为什么 3m 内停止会产生虚假成功","textChars":22,"textLines":1,"bbox":[220,212,870,50]}
+{"kind":"shape","id":"sh/fu18jqh0","slide":2,"bbox":[120,321,980,1]}
+{"kind":"textbox","id":"sh/r65wjudg","slide":2,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[130,270,70,50]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":2,"text":"诊断指标：ONS / GS / OracleGS 如何把失败归因拆开","textPreview":"诊断指标：ONS / GS / OracleGS 如何把失败归因拆开","textChars":34,"textLines":1,"bbox":[220,270,870,50]}
+{"kind":"shape","id":"sh/9cvixcze","slide":2,"bbox":[120,379,980,1]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":2,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[130,328,70,50]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":2,"text":"REALM 方法：上游不动，短程精调接管，最后开放词汇接地","textPreview":"REALM 方法：上游不动，短程精调接管，最后开放词汇接地","textChars":29,"textLines":1,"bbox":[220,328,870,50]}
+{"kind":"shape","id":"sh/yxobm58z","slide":2,"bbox":[120,437,980,1]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":2,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[130,386,70,50]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":2,"text":"REVERIE-AIM：把区域终点改造成物体实例终点","textPreview":"REVERIE-AIM：把区域终点改造成物体实例终点","textChars":26,"textLines":1,"bbox":[220,386,870,50]}
+{"kind":"shape","id":"sh/rmhk3q5o","slide":2,"bbox":[120,495,980,1]}
+{"kind":"textbox","id":"sh/y1kre1w7","slide":2,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[130,444,70,50]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":2,"text":"实验结果：涨点、消融、真机，以及远未解决的天花板","textPreview":"实验结果：涨点、消融、真机，以及远未解决的天花板","textChars":24,"textLines":1,"bbox":[220,444,870,50]}
+{"kind":"shape","id":"sh/vy90je9c","slide":2,"bbox":[120,553,980,1]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":2,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[130,502,70,50]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":2,"text":"批判性评读：它修了什么，没有修什么，对我们有什么启发","textPreview":"批判性评读：它修了什么，没有修什么，对我们有什么启发","textChars":26,"textLines":1,"bbox":[220,502,870,50]}
+{"kind":"shape","id":"sh/61032lsz","slide":2,"bbox":[120,205,980,1.5]}
+{"kind":"notes","id":"nt/oqfvcp","slide":2,"text":""}
+{"kind":"slide","id":"sl/hdek7a","slide":3,"title":"问题钩子","textShapes":11}
+{"kind":"textbox","id":"sh/at47y1kr","slide":3,"text":"问题钩子","textPreview":"问题钩子","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":3,"text":"最刺眼的现象：SR 看起来成功，目标却很可能不可见","textPreview":"最刺眼的现象：SR 看起来成功，目标却很可能不可见","textChars":25,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":3,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":3,"bbox":[825,170,330,155]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":3,"text":"34.67%","textPreview":"34.67%","textChars":6,"textLines":1,"bbox":[847,204,286,78]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":3,"text":"ETPNav-FT 在传统 3m 标准下的 Success Rate","textPreview":"ETPNav-FT 在传统 3m 标准下的 Success Rate","textChars":34,"textLines":1,"bbox":[847,296,286,86]}
+{"kind":"shape","id":"sh/e9cvixcz","slide":3,"bbox":[825,350,330,155]}
+{"kind":"textbox","id":"sh/87ed8bat","slide":3,"text":"11.31%","textPreview":"11.31%","textChars":6,"textLines":1,"bbox":[847,384,286,78]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":3,"text":"同一模型最终视角里目标可见的 OracleGS","textPreview":"同一模型最终视角里目标可见的 OracleGS","textChars":23,"textLines":1,"bbox":[847,476,286,86]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":3,"text":"论文的判断：超过 80% 的传统“成功”没有真正完成实例级接地。","textPreview":"论文的判断：超过 80% 的传统“成功”没有真正完成实例级接地。","textChars":32,"textLines":1,"bbox":[42,548,920,48]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":3,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":3,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"image","id":"im/fu18jqh0","slide":3,"name":"","alt":"Figure 1: conventional viewpoint success but grounding failure","bbox":[42,158,730,355]}
+{"kind":"notes","id":"nt/hdek7a","slide":3,"text":""}
+{"kind":"slide","id":"sl/am7is1","slide":4,"title":"背景","textShapes":19}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":4,"text":"背景","textPreview":"背景","textChars":2,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":4,"text":"REVERIE-CE 的成功标准只奖励位置，不检查视角和目标可见性","textPreview":"REVERIE-CE 的成功标准只奖励位置，不检查视角和目标可见性","textChars":33,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":4,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/orytsvu9","slide":4,"bbox":[42,182,360,320]}
+{"kind":"textbox","id":"sh/z61032ls","slide":4,"text":"传统 SR","textPreview":"传统 SR","textChars":5,"textLines":1,"bbox":[70,214,280,38]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":4,"text":"stop position within 3m of a pre-annotated endpoint","textPreview":"stop position within 3m of a pre-annotated endpoint","textChars":51,"textLines":1,"bbox":[70,282,280,90]}
+{"kind":"textbox","id":"sh/hk3q5o7q","slide":4,"text":"这个 endpoint 是目标附近的导航点，不是物体实例本身。","textPreview":"这个 endpoint 是目标附近的导航点，不是物体实例本身。","textChars":31,"textLines":1,"bbox":[70,408,280,70]}
+{"kind":"shape","id":"sh/oza1gvy9","slide":4,"bbox":[460,182,360,320]}
+{"kind":"textbox","id":"sh/29gr2p8n","slide":4,"text":"缺失检查","textPreview":"缺失检查","textChars":4,"textLines":1,"bbox":[488,214,280,38]}
+{"kind":"textbox","id":"sh/vu9knih4","slide":4,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[488,284,34,34]}
+{"kind":"textbox","id":"sh/kf6dcbul","slide":4,"text":"是否面对目标","textPreview":"是否面对目标","textChars":6,"textLines":1,"bbox":[532,282,236,36]}
+{"kind":"textbox","id":"sh/d0z61032","slide":4,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[488,332,34,34]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":4,"text":"目标是否进入视野","textPreview":"目标是否进入视野","textChars":8,"textLines":1,"bbox":[532,330,236,36]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":4,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[488,380,34,34]}
+{"kind":"textbox","id":"sh/knih4byh","slide":4,"text":"目标是否足够大，可被定位","textPreview":"目标是否足够大，可被定位","textChars":12,"textLines":1,"bbox":[532,378,236,60]}
+{"kind":"shape","id":"sh/d8bat47y","slide":4,"bbox":[878,182,360,320]}
+{"kind":"textbox","id":"sh/6psfil0r","slide":4,"text":"后果","textPreview":"后果","textChars":2,"textLines":1,"bbox":[906,214,280,38]}
+{"kind":"textbox","id":"sh/val87ed8","slide":4,"text":"能“到附近”，但不能服务后续检查、操作或真实机器人交互。","textPreview":"能“到附近”，但不能服务后续检查、操作或真实机器人交互。","textChars":28,"textLines":1,"bbox":[906,282,280,130]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":4,"text":"区域级到达 != 实例级可接地","textPreview":"区域级到达 != 实例级可接地","textChars":15,"textLines":1,"bbox":[42,555,850,52]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":4,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":4,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/am7is1","slide":4,"text":""}
+{"kind":"slide","id":"sl/cmgc7m","slide":5,"title":"问题形式化","textShapes":12}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":5,"text":"问题形式化","textPreview":"问题形式化","textChars":5,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":5,"text":"Last-3-Meter Grounding Gap 把“到达质量”重新定义为终态问题","textPreview":"Last-3-Meter Grounding Gap 把“到达质量”重新定义为终态问题","textChars":43,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":5,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/wval87ed","slide":5,"text":"合格终态必须同时满足两个条件","textPreview":"合格终态必须同时满足两个条件","textChars":14,"textLines":1,"bbox":[42,166,700,42]}
+{"kind":"shape","id":"sh/7adsji5s","slide":5,"bbox":[42,240,520,190]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":5,"text":"1. Physical proximity","textPreview":"1. Physical proximity","textChars":21,"textLines":1,"bbox":[70,270,440,38]}
+{"kind":"textbox","id":"sh/lc7u54zi","slide":5,"text":"停止位置要接近目标实例周边的可导航点，而不是接近旧的区域 waypoint。","textPreview":"停止位置要接近目标实例周边的可导航点，而不是接近旧的区域 waypoint。","textChars":38,"textLines":1,"bbox":[70,330,420,70]}
+{"kind":"shape","id":"sh/wra5gbq1","slide":5,"bbox":[642,240,520,190]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":5,"text":"2. Visual groundability","textPreview":"2. Visual groundability","textChars":23,"textLines":1,"bbox":[670,270,440,38]}
+{"kind":"textbox","id":"sh/nap4r65w","slide":5,"text":"目标必须在第一人称视野中可见，且分辨率足以支持 bbox 级定位。","textPreview":"目标必须在第一人称视野中可见，且分辨率足以支持 bbox 级定位。","textChars":33,"textLines":1,"bbox":[670,330,420,70]}
+{"kind":"shape","id":"sh/cvixczed","slide":5,"bbox":[145,500,990,2]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":5,"text":"Gap = reaching the general vicinity - achieving a final state for reliable grounding","textPreview":"Gap = reaching the general vicinity - achieving a final state for reliable grounding","textChars":84,"textLines":1,"bbox":[145,528,990,54]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":5,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":5,"text":"05","textPreview":"05","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/cmgc7m","slide":5,"text":""}
+{"kind":"slide","id":"sl/3ybpqx","slide":6,"title":"指标设计","textShapes":19}
+{"kind":"textbox","id":"sh/nih4byhg","slide":6,"text":"指标设计","textPreview":"指标设计","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":6,"text":"三个指标的价值在于解耦失败来源，而不是只换一个分数","textPreview":"三个指标的价值在于解耦失败来源，而不是只换一个分数","textChars":25,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/5o7qpg3e","slide":6,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/r65wjudg","slide":6,"bbox":[55,180,1170,55]}
+{"kind":"shape","id":"sh/gr2p8nqx","slide":6,"bbox":[55,235,1170,1]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":6,"text":"指标","textPreview":"指标","textChars":2,"textLines":1,"bbox":[65,187,160,47]}
+{"kind":"textbox","id":"sh/yd0z6103","slide":6,"text":"看什么","textPreview":"看什么","textChars":3,"textLines":1,"bbox":[245,187,510,47]}
+{"kind":"textbox","id":"sh/rytsvu9k","slide":6,"text":"失败说明","textPreview":"失败说明","textChars":4,"textLines":1,"bbox":[775,187,440,47]}
+{"kind":"shape","id":"sh/bi9s36hc","slide":6,"bbox":[55,290,1170,1]}
+{"kind":"textbox","id":"sh/ixczed8v","slide":6,"text":"ONS@tau","textPreview":"ONS@tau","textChars":7,"textLines":1,"bbox":[65,242,160,47]}
+{"kind":"textbox","id":"sh/tovahoza","slide":6,"text":"停止点到目标实例周边可导航点的测地距离","textPreview":"停止点到目标实例周边可导航点的测地距离","textChars":19,"textLines":1,"bbox":[245,242,510,47]}
+{"kind":"textbox","id":"sh/032lszqt","slide":6,"text":"导航没有把 agent 带到物体附近","textPreview":"导航没有把 agent 带到物体附近","textChars":18,"textLines":1,"bbox":[775,242,440,47]}
+{"kind":"shape","id":"sh/bulwval8","slide":6,"bbox":[55,345,1170,1]}
+{"kind":"textbox","id":"sh/i9s36hcr","slide":6,"text":"GS","textPreview":"GS","textChars":2,"textLines":1,"bbox":[65,297,160,47]}
+{"kind":"textbox","id":"sh/p0bi9s36","slide":6,"text":"最终视角检测 bbox 与 GT bbox 的 IoU >= 0.5","textPreview":"最终视角检测 bbox 与 GT bbox 的 IoU >= 0.5","textChars":34,"textLines":1,"bbox":[245,297,510,47]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":6,"text":"真实接地失败，混合导航与检测能力","textPreview":"真实接地失败，混合导航与检测能力","textChars":16,"textLines":1,"bbox":[775,297,440,47]}
+{"kind":"shape","id":"sh/byhgn29g","slide":6,"bbox":[55,400,1170,1]}
+{"kind":"textbox","id":"sh/idonyd0z","slide":6,"text":"OracleGS","textPreview":"OracleGS","textChars":8,"textLines":1,"bbox":[65,352,160,47]}
+{"kind":"textbox","id":"sh/65wjudg7","slide":6,"text":"GT bbox 在画面中且面积 >= 1%","textPreview":"GT bbox 在画面中且面积 >= 1%","textChars":21,"textLines":1,"bbox":[245,352,510,47]}
+{"kind":"textbox","id":"sh/zqtcj6to","slide":6,"text":"纯可见性失败，基本是导航/朝向问题","textPreview":"纯可见性失败，基本是导航/朝向问题","textChars":17,"textLines":1,"bbox":[775,352,440,47]}
+{"kind":"shape","id":"sh/obm58z25","slide":6,"bbox":[55,180,1170,1.5]}
+{"kind":"shape","id":"sh/hwfyxobm","slide":6,"bbox":[160,490,960,82]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":6,"text":"GS vs OracleGS 的差距：检测器的锅；OracleGS 本身低：导航终态的锅。","textPreview":"GS vs OracleGS 的差距：检测器的锅；OracleGS 本身低：导航终态的锅。","textChars":45,"textLines":1,"bbox":[190,512,900,40]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":6,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":6,"text":"06","textPreview":"06","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/3ybpqx","slide":6,"text":""}
+{"kind":"slide","id":"sl/ligk17","slide":7,"title":"诊断结果","textShapes":16}
+{"kind":"textbox","id":"sh/d0z61032","slide":7,"text":"诊断结果","textPreview":"诊断结果","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/29gr2p8n","slide":7,"text":"用这些指标重算后，传统成功率的泡沫被挤出来","textPreview":"用这些指标重算后，传统成功率的泡沫被挤出来","textChars":21,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/vu9knih4","slide":7,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/knih4byh","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/d8bat47y","slide":7,"text":"ETPNav-FT 在 REVERIE-AIM val-unseen 上的同一组结果","textPreview":"ETPNav-FT 在 REVERIE-AIM val-unseen 上的同一组结果","textChars":42,"textLines":1,"bbox":[42,158,760,34]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":7,"text":"传统 SR","textPreview":"传统 SR","textChars":5,"textLines":1,"bbox":[90,235,210,28]}
+{"kind":"shape","id":"sh/v6psfil0","slide":7,"bbox":[320,239,440,22]}
+{"kind":"shape","id":"sh/kre1w7mp","slide":7,"bbox":[320,239,381.37,22]}
+{"kind":"textbox","id":"sh/dcbulwva","slide":7,"text":"34.67%","textPreview":"34.67%","textChars":6,"textLines":1,"bbox":[770,233,80,30]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":7,"text":"ONS@0.1m","textPreview":"ONS@0.1m","textChars":8,"textLines":1,"bbox":[90,310,210,28]}
+{"kind":"shape","id":"sh/s72x4nap","slide":7,"bbox":[320,314,440,22]}
+{"kind":"shape","id":"sh/3m94fu18","slide":7,"bbox":[320,314,69.52,22]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":7,"text":"6.32%","textPreview":"6.32%","textChars":5,"textLines":1,"bbox":[770,308,80,30]}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":7,"text":"OracleGS","textPreview":"OracleGS","textChars":8,"textLines":1,"bbox":[90,385,210,28]}
+{"kind":"shape","id":"sh/sji5snel","slide":7,"bbox":[320,389,440,22]}
+{"kind":"shape","id":"sh/3ylc7u54","slide":7,"bbox":[320,389,124.41,22]}
+{"kind":"textbox","id":"sh/adsji5sn","slide":7,"text":"11.31%","textPreview":"11.31%","textChars":6,"textLines":1,"bbox":[770,383,80,30]}
+{"kind":"shape","id":"sh/hgn29gr2","slide":7,"bbox":[925,220,255,225]}
+{"kind":"textbox","id":"sh/svu9knih","slide":7,"text":">80%","textPreview":">80%","textChars":4,"textLines":1,"bbox":[955,252,200,80]}
+{"kind":"textbox","id":"sh/4r65wjud","slide":7,"text":"传统“成功”没有真正看见并接地目标","textPreview":"传统“成功”没有真正看见并接地目标","textChars":17,"textLines":1,"bbox":[955,350,200,62]}
+{"kind":"textbox","id":"sh/xc3ylc7u","slide":7,"text":"这不是单个模型的偶然误差，而是评价协议把“区域到达”错当成“任务完成”。","textPreview":"这不是单个模型的偶然误差，而是评价协议把“区域到达”错当成“任务完成”。","textChars":36,"textLines":1,"bbox":[90,515,900,62]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":7,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/f6dcbulw","slide":7,"text":"07","textPreview":"07","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/ligk17","slide":7,"text":""}
+{"kind":"slide","id":"sl/8jfyuj","slide":8,"title":"Section","textShapes":5}
+{"kind":"textbox","id":"sh/i5sneloj","slide":8,"text":"Section","textPreview":"Section","textChars":7,"textLines":1,"bbox":[42,38,180,28]}
+{"kind":"textbox","id":"sh/pwb2hwfy","slide":8,"text":"REALM 方法","textPreview":"REALM 方法","textChars":8,"textLines":1,"bbox":[42,190,920,130]}
+{"kind":"textbox","id":"sh/0bi9s36h","slide":8,"text":"上游长程导航不重训；停止后由短程 refinement 模块重新找姿态和视角。","textPreview":"上游长程导航不重训；停止后由短程 refinement 模块重新找姿态和视角。","textChars":39,"textLines":1,"bbox":[42,350,760,76]}
+{"kind":"shape","id":"sh/7y1kre1w","slide":8,"bbox":[920,0,360,720]}
+{"kind":"textbox","id":"sh/ed8v6psf","slide":8,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":8,"text":"08","textPreview":"08","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/8jfyuj","slide":8,"text":""}
+{"kind":"slide","id":"sl/y8laat","slide":9,"title":"方法总览","textShapes":13}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":9,"text":"方法总览","textPreview":"方法总览","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":9,"text":"REALM 是一个接在 stop 之后的三段式 refinement 管线","textPreview":"REALM 是一个接在 stop 之后的三段式 refinement 管线","textChars":37,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":9,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/6tovahoz","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/ovahoza1","slide":9,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[845,190,34,42]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":9,"text":"Navigation：任意上游 VLN policy 先走长程路径并发出 stop。","textPreview":"Navigation：任意上游 VLN policy 先走长程路径并发出 stop。","textChars":42,"textLines":1,"bbox":[889,188,316,44]}
+{"kind":"textbox","id":"sh/61032lsz","slide":9,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[845,250,34,42]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":9,"text":"Refinement：REALM 接管，短程移动/转向到目标可见且可操作的位置。","textPreview":"Refinement：REALM 接管，短程移动/转向到目标可见且可操作的位置。","textChars":40,"textLines":1,"bbox":[889,248,316,62]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":9,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[845,328,34,42]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":9,"text":"Grounding：从最终观测中抽取目标短语，并用 OWLv2 输出 bbox。","textPreview":"Grounding：从最终观测中抽取目标短语，并用 OWLv2 输出 bbox。","textChars":40,"textLines":1,"bbox":[889,326,316,62]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":9,"text":"设计关键：把长程规划和最后 3 米对准拆开，避免一个模型同时背两种目标。","textPreview":"设计关键：把长程规划和最后 3 米对准拆开，避免一个模型同时背两种目标。","textChars":36,"textLines":1,"bbox":[42,535,1030,52]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":9,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":9,"text":"09","textPreview":"09","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"image","id":"im/qpg3ex0n","slide":9,"name":"","alt":"Figure 2: REALM framework","bbox":[42,160,760,336]}
+{"kind":"notes","id":"nt/y8laat","slide":9,"text":""}
+{"kind":"slide","id":"sl/1z67jl","slide":10,"title":"方法动机","textShapes":21}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":10,"text":"方法动机","textPreview":"方法动机","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":10,"text":"为什么要解耦：长程导航和短程对准其实是两类问题","textPreview":"为什么要解耦：长程导航和短程对准其实是两类问题","textChars":23,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":10,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/87ed8bat","slide":10,"bbox":[70,180,500,345]}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":10,"text":"上游导航","textPreview":"上游导航","textChars":4,"textLines":1,"bbox":[100,216,420,38]}
+{"kind":"textbox","id":"sh/q1orytsv","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,290,34,38]}
+{"kind":"textbox","id":"sh/x4nap4r6","slide":10,"text":"跨度：几十米、跨房间","textPreview":"跨度：几十米、跨房间","textChars":10,"textLines":1,"bbox":[144,288,346,38]}
+{"kind":"textbox","id":"sh/8jqh0fep","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,342,34,38]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":10,"text":"核心：路径规划、场景级推理","textPreview":"核心：路径规划、场景级推理","textChars":13,"textLines":1,"bbox":[144,340,346,38]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,394,34,38]}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":10,"text":"评价：是否到达目标附近区域","textPreview":"评价：是否到达目标附近区域","textChars":13,"textLines":1,"bbox":[144,392,346,60]}
+{"kind":"shape","id":"sh/tgfmlkjm","slide":10,"bbox":[710,180,500,345]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":10,"text":"短程 refinement","textPreview":"短程 refinement","textChars":13,"textLines":1,"bbox":[740,216,420,38]}
+{"kind":"textbox","id":"sh/bm58z25k","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[740,290,34,38]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":10,"text":"跨度：最后几米、局部视野","textPreview":"跨度：最后几米、局部视野","textChars":12,"textLines":1,"bbox":[784,288,346,38]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[740,342,34,38]}
+{"kind":"textbox","id":"sh/m58z25kb","slide":10,"text":"核心：物体可见性、姿态对准","textPreview":"核心：物体可见性、姿态对准","textChars":13,"textLines":1,"bbox":[784,340,346,38]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":10,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[740,394,34,38]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":10,"text":"评价：是否接近实例并可被视觉接地","textPreview":"评价：是否接近实例并可被视觉接地","textChars":16,"textLines":1,"bbox":[784,392,346,60]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":10,"text":"解耦让 REALM 可以即插即用到图方法、视频方法、零样本方法和免训练 VLM 方法。","textPreview":"解耦让 REALM 可以即插即用到图方法、视频方法、零样本方法和免训练 VLM 方法。","textChars":43,"textLines":1,"bbox":[115,570,1050,48]}
+{"kind":"textbox","id":"sh/psfil0rq","slide":10,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":10,"text":"10","textPreview":"10","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/1z67jl","slide":10,"text":""}
+{"kind":"slide","id":"sl/lvt4xp","slide":11,"title":"Refinement 模块","textShapes":13}
+{"kind":"textbox","id":"sh/crmhk3q5","slide":11,"text":"Refinement 模块","textPreview":"Refinement 模块","textChars":13,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/j6tovaho","slide":11,"text":"Refinement policy 用 UniNaVid 做短程 VLA，再用 LoRA 轻量适配","textPreview":"Refinement policy 用 UniNaVid 做短程 VLA，再用 LoRA 轻量适配","textChars":49,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/ulwval87","slide":11,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/1kre1w7m","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/c3ylc7u5","slide":11,"bbox":[68,186,330,300]}
+{"kind":"textbox","id":"sh/ji5snelo","slide":11,"text":"输入","textPreview":"输入","textChars":2,"textLines":1,"bbox":[96,224,240,34]}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":11,"text":"第一人称 RGB 序列\n+\n原始语言指令","textPreview":"第一人称 RGB 序列 | + | 原始语言指令","textChars":20,"textLines":3,"bbox":[96,292,250,130]}
+{"kind":"shape","id":"sh/1w7mp0bi","slide":11,"bbox":[475,186,330,300]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":11,"text":"模型","textPreview":"模型","textChars":2,"textLines":1,"bbox":[503,224,240,34]}
+{"kind":"textbox","id":"sh/ytsvu9kn","slide":11,"text":"冻结视觉编码器\nLoRA 微调 LLM backbone 的线性层","textPreview":"冻结视觉编码器 | LoRA 微调 LLM backbone 的线性层","textChars":33,"textLines":2,"bbox":[503,292,250,130]}
+{"kind":"shape","id":"sh/neloj2t8","slide":11,"bbox":[882,186,330,300]}
+{"kind":"textbox","id":"sh/czed8v6p","slide":11,"text":"输出","textPreview":"输出","textChars":2,"textLines":1,"bbox":[910,224,240,34]}
+{"kind":"textbox","id":"sh/5kb6xkf6","slide":11,"text":"未来四步动作\nforward / left / right / stop","textPreview":"未来四步动作 | forward / left / right / stop","textChars":36,"textLines":2,"bbox":[910,292,250,130]}
+{"kind":"textbox","id":"sh/u54zidon","slide":11,"text":"它不是重新解决完整 VLN，而是专门训练“最后几米怎么把目标放进视野”。","textPreview":"它不是重新解决完整 VLN，而是专门训练“最后几米怎么把目标放进视野”。","textChars":36,"textLines":1,"bbox":[120,550,1030,48]}
+{"kind":"textbox","id":"sh/nqxs72x4","slide":11,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/cbulwval","slide":11,"text":"11","textPreview":"11","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/lvt4xp","slide":11,"text":""}
+{"kind":"slide","id":"sl/f8vdlr","slide":12,"title":"Visibility-aware Stop Penalty","textShapes":12}
+{"kind":"textbox","id":"sh/sfil0rqd","slide":12,"text":"Visibility-aware Stop Penalty","textPreview":"Visibility-aware Stop Penalty","textChars":29,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":12,"text":"VSP 的非对称性：不可见时想停就罚，看见了停不罚","textPreview":"VSP 的非对称性：不可见时想停就罚，看见了停不罚","textChars":25,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":12,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":12,"text":"stop margin = z_stop - max(other actions)","textPreview":"stop margin = z_stop - max(other actions)","textChars":41,"textLines":1,"bbox":[92,168,660,42]}
+{"kind":"shape","id":"sh/z61032ls","slide":12,"bbox":[92,250,480,210]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":12,"text":"Target NOT visible","textPreview":"Target NOT visible","textChars":18,"textLines":1,"bbox":[122,285,390,36]}
+{"kind":"textbox","id":"sh/hk3q5o7q","slide":12,"text":"ReLU(margin) 进入损失\n压低 premature stop","textPreview":"ReLU(margin) 进入损失 | 压低 premature stop","textChars":35,"textLines":2,"bbox":[122,354,390,80]}
+{"kind":"shape","id":"sh/oza1gvy9","slide":12,"bbox":[708,250,480,210]}
+{"kind":"textbox","id":"sh/29gr2p8n","slide":12,"text":"Target visible","textPreview":"Target visible","textChars":14,"textLines":1,"bbox":[738,285,390,36]}
+{"kind":"textbox","id":"sh/vu9knih4","slide":12,"text":"不额外惩罚 stop\n避免伤害正确终止","textPreview":"不额外惩罚 stop | 避免伤害正确终止","textChars":19,"textLines":2,"bbox":[738,354,390,80]}
+{"kind":"textbox","id":"sh/kf6dcbul","slide":12,"text":"这比“普通 stop penalty”更有针对性：它修的是过早停，而不是反对所有停。","textPreview":"这比“普通 stop penalty”更有针对性：它修的是过早停，而不是反对所有停。","textChars":42,"textLines":1,"bbox":[126,535,1030,52]}
+{"kind":"textbox","id":"sh/d0z61032","slide":12,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":12,"text":"12","textPreview":"12","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/f8vdlr","slide":12,"text":""}
+{"kind":"slide","id":"sl/c7j1jp","slide":13,"title":"Grounding 模块","textShapes":13}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":13,"text":"Grounding 模块","textPreview":"Grounding 模块","textChars":12,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":13,"text":"视觉接地模块先净化语言，再用开放词汇检测器找框","textPreview":"视觉接地模块先净化语言，再用开放词汇检测器找框","textChars":23,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":13,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/l87ed8ba","slide":13,"bbox":[90,210,260,150]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":13,"text":"原始指令","textPreview":"原始指令","textChars":4,"textLines":1,"bbox":[110,236,220,28]}
+{"kind":"textbox","id":"sh/32lszqtc","slide":13,"text":"go to the bathroom and clean the toilet seat","textPreview":"go to the bathroom and clean the toilet seat","textChars":44,"textLines":1,"bbox":[110,290,220,46]}
+{"kind":"shape","id":"sh/wb2hwfyx","slide":13,"bbox":[420,210,260,150]}
+{"kind":"textbox","id":"sh/lwval87e","slide":13,"text":"BERT-QA","textPreview":"BERT-QA","textChars":7,"textLines":1,"bbox":[440,236,220,28]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":13,"text":"抽取目标名词短语\n\"toilet seat\"","textPreview":"抽取目标名词短语 | \"toilet seat\"","textChars":22,"textLines":2,"bbox":[440,290,220,56]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":13,"bbox":[750,210,260,150]}
+{"kind":"textbox","id":"sh/zidonyd0","slide":13,"text":"OWLv2","textPreview":"OWLv2","textChars":5,"textLines":1,"bbox":[770,236,220,28]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":13,"text":"用目标短语在最终观测中预测 bbox","textPreview":"用目标短语在最终观测中预测 bbox","textChars":18,"textLines":1,"bbox":[770,290,220,56]}
+{"kind":"shape","id":"sh/hgn29gr2","slide":13,"bbox":[350,286,70,3]}
+{"kind":"shape","id":"sh/svu9knih","slide":13,"bbox":[680,286,70,3]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":13,"text":"为什么要抽目标短语：完整指令里混有导航动词和空间线索，会干扰开放词汇检测。","textPreview":"为什么要抽目标短语：完整指令里混有导航动词和空间线索，会干扰开放词汇检测。","textChars":37,"textLines":1,"bbox":[102,500,1020,52]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":13,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/h4byhgn2","slide":13,"text":"13","textPreview":"13","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/c7j1jp","slide":13,"text":""}
+{"kind":"slide","id":"sl/hxmo8r","slide":14,"title":"Section","textShapes":5}
+{"kind":"textbox","id":"sh/svu9knih","slide":14,"text":"Section","textPreview":"Section","textChars":7,"textLines":1,"bbox":[42,38,180,28]}
+{"kind":"textbox","id":"sh/za1gvy90","slide":14,"text":"REVERIE-AIM 数据","textPreview":"REVERIE-AIM 数据","textChars":14,"textLines":1,"bbox":[42,190,920,130]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":14,"text":"作者不只是换指标，还重建了更贴近实例目标的训练和评测数据。","textPreview":"作者不只是换指标，还重建了更贴近实例目标的训练和评测数据。","textChars":29,"textLines":1,"bbox":[42,350,760,76]}
+{"kind":"shape","id":"sh/hoza1gvy","slide":14,"bbox":[920,0,360,720]}
+{"kind":"textbox","id":"sh/s36hcrmh","slide":14,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/zidonyd0","slide":14,"text":"14","textPreview":"14","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/hxmo8r","slide":14,"text":""}
+{"kind":"slide","id":"sl/nlpxac","slide":15,"title":"数据构建","textShapes":13}
+{"kind":"textbox","id":"sh/c7u54zid","slide":15,"text":"数据构建","textPreview":"数据构建","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/jm1cfa9w","slide":15,"text":"REVERIE-AIM 把“附近路点”改造成“物体实例附近可达点”","textPreview":"REVERIE-AIM 把“附近路点”改造成“物体实例附近可达点”","textChars":33,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/u18jqh0f","slide":15,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/1032lszq","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/judg7ads","slide":15,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[70,196,34,44]}
+{"kind":"textbox","id":"sh/u9knih4b","slide":15,"text":"离散 REVERIE 轨迹映射并插值到 Habitat 连续环境。","textPreview":"离散 REVERIE 轨迹映射并插值到 Habitat 连续环境。","textChars":33,"textLines":1,"bbox":[114,194,506,46]}
+{"kind":"textbox","id":"sh/54zidony","slide":15,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[70,262,34,44]}
+{"kind":"textbox","id":"sh/cj6tovah","slide":15,"text":"利用 Matterport3D 共享场景层级，对齐 REVERIE 与 ObjectNav 实例 ID。","textPreview":"利用 Matterport3D 共享场景层级，对齐 REVERIE 与 ObjectNav 实例 ID。","textChars":52,"textLines":1,"bbox":[114,260,506,64]}
+{"kind":"textbox","id":"sh/ex0nuxc3","slide":15,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[70,346,34,44]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":15,"text":"把原来的 region-level endpoint 替换为 object-centric endpoint。","textPreview":"把原来的 region-level endpoint 替换为 object-centric endpoint。","textChars":55,"textLines":1,"bbox":[114,344,506,46]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":15,"text":"数据集贡献不是“又做一个 benchmark”，而是把评测目标从位置点拉回到物体实例。","textPreview":"数据集贡献不是“又做一个 benchmark”，而是把评测目标从位置点拉回到物体实例。","textChars":43,"textLines":1,"bbox":[70,545,1070,50]}
+{"kind":"textbox","id":"sh/loj2t83i","slide":15,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":15,"text":"15","textPreview":"15","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"image","id":"im/5sneloj2","slide":15,"name":"","alt":"Table 1 dataset comparison","bbox":[690,170,500,286]}
+{"kind":"notes","id":"nt/nlpxac","slide":15,"text":""}
+{"kind":"slide","id":"sl/uowgxi","slide":16,"title":"数据规模","textShapes":16}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":16,"text":"数据规模","textPreview":"数据规模","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":16,"text":"REVERIE-AIM 的两个关键数字：更近的终点和大量短程样本","textPreview":"REVERIE-AIM 的两个关键数字：更近的终点和大量短程样本","textChars":32,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":16,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/dsji5sne","slide":16,"bbox":[70,170,510,190]}
+{"kind":"textbox","id":"sh/61032lsz","slide":16,"text":"1.32m -> 0.34m","textPreview":"1.32m -> 0.34m","textChars":14,"textLines":1,"bbox":[92,204,466,78]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":16,"text":"平均最小测地距离从宽松区域终点缩到物体级终点","textPreview":"平均最小测地距离从宽松区域终点缩到物体级终点","textChars":22,"textLines":1,"bbox":[92,296,466,86]}
+{"kind":"shape","id":"sh/ovahoza1","slide":16,"bbox":[700,170,430,190]}
+{"kind":"textbox","id":"sh/dg7adsji","slide":16,"text":"180K","textPreview":"180K","textChars":4,"textLines":1,"bbox":[722,204,386,78]}
+{"kind":"textbox","id":"sh/1032lszq","slide":16,"text":"从训练 split 生成的 fine-grained navigation samples","textPreview":"从训练 split 生成的 fine-grained navigation samples","textChars":45,"textLines":1,"bbox":[722,296,386,86]}
+{"kind":"shape","id":"sh/cfa9w3m9","slide":16,"bbox":[70,405,330,150]}
+{"kind":"textbox","id":"sh/judg7ads","slide":16,"text":"3,691 / 1,344","textPreview":"3,691 / 1,344","textChars":13,"textLines":1,"bbox":[92,439,286,78]}
+{"kind":"textbox","id":"sh/u9knih4b","slide":16,"text":"训练轨迹 / val-unseen 轨迹","textPreview":"训练轨迹 / val-unseen 轨迹","textChars":20,"textLines":1,"bbox":[92,531,286,86]}
+{"kind":"shape","id":"sh/1orytsvu","slide":16,"bbox":[475,405,330,150]}
+{"kind":"textbox","id":"sh/c7u54zid","slide":16,"text":"53 / 10","textPreview":"53 / 10","textChars":7,"textLines":1,"bbox":[497,439,286,78]}
+{"kind":"textbox","id":"sh/jm1cfa9w","slide":16,"text":"训练场景 / 未见验证场景","textPreview":"训练场景 / 未见验证场景","textChars":13,"textLines":1,"bbox":[497,531,286,86]}
+{"kind":"shape","id":"sh/u18jqh0f","slide":16,"bbox":[880,405,330,150]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":16,"text":"90 / 48","textPreview":"90 / 48","textChars":7,"textLines":1,"bbox":[902,439,286,78]}
+{"kind":"textbox","id":"sh/cvixczed","slide":16,"text":"训练目标类别 / 验证目标类别","textPreview":"训练目标类别 / 验证目标类别","textChars":15,"textLines":1,"bbox":[902,531,286,86]}
+{"kind":"textbox","id":"sh/c3ylc7u5","slide":16,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/1kre1w7m","slide":16,"text":"16","textPreview":"16","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/uowgxi","slide":16,"text":""}
+{"kind":"slide","id":"sl/olh9j5","slide":17,"title":"短程样本生成","textShapes":15}
+{"kind":"textbox","id":"sh/t83itgfm","slide":17,"text":"短程样本生成","textPreview":"短程样本生成","textChars":6,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":17,"text":"短程训练样本刻意模拟“上游已经快到但还没对准”的状态","textPreview":"短程训练样本刻意模拟“上游已经快到但还没对准”的状态","textChars":26,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":17,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/twra5gbq","slide":17,"bbox":[120,190,980,68]}
+{"kind":"shape","id":"sh/m58z25kb","slide":17,"bbox":[120,258,980,1]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":17,"text":"01","textPreview":"01","textChars":2,"textLines":1,"bbox":[130,197,75,60]}
+{"kind":"textbox","id":"sh/47y1kre1","slide":17,"text":"选参考路径倒数第二个节点作为 anchor","textPreview":"选参考路径倒数第二个节点作为 anchor","textChars":21,"textLines":1,"bbox":[225,197,865,60]}
+{"kind":"shape","id":"sh/tsvu9kni","slide":17,"bbox":[120,326,980,1]}
+{"kind":"textbox","id":"sh/90je9cvi","slide":17,"text":"02","textPreview":"02","textChars":2,"textLines":1,"bbox":[130,265,75,60]}
+{"kind":"textbox","id":"sh/gfmlkjm1","slide":17,"text":"位置加截断高斯扰动，sigma=1.5，范围 [-5m, 5m]","textPreview":"位置加截断高斯扰动，sigma=1.5，范围 [-5m, 5m]","textChars":32,"textLines":1,"bbox":[225,265,865,60]}
+{"kind":"shape","id":"sh/rytsvu9k","slide":17,"bbox":[120,394,980,1]}
+{"kind":"textbox","id":"sh/yd0z6103","slide":17,"text":"03","textPreview":"03","textChars":2,"textLines":1,"bbox":[130,333,75,60]}
+{"kind":"textbox","id":"sh/9s36hcrm","slide":17,"text":"初始朝向随机采样到 [-pi, pi]","textPreview":"初始朝向随机采样到 [-pi, pi]","textChars":19,"textLines":1,"bbox":[225,333,865,60]}
+{"kind":"shape","id":"sh/g7adsji5","slide":17,"bbox":[120,462,980,1]}
+{"kind":"textbox","id":"sh/rmhk3q5o","slide":17,"text":"04","textPreview":"04","textChars":2,"textLines":1,"bbox":[130,401,75,60]}
+{"kind":"textbox","id":"sh/y1kre1w7","slide":17,"text":"计算到物体周边采样点的最短路，生成 action label","textPreview":"计算到物体周边采样点的最短路，生成 action label","textChars":30,"textLines":1,"bbox":[225,401,865,60]}
+{"kind":"shape","id":"sh/5o7qpg3e","slide":17,"bbox":[120,190,980,1.5]}
+{"kind":"textbox","id":"sh/g3ex0nux","slide":17,"text":"读法：REALM 训练分布默认“目标在最后几米内”，因此它擅长修正姿态和可见性，不负责判断上游是否停错房间。","textPreview":"读法：REALM 训练分布默认“目标在最后几米内”，因此它擅长修正姿态和可见性，不负责判断上游是否停错房间。","textChars":54,"textLines":1,"bbox":[100,540,1080,72]}
+{"kind":"textbox","id":"sh/cfa9w3m9","slide":17,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/1032lszq","slide":17,"text":"17","textPreview":"17","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/olh9j5","slide":17,"text":""}
+{"kind":"slide","id":"sl/4u2oi8","slide":18,"title":"Section","textShapes":5}
+{"kind":"textbox","id":"sh/1orytsvu","slide":18,"text":"Section","textPreview":"Section","textChars":7,"textLines":1,"bbox":[42,38,180,28]}
+{"kind":"textbox","id":"sh/u18jqh0f","slide":18,"text":"实验与结果","textPreview":"实验与结果","textChars":5,"textLines":1,"bbox":[42,190,920,130]}
+{"kind":"textbox","id":"sh/jm1cfa9w","slide":18,"text":"REALM 在四类上游上都涨，但绝对性能距离人类还很远。","textPreview":"REALM 在四类上游上都涨，但绝对性能距离人类还很远。","textChars":28,"textLines":1,"bbox":[42,350,760,76]}
+{"kind":"shape","id":"sh/cfa9w3m9","slide":18,"bbox":[920,0,360,720]}
+{"kind":"textbox","id":"sh/1032lszq","slide":18,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/u9knih4b","slide":18,"text":"18","textPreview":"18","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/4u2oi8","slide":18,"text":""}
+{"kind":"slide","id":"sl/weomgp","slide":19,"title":"实验设置","textShapes":26}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":19,"text":"实验设置","textPreview":"实验设置","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":19,"text":"实验设计覆盖四类上游和六种 destination 后移动策略","textPreview":"实验设计覆盖四类上游和六种 destination 后移动策略","textChars":31,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":19,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/j2t83itg","slide":19,"bbox":[58,178,555,50]}
+{"kind":"shape","id":"sh/8nqxs72x","slide":19,"bbox":[58,228,555,1]}
+{"kind":"textbox","id":"sh/18jqh0fe","slide":19,"text":"上游 backbone","textPreview":"上游 backbone","textChars":11,"textLines":1,"bbox":[68,185,170,42]}
+{"kind":"textbox","id":"sh/ulwval87","slide":19,"text":"代表范式","textPreview":"代表范式","textChars":4,"textLines":1,"bbox":[258,185,345,42]}
+{"kind":"shape","id":"sh/j6tovaho","slide":19,"bbox":[58,278,555,1]}
+{"kind":"textbox","id":"sh/j2t83itg","slide":19,"text":"ETPNav-ZS","textPreview":"ETPNav-ZS","textChars":9,"textLines":1,"bbox":[68,235,170,42]}
+{"kind":"textbox","id":"sh/qh0fepkz","slide":19,"text":"zero-shot topological planning","textPreview":"zero-shot topological planning","textChars":30,"textLines":1,"bbox":[258,235,345,42]}
+{"kind":"shape","id":"sh/18jqh0fe","slide":19,"bbox":[58,328,555,1]}
+{"kind":"textbox","id":"sh/8nqxs72x","slide":19,"text":"ETPNav-FT","textPreview":"ETPNav-FT","textChars":9,"textLines":1,"bbox":[68,285,170,42]}
+{"kind":"textbox","id":"sh/jqh0fepk","slide":19,"text":"fine-tuned topological planning","textPreview":"fine-tuned topological planning","textChars":31,"textLines":1,"bbox":[258,285,345,42]}
+{"kind":"shape","id":"sh/q5o7qpg3","slide":19,"bbox":[58,378,555,1]}
+{"kind":"textbox","id":"sh/1w7mp0bi","slide":19,"text":"UniNaVid-ZS","textPreview":"UniNaVid-ZS","textChars":11,"textLines":1,"bbox":[68,335,170,42]}
+{"kind":"textbox","id":"sh/8bat47y1","slide":19,"text":"video-based VLA baseline","textPreview":"video-based VLA baseline","textChars":24,"textLines":1,"bbox":[258,335,345,42]}
+{"kind":"shape","id":"sh/ji5snelo","slide":19,"bbox":[58,428,555,1]}
+{"kind":"textbox","id":"sh/uxc3ylc7","slide":19,"text":"SmartWay","textPreview":"SmartWay","textChars":8,"textLines":1,"bbox":[68,385,170,42]}
+{"kind":"textbox","id":"sh/2t83itgf","slide":19,"text":"training-free large VLM paradigm","textPreview":"training-free large VLM paradigm","textChars":32,"textLines":1,"bbox":[258,385,345,42]}
+{"kind":"shape","id":"sh/re1w7mp0","slide":19,"bbox":[58,178,555,1.5]}
+{"kind":"shape","id":"sh/kzupwb2h","slide":19,"bbox":[700,178,470,260]}
+{"kind":"textbox","id":"sh/9knih4by","slide":19,"text":"Downstream variants","textPreview":"Downstream variants","textChars":19,"textLines":1,"bbox":[730,212,400,34]}
+{"kind":"textbox","id":"sh/25kb6xkf","slide":19,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[730,280,34,34]}
+{"kind":"textbox","id":"sh/rqd4vmtw","slide":19,"text":"no move / random / CLIP-search","textPreview":"no move / random / CLIP-search","textChars":30,"textLines":1,"bbox":[774,278,346,36]}
+{"kind":"textbox","id":"sh/kb6xkf6d","slide":19,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[730,324,34,34]}
+{"kind":"textbox","id":"sh/9w3m94fu","slide":19,"text":"Vanilla UniNaVid","textPreview":"Vanilla UniNaVid","textChars":16,"textLines":1,"bbox":[774,322,346,36]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":19,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[730,368,34,34]}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":19,"text":"Ours w/o VSP","textPreview":"Ours w/o VSP","textChars":12,"textLines":1,"bbox":[774,366,346,36]}
+{"kind":"textbox","id":"sh/1gvy90je","slide":19,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[730,412,34,34]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":19,"text":"Ours (Full)","textPreview":"Ours (Full)","textChars":11,"textLines":1,"bbox":[774,410,346,36]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":19,"text":"重要控制：标准 VLN 指标在每个 backbone 内固定，REALM 只改变 stop 后的 final-meters behavior。","textPreview":"重要控制：标准 VLN 指标在每个 backbone 内固定，REALM 只改变 stop 后的 final-meters behavior。","textChars":71,"textLines":1,"bbox":[88,535,1080,54]}
+{"kind":"textbox","id":"sh/qtcj6tov","slide":19,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":19,"text":"19","textPreview":"19","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/weomgp","slide":19,"text":""}
+{"kind":"slide","id":"sl/c628q7","slide":20,"title":"模拟结果","textShapes":17}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":20,"text":"模拟结果","textPreview":"模拟结果","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":20,"text":"模拟实验显示：REALM 对四类上游都能稳定提升最后几米质量","textPreview":"模拟实验显示：REALM 对四类上游都能稳定提升最后几米质量","textChars":30,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":20,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/6dcbulwv","slide":20,"text":"20","textPreview":"20","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":20,"text":"ETPNav-ZS ONS@0.1","textPreview":"ETPNav-ZS ONS@0.1","textChars":17,"textLines":1,"bbox":[80,190,210,28]}
+{"kind":"shape","id":"sh/oj2t83it","slide":20,"bbox":[310,194,480,22]}
+{"kind":"shape","id":"sh/d4vmtwra","slide":20,"bbox":[310,194,390.93,22]}
+{"kind":"textbox","id":"sh/6hcrmhk3","slide":20,"text":"14.66%","textPreview":"14.66%","textChars":6,"textLines":1,"bbox":[800,188,80,30]}
+{"kind":"textbox","id":"sh/z25kb6xk","slide":20,"text":"ETPNav-FT ONS@0.1","textPreview":"ETPNav-FT ONS@0.1","textChars":17,"textLines":1,"bbox":[80,260,210,28]}
+{"kind":"shape","id":"sh/vy90je9c","slide":20,"bbox":[310,264,480,22]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":20,"bbox":[310,264,458.4,22]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":20,"text":"17.19%","textPreview":"17.19%","textChars":6,"textLines":1,"bbox":[800,258,80,30]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":20,"text":"UniNaVid-ZS ONS@0.1","textPreview":"UniNaVid-ZS ONS@0.1","textChars":19,"textLines":1,"bbox":[80,330,210,28]}
+{"kind":"shape","id":"sh/vmtwra5g","slide":20,"bbox":[310,334,480,22]}
+{"kind":"shape","id":"sh/61032lsz","slide":20,"bbox":[310,334,398.93,22]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":20,"text":"14.96%","textPreview":"14.96%","textChars":6,"textLines":1,"bbox":[800,328,80,30]}
+{"kind":"textbox","id":"sh/o7qpg3ex","slide":20,"text":"SmartWay ONS@0.1","textPreview":"SmartWay ONS@0.1","textChars":16,"textLines":1,"bbox":[80,400,210,28]}
+{"kind":"shape","id":"sh/vahoza1g","slide":20,"bbox":[310,404,480,22]}
+{"kind":"shape","id":"sh/6tovahoz","slide":20,"bbox":[310,404,373.07,22]}
+{"kind":"textbox","id":"sh/epkzupwb","slide":20,"text":"13.99%","textPreview":"13.99%","textChars":6,"textLines":1,"bbox":[800,398,80,30]}
+{"kind":"shape","id":"sh/7adsji5s","slide":20,"bbox":[925,205,255,230]}
+{"kind":"textbox","id":"sh/wval87ed","slide":20,"text":"4/4","textPreview":"4/4","textChars":3,"textLines":1,"bbox":[955,240,200,72]}
+{"kind":"textbox","id":"sh/pg3ex0nu","slide":20,"text":"上游 backbone\n全部涨点","textPreview":"上游 backbone | 全部涨点","textChars":16,"textLines":2,"bbox":[955,338,200,58]}
+{"kind":"textbox","id":"sh/e1w7mp0b","slide":20,"text":"最值得强调的是可插拔性：不是只帮某一个架构补丁，而是补整个 pipeline 的最后阶段。","textPreview":"最值得强调的是可插拔性：不是只帮某一个架构补丁，而是补整个 pipeline 的最后阶段。","textChars":45,"textLines":1,"bbox":[95,535,1050,54]}
+{"kind":"textbox","id":"sh/7mp0bi9s","slide":20,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/w7mp0bi9","slide":20,"text":"20","textPreview":"20","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/c628q7","slide":20,"text":""}
+{"kind":"slide","id":"sl/1bpxof","slide":21,"title":"关键对比","textShapes":32}
+{"kind":"textbox","id":"sh/4vmtwra5","slide":21,"text":"关键对比","textPreview":"关键对比","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":21,"text":"ETPNav-FT 案例：精调把 ONS@0.1m 从 6.32 拉到 17.19","textPreview":"ETPNav-FT 案例：精调把 ONS@0.1m 从 6.32 拉到 17.19","textChars":41,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/mp0bi9s3","slide":21,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/tsvu9kni","slide":21,"text":"21","textPreview":"21","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/47y1kre1","slide":21,"bbox":[82,188,1090,58]}
+{"kind":"shape","id":"sh/bm58z25k","slide":21,"bbox":[82,246,1090,1]}
+{"kind":"textbox","id":"sh/m1cfa9w3","slide":21,"text":"Move policy","textPreview":"Move policy","textChars":11,"textLines":1,"bbox":[92,195,260,50]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":21,"text":"ONS@0.1m","textPreview":"ONS@0.1m","textChars":8,"textLines":1,"bbox":[372,195,170,50]}
+{"kind":"textbox","id":"sh/4byhgn29","slide":21,"text":"ONS@0.5m","textPreview":"ONS@0.5m","textChars":8,"textLines":1,"bbox":[562,195,170,50]}
+{"kind":"textbox","id":"sh/m58z25kb","slide":21,"text":"GS","textPreview":"GS","textChars":2,"textLines":1,"bbox":[752,195,170,50]}
+{"kind":"textbox","id":"sh/bq1oryts","slide":21,"text":"OracleGS","textPreview":"OracleGS","textChars":8,"textLines":1,"bbox":[942,195,220,50]}
+{"kind":"shape","id":"sh/4byhgn29","slide":21,"bbox":[82,304,1090,1]}
+{"kind":"textbox","id":"sh/twra5gbq","slide":21,"text":"no move","textPreview":"no move","textChars":7,"textLines":1,"bbox":[92,253,260,50]}
+{"kind":"textbox","id":"sh/mhk3q5o7","slide":21,"text":"6.32","textPreview":"6.32","textChars":4,"textLines":1,"bbox":[372,253,170,50]}
+{"kind":"textbox","id":"sh/b2hwfyxo","slide":21,"text":"12.20","textPreview":"12.20","textChars":5,"textLines":1,"bbox":[562,253,170,50]}
+{"kind":"textbox","id":"sh/4nap4r65","slide":21,"text":"4.46","textPreview":"4.46","textChars":4,"textLines":1,"bbox":[752,253,170,50]}
+{"kind":"textbox","id":"sh/t83itgfm","slide":21,"text":"11.31","textPreview":"11.31","textChars":5,"textLines":1,"bbox":[942,253,220,50]}
+{"kind":"shape","id":"sh/mp0bi9s3","slide":21,"bbox":[82,362,1090,1]}
+{"kind":"textbox","id":"sh/bat47y1k","slide":21,"text":"Vanilla UniNaVid","textPreview":"Vanilla UniNaVid","textChars":16,"textLines":1,"bbox":[92,311,260,50]}
+{"kind":"textbox","id":"sh/3ex0nuxc","slide":21,"text":"13.39","textPreview":"13.39","textChars":5,"textLines":1,"bbox":[372,311,170,50]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":21,"text":"19.12","textPreview":"19.12","textChars":5,"textLines":1,"bbox":[562,311,170,50]}
+{"kind":"textbox","id":"sh/lkjm1cfa","slide":21,"text":"4.91","textPreview":"4.91","textChars":4,"textLines":1,"bbox":[752,311,170,50]}
+{"kind":"textbox","id":"sh/szqtcj6t","slide":21,"text":"12.57","textPreview":"12.57","textChars":5,"textLines":1,"bbox":[942,311,220,50]}
+{"kind":"shape","id":"sh/32lszqtc","slide":21,"bbox":[82,420,1090,1]}
+{"kind":"textbox","id":"sh/ahoza1gv","slide":21,"text":"Ours w/o VSP","textPreview":"Ours w/o VSP","textChars":12,"textLines":1,"bbox":[92,369,260,50]}
+{"kind":"textbox","id":"sh/l87ed8ba","slide":21,"text":"16.82","textPreview":"16.82","textChars":5,"textLines":1,"bbox":[372,369,170,50]}
+{"kind":"textbox","id":"sh/sneloj2t","slide":21,"text":"25.00","textPreview":"25.00","textChars":5,"textLines":1,"bbox":[562,369,170,50]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":21,"text":"8.04","textPreview":"8.04","textChars":4,"textLines":1,"bbox":[752,369,170,50]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":21,"text":"19.79","textPreview":"19.79","textChars":5,"textLines":1,"bbox":[942,369,220,50]}
+{"kind":"shape","id":"sh/o7qpg3ex","slide":21,"bbox":[82,478,1090,1]}
+{"kind":"textbox","id":"sh/dsji5sne","slide":21,"text":"Ours (Full)","textPreview":"Ours (Full)","textChars":11,"textLines":1,"bbox":[92,427,260,50]}
+{"kind":"textbox","id":"sh/61032lsz","slide":21,"text":"17.19","textPreview":"17.19","textChars":5,"textLines":1,"bbox":[372,427,170,50]}
+{"kind":"textbox","id":"sh/vmtwra5g","slide":21,"text":"25.89","textPreview":"25.89","textChars":5,"textLines":1,"bbox":[562,427,170,50]}
+{"kind":"textbox","id":"sh/oj2t83it","slide":21,"text":"8.48","textPreview":"8.48","textChars":4,"textLines":1,"bbox":[752,427,170,50]}
+{"kind":"textbox","id":"sh/d4vmtwra","slide":21,"text":"20.24","textPreview":"20.24","textChars":5,"textLines":1,"bbox":[942,427,220,50]}
+{"kind":"shape","id":"sh/6dcbulwv","slide":21,"bbox":[82,188,1090,1.5]}
+{"kind":"textbox","id":"sh/vy90je9c","slide":21,"text":"涨点最大不意味着问题解决：Full 的 ONS@0.5m 仍只有 25.89%，远低于 Human Eval 74.71%。","textPreview":"涨点最大不意味着问题解决：Full 的 ONS@0.5m 仍只有 25.89%，远低于 Human Eval 74.71%。","textChars":62,"textLines":1,"bbox":[92,535,1050,60]}
+{"kind":"textbox","id":"sh/onyd0z61","slide":21,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/d8v6psfi","slide":21,"text":"21","textPreview":"21","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/1bpxof","slide":21,"text":""}
+{"kind":"slide","id":"sl/fgqpj5","slide":22,"title":"Table 2","textShapes":11}
+{"kind":"textbox","id":"sh/fepkzupw","slide":22,"text":"Table 2","textPreview":"Table 2","textChars":7,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/4zidonyd","slide":22,"text":"原表证据：提升是系统性的，但表格也暴露了天花板","textPreview":"原表证据：提升是系统性的，但表格也暴露了天花板","textChars":23,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/xkf6dcbu","slide":22,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":22,"text":"22","textPreview":"22","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/4r65wjud","slide":22,"bbox":[815,190,330,138]}
+{"kind":"textbox","id":"sh/xc3ylc7u","slide":22,"text":"Human Eval","textPreview":"Human Eval","textChars":10,"textLines":1,"bbox":[845,218,260,32]}
+{"kind":"textbox","id":"sh/m94fu18j","slide":22,"text":"ONS@0.5m = 74.71","textPreview":"ONS@0.5m = 74.71","textChars":16,"textLines":1,"bbox":[845,268,260,34]}
+{"kind":"shape","id":"sh/fu18jqh0","slide":22,"bbox":[815,375,330,138]}
+{"kind":"textbox","id":"sh/r65wjudg","slide":22,"text":"Best full model","textPreview":"Best full model","textChars":15,"textLines":1,"bbox":[845,403,260,32]}
+{"kind":"textbox","id":"sh/ylc7u54z","slide":22,"text":"ONS@0.5m = 25.89","textPreview":"ONS@0.5m = 25.89","textChars":16,"textLines":1,"bbox":[845,453,260,34]}
+{"kind":"textbox","id":"sh/9cvixcze","slide":22,"text":"解读重点：REALM 证明 final-meters refinement 有用，但没有把可靠停止和主动视角选择真正解决。","textPreview":"解读重点：REALM 证明 final-meters refinement 有用，但没有把可靠停止和主动视角选择真正解决。","textChars":61,"textLines":1,"bbox":[805,555,380,70]}
+{"kind":"textbox","id":"sh/gr2p8nqx","slide":22,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/nih4byhg","slide":22,"text":"22","textPreview":"22","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"image","id":"im/eloj2t83","slide":22,"name":"","alt":"Table 2 simulation results","bbox":[80,150,680,492]}
+{"kind":"notes","id":"nt/fgqpj5","slide":22,"text":""}
+{"kind":"slide","id":"sl/l2hhur","slide":23,"title":"消融与天花板","textShapes":14}
+{"kind":"textbox","id":"sh/h0fepkzu","slide":23,"text":"消融与天花板","textPreview":"消融与天花板","textChars":6,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/a9w3m94f","slide":23,"text":"VSP 的消融说明：收益来自停止策略","textPreview":"VSP 的消融说明：收益来自停止策略","textChars":18,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/zupwb2hw","slide":23,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/orytsvu9","slide":23,"text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/hcrmhk3q","slide":23,"text":"UniNaVid-ZS 上去掉 VSP：ONS@0.1m 从 14.96 掉到 12.43","textPreview":"UniNaVid-ZS 上去掉 VSP：ONS@0.1m 从 14.96 掉到 12.43","textChars":45,"textLines":1,"bbox":[72,165,1000,38]}
+{"kind":"textbox","id":"sh/al87ed8b","slide":23,"text":"Ours w/o VSP","textPreview":"Ours w/o VSP","textChars":12,"textLines":1,"bbox":[80,250,210,28]}
+{"kind":"shape","id":"sh/z61032ls","slide":23,"bbox":[310,254,580,22]}
+{"kind":"shape","id":"sh/oza1gvy9","slide":23,"bbox":[310,254,131.08,22]}
+{"kind":"textbox","id":"sh/hk3q5o7q","slide":23,"text":"12.43%","textPreview":"12.43%","textChars":6,"textLines":1,"bbox":[900,248,80,30]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":23,"text":"Ours (Full)","textPreview":"Ours (Full)","textChars":11,"textLines":1,"bbox":[80,320,210,28]}
+{"kind":"shape","id":"sh/svu9knih","slide":23,"bbox":[310,324,580,22]}
+{"kind":"shape","id":"sh/za1gvy90","slide":23,"bbox":[310,324,157.76,22]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":23,"text":"14.96%","textPreview":"14.96%","textChars":6,"textLines":1,"bbox":[900,318,80,30]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":23,"text":"Human Eval","textPreview":"Human Eval","textChars":10,"textLines":1,"bbox":[80,390,210,28]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":23,"bbox":[310,394,580,22]}
+{"kind":"shape","id":"sh/zidonyd0","slide":23,"bbox":[310,394,531.49,22]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":23,"text":"50.40%","textPreview":"50.40%","textChars":6,"textLines":1,"bbox":[900,388,80,30]}
+{"kind":"textbox","id":"sh/lszqtcj6","slide":23,"text":"同一指标口径下看：VSP 带来稳定增益，但 Human Eval 仍说明最后几米远未被解决。","textPreview":"同一指标口径下看：VSP 带来稳定增益，但 Human Eval 仍说明最后几米远未被解决。","textChars":46,"textLines":1,"bbox":[92,525,1070,62]}
+{"kind":"textbox","id":"sh/s72x4nap","slide":23,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":23,"text":"23","textPreview":"23","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/l2hhur","slide":23,"text":""}
+{"kind":"slide","id":"sl/4j9e8o","slide":24,"title":"Real-world","textShapes":14}
+{"kind":"textbox","id":"sh/pkzupwb2","slide":24,"text":"Real-world","textPreview":"Real-world","textChars":10,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/itgfmlkj","slide":24,"text":"真机结果是有信号的，但证据级别仍然很初步","textPreview":"真机结果是有信号的，但证据级别仍然很初步","textChars":20,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/7ed8bat4","slide":24,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/0nuxc3yl","slide":24,"text":"24","textPreview":"24","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/ih4byhgn","slide":24,"bbox":[735,175,380,180]}
+{"kind":"textbox","id":"sh/72x4nap4","slide":24,"text":"8.33 -> 33.33","textPreview":"8.33 -> 33.33","textChars":13,"textLines":1,"bbox":[757,209,336,78]}
+{"kind":"textbox","id":"sh/wjudg7ad","slide":24,"text":"Hello Robot Stretch 上 ONS@0.5m 的提升","textPreview":"Hello Robot Stretch 上 ONS@0.5m 的提升","textChars":34,"textLines":1,"bbox":[757,301,336,86]}
+{"kind":"textbox","id":"sh/p4r65wju","slide":24,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,432,34,42]}
+{"kind":"textbox","id":"sh/lwval87e","slide":24,"text":"12 个真实环境 episode，包含机器人实验室、学校 lobby 和 foyer。","textPreview":"12 个真实环境 episode，包含机器人实验室、学校 lobby 和 foyer。","textChars":43,"textLines":1,"bbox":[144,430,936,54]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":24,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,502,34,42]}
+{"kind":"textbox","id":"sh/3q5o7qpg","slide":24,"text":"使用 Intel RealSense D435if RGB-D，工作站 RTX 4090。","textPreview":"使用 Intel RealSense D435if RGB-D，工作站 RTX 4090。","textChars":45,"textLines":1,"bbox":[144,500,936,46]}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":24,"text":"-","textPreview":"-","textChars":1,"textLines":1,"bbox":[100,564,34,42]}
+{"kind":"textbox","id":"sh/loj2t83i","slide":24,"text":"结果说明方向有希望，但 n=12 只能当 preliminary evidence。","textPreview":"结果说明方向有希望，但 n=12 只能当 preliminary evidence。","textChars":42,"textLines":1,"bbox":[144,562,936,54]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":24,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":24,"text":"24","textPreview":"24","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"image","id":"im/obm58z25","slide":24,"name":"","alt":"Table 3 real-world robot results","bbox":[100,198,540,168]}
+{"kind":"notes","id":"nt/4j9e8o","slide":24,"text":""}
+{"kind":"slide","id":"sl/tiv3t9","slide":25,"title":"相关工作对照","textShapes":22}
+{"kind":"textbox","id":"sh/fil0rqd4","slide":25,"text":"相关工作对照","textPreview":"相关工作对照","textChars":6,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/83itgfml","slide":25,"text":"终点目标相关论文：机制都在补“到达质量”，但评测口径不同","textPreview":"终点目标相关论文：机制都在补“到达质量”，但评测口径不同","textChars":28,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/xobm58z2","slide":25,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/m94fu18j","slide":25,"text":"25","textPreview":"25","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/fu18jqh0","slide":25,"bbox":[42,160,1196,108]}
+{"kind":"shape","id":"sh/4fu18jqh","slide":25,"bbox":[42,268,1196,1]}
+{"kind":"textbox","id":"sh/x0nuxc3y","slide":25,"text":"论文 / 任务","textPreview":"论文 / 任务","textChars":7,"textLines":1,"bbox":[52,167,145,100]}
+{"kind":"textbox","id":"sh/mlkjm1cf","slide":25,"text":"终点目标机制","textPreview":"终点目标机制","textChars":6,"textLines":1,"bbox":[217,167,365,100]}
+{"kind":"textbox","id":"sh/f6dcbulw","slide":25,"text":"性能证据","textPreview":"性能证据","textChars":4,"textLines":1,"bbox":[602,167,390,100]}
+{"kind":"textbox","id":"sh/vixczed8","slide":25,"text":"读法","textPreview":"读法","textChars":2,"textLines":1,"bbox":[1012,167,216,100]}
+{"kind":"shape","id":"sh/2x4nap4r","slide":25,"bbox":[42,376,1196,1]}
+{"kind":"textbox","id":"sh/donyd0z6","slide":25,"text":"MSGNav\nGOAT / ObjNav","textPreview":"MSGNav | GOAT / ObjNav","textChars":20,"textLines":2,"bbox":[52,275,145,100]}
+{"kind":"textbox","id":"sh/k3q5o7qp","slide":25,"text":"M3DSG 图像边场景图 + KSS；目标定位后用 VVD 采样可见性最高视点，解决 last-mile 站位。","textPreview":"M3DSG 图像边场景图 + KSS；目标定位后用 VVD 采样可见性最高视点，解决 last-mile 站位。","textChars":56,"textLines":1,"bbox":[217,275,365,100]}
+{"kind":"textbox","id":"sh/val87ed8","slide":25,"text":"GOAT Val Unseen SR/SPL 52.0/29.6；HM3D-ObjNav 74.1/33.4；VVD 在 0.25m 阈值下 33.91 -> 51.97。","textPreview":"GOAT Val Unseen SR/SPL 52.0/29.6；HM3D-ObjNav 74.1/33.4；VVD 在 0.25m 阈值下 33.91 -> 51.97。","textChars":86,"textLines":1,"bbox":[602,275,390,100]}
+{"kind":"textbox","id":"sh/6psfil0r","slide":25,"text":"修“找到目标后停在哪”。","textPreview":"修“找到目标后停在哪”。","textChars":12,"textLines":1,"bbox":[1012,275,216,100]}
+{"kind":"shape","id":"sh/dcbulwva","slide":25,"bbox":[42,484,1196,1]}
+{"kind":"textbox","id":"sh/kre1w7mp","slide":25,"text":"ConsistNav\nZero-shot ObjectNav","textPreview":"ConsistNav | Zero-shot ObjectNav","textChars":30,"textLines":2,"bbox":[52,383,145,100]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":25,"text":"Persistent Candidate Memory + 有限状态 executive + verified stop；把目标证据转成承诺、验证和停止。","textPreview":"Persistent Candidate Memory + 有限状态 executive + verified stop；把目标证据转成承诺、验证和停止。","textChars":77,"textLines":1,"bbox":[217,383,365,100]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":25,"text":"HM3Dv2 SR/SPL 84.2/41.2；HM3Dv1 63.2/34.8；MP3D 50.6/25.7；same-stack HM3Dv2 76.2 -> 84.2。","textPreview":"HM3Dv2 SR/SPL 84.2/41.2；HM3Dv1 63.2/34.8；MP3D 50.6/25.7；same-stack HM3Dv2 76.2 -> 84.2。","textChars":87,"textLines":1,"bbox":[602,383,390,100]}
+{"kind":"textbox","id":"sh/ap4r65wj","slide":25,"text":"修“看到线索后能否持续追踪并停下”。","textPreview":"修“看到线索后能否持续追踪并停下”。","textChars":18,"textLines":1,"bbox":[1012,383,216,100]}
+{"kind":"shape","id":"sh/za1gvy90","slide":25,"bbox":[42,592,1196,1]}
+{"kind":"textbox","id":"sh/svu9knih","slide":25,"text":"REALM\nREVERIE-AIM","textPreview":"REALM | REVERIE-AIM","textChars":17,"textLines":2,"bbox":[52,491,145,100]}
+{"kind":"textbox","id":"sh/hgn29gr2","slide":25,"text":"上游 stop 后接管短程 refinement；VSP 抑制不可见时 stop；BERT-QA + OWLv2 做实例级接地。","textPreview":"上游 stop 后接管短程 refinement；VSP 抑制不可见时 stop；BERT-QA + OWLv2 做实例级接地。","textChars":64,"textLines":1,"bbox":[217,491,365,100]}
+{"kind":"textbox","id":"sh/a1gvy90j","slide":25,"text":"ETPNav-FT ONS@0.1m 6.32 -> 17.19，ONS@0.5m 12.20 -> 25.89；真机 8.33 -> 33.33。","textPreview":"ETPNav-FT ONS@0.1m 6.32 -> 17.19，ONS@0.5m 12.20 -> 25.89；真机 8.33 -> 33.33。","textChars":74,"textLines":1,"bbox":[602,491,390,100]}
+{"kind":"textbox","id":"sh/zidonyd0","slide":25,"text":"修“到了附近但没有对准和看见”。","textPreview":"修“到了附近但没有对准和看见”。","textChars":16,"textLines":1,"bbox":[1012,491,216,100]}
+{"kind":"shape","id":"sh/s36hcrmh","slide":25,"bbox":[42,160,1196,1.5]}
+{"kind":"textbox","id":"sh/hoza1gvy","slide":25,"text":"共同空格：三篇都补 stop 后或目标附近的下游质量，仍没有把“上游何时该停”彻底解决。","textPreview":"共同空格：三篇都补 stop 后或目标附近的下游质量，仍没有把“上游何时该停”彻底解决。","textChars":44,"textLines":1,"bbox":[78,614,1080,34]}
+{"kind":"textbox","id":"sh/a5gbq1or","slide":25,"text":"Sources: MSGNav arXiv:2511.10376; ConsistNav arXiv:2605.09869; REALM arXiv:2607.03792","textPreview":"Sources: MSGNav arXiv:2511.10376; ConsistNav arXiv:2605.09869; REALM arXiv:2607.03792","textChars":85,"textLines":1,"bbox":[42,647,920,16]}
+{"kind":"notes","id":"nt/tiv3t9","slide":25,"text":""}
+{"kind":"slide","id":"sl/tl7y5z","slide":26,"title":"Section","textShapes":5}
+{"kind":"textbox","id":"sh/fmlkjm1c","slide":26,"text":"Section","textPreview":"Section","textChars":7,"textLines":1,"bbox":[42,38,180,28]}
+{"kind":"textbox","id":"sh/87ed8bat","slide":26,"text":"批判性评读","textPreview":"批判性评读","textChars":5,"textLines":1,"bbox":[42,190,920,130]}
+{"kind":"textbox","id":"sh/xs72x4na","slide":26,"text":"REALM 修的是“到了但没对准”，不是“到底该不该停”。","textPreview":"REALM 修的是“到了但没对准”，不是“到底该不该停”。","textChars":29,"textLines":1,"bbox":[42,350,760,76]}
+{"kind":"shape","id":"sh/qtcj6tov","slide":26,"bbox":[920,0,360,720]}
+{"kind":"textbox","id":"sh/je9cvixc","slide":26,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/8z25kb6x","slide":26,"text":"26","textPreview":"26","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/tl7y5z","slide":26,"text":""}
+{"kind":"slide","id":"sl/6lo1qm","slide":27,"title":"核心局限","textShapes":11}
+{"kind":"textbox","id":"sh/e9cvixcz","slide":27,"text":"核心局限","textPreview":"核心局限","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/lwval87e","slide":27,"text":"这篇论文最重要的局限：它默认上游已经把 agent 带到目标邻域","textPreview":"这篇论文最重要的局限：它默认上游已经把 agent 带到目标邻域","textChars":32,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/wb2hwfyx","slide":27,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/3itgfmlk","slide":27,"text":"27","textPreview":"27","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/ex0nuxc3","slide":27,"bbox":[70,175,500,250]}
+{"kind":"textbox","id":"sh/loj2t83i","slide":27,"text":"训练分布","textPreview":"训练分布","textChars":4,"textLines":1,"bbox":[100,210,400,34]}
+{"kind":"textbox","id":"sh/w3m94fu1","slide":27,"text":"倒数第二节点附近\n[-5m, 5m] 扰动\n随机朝向","textPreview":"倒数第二节点附近 | [-5m, 5m] 扰动 | 随机朝向","textChars":26,"textLines":3,"bbox":[100,280,400,110]}
+{"kind":"shape","id":"sh/3ex0nuxc","slide":27,"bbox":[710,175,500,250]}
+{"kind":"textbox","id":"sh/at47y1kr","slide":27,"text":"分布外场景","textPreview":"分布外场景","textChars":5,"textLines":1,"bbox":[740,210,400,34]}
+{"kind":"textbox","id":"sh/knih4byh","slide":27,"text":"上游停在错误房间\n或离目标 8m 外\nREALM 不会质疑 stop 本身","textPreview":"上游停在错误房间 | 或离目标 8m 外 | REALM 不会质疑 stop 本身","textChars":37,"textLines":3,"bbox":[740,280,400,110]}
+{"kind":"textbox","id":"sh/d8bat47y","slide":27,"text":"所以它解决的是 final alignment，不是 upstream stopping decision reliability。","textPreview":"所以它解决的是 final alignment，不是 upstream stopping decision reliability。","textChars":66,"textLines":1,"bbox":[125,520,1030,54]}
+{"kind":"textbox","id":"sh/2lszqtcj","slide":27,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/v6psfil0","slide":27,"text":"27","textPreview":"27","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/6lo1qm","slide":27,"text":""}
+{"kind":"slide","id":"sl/aq93la","slide":28,"title":"评读清单","textShapes":17}
+{"kind":"textbox","id":"sh/58z25kb6","slide":28,"text":"评读清单","textPreview":"评读清单","textChars":4,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":28,"text":"评读时可以把贡献和风险分开讲，避免只说“涨点”","textPreview":"评读时可以把贡献和风险分开讲，避免只说“涨点”","textChars":23,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":28,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/gbq1oryt","slide":28,"text":"28","textPreview":"28","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/5wjudg7a","slide":28,"bbox":[62,170,1148,70]}
+{"kind":"shape","id":"sh/y90je9cv","slide":28,"bbox":[62,240,1148,1]}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":28,"text":"贡献","textPreview":"贡献","textChars":2,"textLines":1,"bbox":[72,177,540,62]}
+{"kind":"textbox","id":"sh/cbulwval","slide":28,"text":"仍需验证","textPreview":"仍需验证","textChars":4,"textLines":1,"bbox":[632,177,568,62]}
+{"kind":"shape","id":"sh/5sneloj2","slide":28,"bbox":[62,310,1148,1]}
+{"kind":"textbox","id":"sh/tcj6tova","slide":28,"text":"把 SR 泡沫拆成 ONS / GS / OracleGS 三个诊断轴","textPreview":"把 SR 泡沫拆成 ONS / GS / OracleGS 三个诊断轴","textChars":35,"textLines":1,"bbox":[72,247,540,62]}
+{"kind":"textbox","id":"sh/0rqd4vmt","slide":28,"text":"自建 REVERIE-AIM 上评测，社区横向复验还没发生","textPreview":"自建 REVERIE-AIM 上评测，社区横向复验还没发生","textChars":29,"textLines":1,"bbox":[632,247,568,62]}
+{"kind":"shape","id":"sh/b6xkf6dc","slide":28,"bbox":[62,380,1148,1]}
+{"kind":"textbox","id":"sh/il0rqd4v","slide":28,"text":"REALM 即插即用，不绑定上游架构","textPreview":"REALM 即插即用，不绑定上游架构","textChars":18,"textLines":1,"bbox":[72,317,540,62]}
+{"kind":"textbox","id":"sh/t47y1kre","slide":28,"text":"VSP 训练期依赖模拟器可见性标注","textPreview":"VSP 训练期依赖模拟器可见性标注","textChars":17,"textLines":1,"bbox":[632,317,568,62]}
+{"kind":"shape","id":"sh/0je9cvix","slide":28,"bbox":[62,450,1148,1]}
+{"kind":"textbox","id":"sh/byhgn29g","slide":28,"text":"短程 refinement 在四类上游上稳定涨点","textPreview":"短程 refinement 在四类上游上稳定涨点","textChars":24,"textLines":1,"bbox":[72,387,540,62]}
+{"kind":"textbox","id":"sh/idonyd0z","slide":28,"text":"真机 n=12，更多是可行性展示","textPreview":"真机 n=12，更多是可行性展示","textChars":16,"textLines":1,"bbox":[632,387,568,62]}
+{"kind":"shape","id":"sh/p0bi9s36","slide":28,"bbox":[62,520,1148,1]}
+{"kind":"textbox","id":"sh/0fepkzup","slide":28,"text":"直接暴露最后 3 米的真实难度","textPreview":"直接暴露最后 3 米的真实难度","textChars":15,"textLines":1,"bbox":[72,457,540,62]}
+{"kind":"textbox","id":"sh/cbulwval","slide":28,"text":"可靠停止决策仍被列为 future work","textPreview":"可靠停止决策仍被列为 future work","textChars":22,"textLines":1,"bbox":[632,457,568,62]}
+{"kind":"shape","id":"sh/5sneloj2","slide":28,"bbox":[62,170,1148,1.5]}
+{"kind":"textbox","id":"sh/u54zidon","slide":28,"text":"最值得学的方法论：先设计能归因的指标，再让方法只修其中一个明确缺口。","textPreview":"最值得学的方法论：先设计能归因的指标，再让方法只修其中一个明确缺口。","textChars":34,"textLines":1,"bbox":[95,590,1060,42]}
+{"kind":"textbox","id":"sh/nqxs72x4","slide":28,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/czed8v6p","slide":28,"text":"28","textPreview":"28","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/aq93la","slide":28,"text":""}
+{"kind":"slide","id":"sl/u41vnv","slide":29,"title":"联系到我们的工作","textShapes":11}
+{"kind":"textbox","id":"sh/gbq1oryt","slide":29,"text":"联系到我们的工作","textPreview":"联系到我们的工作","textChars":8,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/nuxc3ylc","slide":29,"text":"对我们最有用的启示：SR 通胀可能来自两个独立源头","textPreview":"对我们最有用的启示：SR 通胀可能来自两个独立源头","textChars":25,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/y90je9cv","slide":29,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/58z25kb6","slide":29,"text":"29","textPreview":"29","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"shape","id":"sh/gn29gr2p","slide":29,"bbox":[70,190,500,260]}
+{"kind":"textbox","id":"sh/n29gr2p8","slide":29,"text":"REALM 暴露的通胀","textPreview":"REALM 暴露的通胀","textChars":11,"textLines":1,"bbox":[100,225,420,36]}
+{"kind":"textbox","id":"sh/yhgn29gr","slide":29,"text":"区域到达被当成实例接地\n“到了但没对准”","textPreview":"区域到达被当成实例接地 | “到了但没对准”","textChars":20,"textLines":2,"bbox":[100,305,420,82]}
+{"kind":"shape","id":"sh/5kb6xkf6","slide":29,"bbox":[710,190,500,260]}
+{"kind":"textbox","id":"sh/czed8v6p","slide":29,"text":"我们关注的通胀","textPreview":"我们关注的通胀","textChars":7,"textLines":1,"bbox":[740,225,420,36]}
+{"kind":"textbox","id":"sh/2hwfyxob","slide":29,"text":"终止判断被 oracle 或协议补贴\n“没到却说到了”","textPreview":"终止判断被 oracle 或协议补贴 | “没到却说到了”","textChars":27,"textLines":2,"bbox":[740,305,420,82]}
+{"kind":"textbox","id":"sh/r2p8nqxs","slide":29,"text":"同一个 SR 指标，可能同时高估终止能力和实例接地能力；评测卫生本身是系统性问题。","textPreview":"同一个 SR 指标，可能同时高估终止能力和实例接地能力；评测卫生本身是系统性问题。","textChars":41,"textLines":1,"bbox":[105,535,1060,58]}
+{"kind":"textbox","id":"sh/kjm1cfa9","slide":29,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/94fu18jq","slide":29,"text":"29","textPreview":"29","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/u41vnv","slide":29,"text":""}
+{"kind":"slide","id":"sl/jyis4a","slide":30,"title":"总结","textShapes":11}
+{"kind":"textbox","id":"sh/cj6tovah","slide":30,"text":"总结","textPreview":"总结","textChars":2,"textLines":1,"bbox":[42,36,260,28]}
+{"kind":"textbox","id":"sh/nyd0z610","slide":30,"text":"一句话收尾：REALM 修 pipeline 的尾部，我们的问题在 pipeline 的 stop gate","textPreview":"一句话收尾：REALM 修 pipeline 的尾部，我们的问题在 pipeline 的 stop gate","textChars":54,"textLines":1,"bbox":[42,70,1120,72]}
+{"kind":"textbox","id":"sh/udg7adsj","slide":30,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/5gbq1ory","slide":30,"text":"30","textPreview":"30","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"textbox","id":"sh/cvixczed","slide":30,"text":"REALM 修的是","textPreview":"REALM 修的是","textChars":9,"textLines":1,"bbox":[92,205,360,50]}
+{"kind":"textbox","id":"sh/nap4r65w","slide":30,"text":"“到了但没对准”","textPreview":"“到了但没对准”","textChars":8,"textLines":1,"bbox":[92,280,500,70]}
+{"kind":"textbox","id":"sh/upwb2hwf","slide":30,"text":"我们修的是","textPreview":"我们修的是","textChars":5,"textLines":1,"bbox":[685,205,360,50]}
+{"kind":"textbox","id":"sh/1orytsvu","slide":30,"text":"“没到却说到了”","textPreview":"“没到却说到了”","textChars":8,"textLines":1,"bbox":[685,280,500,70]}
+{"kind":"shape","id":"sh/c7u54zid","slide":30,"bbox":[112,435,1050,2]}
+{"kind":"textbox","id":"sh/6xkf6dcb","slide":30,"text":"这两件事首尾相接：一个决定何时停止，一个决定停止后是否真正可接地。","textPreview":"这两件事首尾相接：一个决定何时停止，一个决定停止后是否真正可接地。","textChars":33,"textLines":1,"bbox":[112,485,1050,58]}
+{"kind":"textbox","id":"sh/zed8v6ps","slide":30,"text":"Shi et al., arXiv:2607.03792v1","textPreview":"Shi et al., arXiv:2607.03792v1","textChars":30,"textLines":1,"bbox":[42,668,720,22]}
+{"kind":"textbox","id":"sh/oza1gvy9","slide":30,"text":"30","textPreview":"30","textChars":2,"textLines":1,"bbox":[1182,658,56,26]}
+{"kind":"notes","id":"nt/jyis4a","slide":30,"text":""}

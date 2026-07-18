@@ -4,12 +4,14 @@ tags:
   - AAAI
   - execution-plan
   - minimal-publishable-path
-status: active
+status: superseded
 related:
   - "[[current_task]]"
   - "[[总方案-性能优先-执行版-20260702]]"
   - "[[总方案-可靠终止决策-执行版-20260629]]"
 ---
+
+> **[已被取代 2026-07-06]** 本版围绕 AAAI-27（7/27）截止日期制定。2026-07-06 决策：**放弃该 DDL**，项目重定义为"性能 + 创新点"双目标，训练路线解禁、backbone 可换。oracle 审计后诚实基线为 SR 16%/OSR 21%（clean_baseline_v1）。新战略见 [[项目总控]] 与 docs/experiment_report_20260706_group_meeting。本文的实验矩阵与优先级不再驱动行动，诊断结论仍有效。
 
 # AAAI-27 最小可发表路径（执行清单）
 
