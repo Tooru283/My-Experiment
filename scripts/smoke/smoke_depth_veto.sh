@@ -11,6 +11,17 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."   # repo root
 
+# Mirror the runtime env that run_OpenNav.bash (the baseline launcher) exports.
+# Critically OPENNAV_LLM_MODEL: `transformers serve` is model-pinned and 400s any
+# request whose model != the loaded weights, so the client label MUST be 9B to
+# match the served 9B backend (parity with clean_baseline_v1). Missing this is
+# why the 07-05/07-18 smokes defaulted to 4B and were rejected.
+export OPENNAV_LLM_BASE_URL="${OPENNAV_LLM_BASE_URL:-http://127.0.0.1:23333/v1}"
+export OPENNAV_LLM_MODEL="${OPENNAV_LLM_MODEL:-/root/models/Qwen3.5-9B}"
+export OPENNAV_SIGLIP_PATH="${OPENNAV_SIGLIP_PATH:-/root/models/google-siglip-so400m-patch14-384}"
+export EGL_DEVICE_ID="${EGL_DEVICE_ID:-0}"
+export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES:-0}"
+
 BASELINE_PID="${BASELINE_PID:-6378}"
 if ps -p "$BASELINE_PID" >/dev/null 2>&1; then
   echo "REFUSING: baseline PID $BASELINE_PID still running (single GPU is busy). Wait for it to finish."

@@ -1,0 +1,5 @@
+=== DEPTH_STOP_VETO smoke: exp=smoke_depthveto_20260705_192552 episodes=[377 824 11] ===
+Traceback (most recent call last):
+  File "/root/wjj/Open-Nav/run.py", line 8, in <module>
+    from habitat import logger
+ModuleNotFoundError: No module named 'habitat'

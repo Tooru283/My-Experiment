@@ -1,0 +1,20 @@
+2026-07-18 11:18:00 - base_il_trainer_llm.py/_eval_llm[line:523] - INFO: Navigation text log: logs/navigation_records/ep3/20260718/smoke_depthveto_20260718_111737_train_navigation_20260718_111800.log
+2026-07-18 11:18:00 - base_il_trainer_llm.py/_eval_llm[line:524] - INFO: Navigation JSONL record: logs/navigation_records/ep3/20260718/smoke_depthveto_20260718_111737_train_navigation_20260718_111800.jsonl
+2026-07-18 11:18:49 - base_il_trainer_llm.py/_eval_llm[line:1415] - INFO: ==================== The current episode id is 377 ====================
+2026-07-18 11:18:49 - base_il_trainer_llm.py/_eval_llm[line:1416] - INFO: Instruction: Leave the bathroom and take a right. Walk down the hallway into the entry way and stop next to the console table on the right, and the banister to the stairs on the right. 
+2026-07-18 11:18:49 - base_il_trainer_llm.py/_eval_llm[line:1427] - INFO: Actions: Leave the bathroom, take a right, walk down the hallway, enter the entry way, stop next to the console table, stop next to the banister
+
+2026-07-18 11:18:49 - base_il_trainer_llm.py/_eval_llm[line:1428] - INFO: Landmarks: bathroom
+hallway
+entry way
+console table
+banister
+
+2026-07-18 11:18:49 - base_il_trainer_llm.py/_eval_llm[line:1486] - INFO: -------------------- Step 1 --------------------
+2026-07-18 11:18:51 - base_il_trainer_llm.py/_eval_llm[line:1541] - INFO: ========== Get Observation ==========
+2026-07-18 11:18:58 - spatialNavigator.py/observe_environment[line:62] - INFO: Direction 11 Direction Viewpoint ID: 11 in Step ID: 1 Elevation: Eye Level Scene Description: The image shows a hallway with a door on the left side and a window on the right side. The door is approximately 2 meters away from the camera, and the window is approximately 3 meters away. Scene Objects: bookshelf | ceiling | pillar | corridor | doorway | floor | hall | hardwood | hardwood floor | home | lead to | hallway | room | white | wood floor; 
+2026-07-18 11:18:59 - spatialNavigator.py/observe_environment[line:62] - INFO: Direction 10 Direction Viewpoint ID: 10 in Step ID: 1 Elevation: Eye Level Scene Description: The image shows a hallway with a door on the right side and a window on the left side. The door is closer to the camera, while the window is further away. The door is approximately 1 meter from the camera, and the window is approximately 2 meters from the camera. Scene Objects: bookshelf | ceiling | ceiling fan | pillar | doorway | floor | hall | hardwood | hardwood floor | home | lead to | living room | hallway | room | white | wood floor; 
+2026-07-18 11:19:01 - spatialNavigator.py/observe_environment[line:62] - INFO: Direction 6 Direction Viewpoint ID: 6 in Step ID: 1 Elevation: Eye Level Scene Description: The image contains a door, a cabinet, a sink, and a counter. The door is closest to the camera, followed by the cabinet, sink, and counter. The door is approximately 1 meter away, the cabinet is about 2 meters away, the sink is about 3 meters away, and the counter is about 4 meters away. Scene Objects: appliance | cabinet | cabinetry | ceiling | closet | counter top | dish washer | doorway | exhaust hood | floor | home appliance | kitchen | lead to | oven | sink | white; 
+2026-07-18 11:19:03 - spatialNavigator.py/observe_environment[line:62] - INFO: Direction 5 Direction Viewpoint ID: 5 in Step ID: 1 Elevation: Eye Level Scene Description: The image contains a door, a cabinet, a sink, a light fixture, and a counter. The door is closest to the camera, followed by the cabinet, sink, and counter. The light fixture is further back in the room. The distances from the camera are approximately: door - 0.0 meters, cabinet - 0.5 meters, sink - 0.6 meters, counter - 0.7 meters, light fixture - 0.8 meters. Scene Objects: appliance | cabinet | ceiling | dish washer | doorway | exhaust hood | floor | home appliance | kitchen | lead to | oven | sink | white; 
+2026-07-18 11:19:19 - base_il_trainer_llm.py/_eval_llm[line:1803] - INFO: ========== Review History ==========
+2026-07-18 11:19:19 - base_il_trainer_llm.py/_eval_llm[line:1813] - INFO: ========== Estimate Completion Progress ==========

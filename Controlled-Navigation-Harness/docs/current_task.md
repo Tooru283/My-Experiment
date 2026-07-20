@@ -4,7 +4,7 @@ tags:
   - current_task
   - living_document
 status: active
-updated: 2026-07-06
+updated: 2026-07-19
 ---
 
 # Current Task — 导航实验当前状态与下一步
@@ -31,15 +31,155 @@ updated: 2026-07-06
 - 24%（4B 与 9B Run1）带 oracle：终止栈 5 门读 GT 距离，−8 SR 显著（p=0.022），归因 = 6 早停 + 3 近距擦边 − 1。
 - 失败结构（干净版）：假停 56（avg 8.3m）、耗尽 23、擦边 5；停止请求占终止 72/100——模型扣扳机过快。
 - 核心诊断五条 → 见 [[项目总控]] §2（终止信念脱钩 / 选择层随机游走 / 探针全失效 / 信息注入无增益 / 零 GT 铁律）。
+- **转化存量空间只有 5 集**：OSR 有而 SR 无 = 1084 / 338 / 516 / 568 / 705。故 SR 增量必须靠**新挣的 OSR 集**，而那批正是最难转化的。
+
+## 一bis、2026-07-18 新增事实
+
+**A. oracle 清除已复核彻底（可放心用 SR 16 这个数）**
+`latest_goal_dist` 全代码库 grep 0 命中。`E3_ARRIVAL_OVERRIDE_DIST` / `RESCUE_MAX_GOAL_DIST` / `TRAJECTORY_BYPASS_DIST` 这些看着像 oracle 的距离阈值，代码里**只判 `> 0`，已退化为纯开/关标志**；真正的门换成了 `persistent_visual_confirm`（连续 ≥2 帧视觉确认）+ `depth_confirm`。见 `stop_evidence_verifier.py:218-240, 280-295`。
+
+**B. depth veto smoke 通过，但暴露了机制的单向性（ep377）**
+
+| | 基线 | veto 开 |
+|---|---|---|
+| SR | 0 | 0 |
+| OSR | 0 | **1** |
+| d2g | 5.42m | 4.04m |
+| steps | 3 | 8 |
+
+19 条 `depth_stop_veto` 事件、`depth_reading_m` 全非空、`fail_open_unavailable`=0 → 深度传感器确实被读（预注册 caveat 2 满足）。
+
+**结论：veto 抬 OSR，不抬转化。** 它把 3 步就放弃变成 8 步探索并真的走进了成功半径，但最终仍停在 4.04m。
+
+**C. 为什么阈值 3.0m 却停在 4.04m —— veto 读的不是到目标距离**
+`_depth_stop_ok` 取的是**正前方中心区深度中位数**。任何 3m 内的墙面/家具都满足条件，与目标位置无关。所以它只能表达"别在空旷处远远地停"，无法表达"该在这儿停"。
+
+**D. 误杀风险（预注册红线：真到达误杀 = 0）**
+16 集成功里约 6–8 集的停止目标是**开口类**——`371 门口/楼梯顶`、`513 餐厅入口旁`、`259 走廊`、`531 楼梯平台`、`526 敞开的白门`、`824 刚进屋`、`586 刚进屋`。站在开口处中心深度天然 >3m，veto 会系统性误杀这一类真到达。
+⚠ 基线跑时 veto 关闭、`_depth_stop_ok` 直接 return **未记任何深度读数**，故此风险目前只有文本启发式证据，实测值要等本轮跑完。
+
+**E. 本轮净预期：OSR +5~10 / SR −3~+3 / SPL 下跌。**
+两个开关（veto + 回溯）**全部作用于"能不能走到"，无一作用于"停得准不准"**。上行来自 56 集假停的大池子，下行来自 16 集成功的误杀，量级接近故方向不定。→ **本轮按测量跑，不按性能跑**；产出 = 锚点所需的三个输入（新 OSR 量级 / 新 OSR 转化率 / 停止时刻深度分布，用于标定锚点 ≤2m 阈值）。
+
+**F. 20260718 事故：ep100 白跑 9 小时**
+`run_OpenNav.bash` 未带 YACS 尾参数启动 → 开关保持 False → 逐集与 20260705 基线**逐字节相同**（100/100 集 d2g 差 <1e-6，SR 翻转 0）。根因是**全链路无生效回显**，9 小时内无任何信号可判断开关状态。
+- 已修：`base_il_trainer_llm.py` 在 episode loop 前打印 `[HARNESS SWITCHES] depth_stop_veto=… backtrack=… u_series=… unit=… geometry_injection=…`，模型加载后几秒可见。
+- 已改：两个开关直接写进 `run_OpenNav.yaml`，不再依赖命令行透传，结构上消除该失败面。
+- 附带收获：贪心 + 固定 seed 下管线**逐字节可复现**，配对 McNemar 无运行间噪声。
+
+**G. phase 侧 oracle 残留（新发现，未修）**
+`phase_evidence.py:148` 的 `phase = "recover"` 分支条件含 `non_positive_count >= 2`，而 `non_positive_count` 数的是 `recent_distance_gains <= 0` = **模拟器测地目标距离差分 = GT**。实测 clean_baseline_v1：`recent_distance_gains` 650 步中 550 步非空，**51 次 phase 由该 oracle 量决定**；`PHASE_EVIDENCE.LOG_ONLY: false` + U1 决策生效 → 影响决策。
+07-04 审计注释 "recent_distance_gains now only feeds logging" 对 `stop_evidence_verifier` 成立，**对 `phase_evidence` 不成立**。
+→ 待查 `decision_audit` 判定是否*决定性*。**不阻塞开跑，但阻塞 SR=16 写进论文。**
+→ **推论：任何新机制都不得 key 在 `phase` 上**，否则继承污染（ENDGAME_TILT_VIEW 的触发器已按此设计）。
+
+**H. U1 / V4 互斥（架构约束，非遗漏）**
+`harness_config.py:268-274` 禁止 `PHASE_EVIDENCE`(U1) 与 `MULTIMODAL_SELECTOR_CONTEXT`(V4) 同时决策生效，违反直接 `ValueError`。另 `harness_config.py:278-302` 强制 V1 `VISUAL_EVIDENCE` / `VISUAL_EVIDENCE_MEMORY` / 各 diagnostic 模块必须 `LOG_ONLY=true`。故"把 uv 系列全打开"无物理解，真正的选择只有 **U1 ↔ V4 二选一**（当前 U1，V4 从未单独对照过，是个零新代码的候选实验）。
+
+## 一ter、2026-07-19 结论：veto / 回溯双双证伪，主线转选择层
+
+> 全部数字见 [[experiment_record_20260719]]。ep100 = SR 20 / OSR 25 / SPL 0.155，
+> 配对 McNemar **p=0.388 不显著**（8 涨 4 跌，99/100 集轨迹改变）。
+
+**I. 深度否决在任何阈值下都不可能净正 —— §一bis B/C/E 的推断已被量化证伪。**
+提交停止时刻的前向深度对成败 **AUROC = 0.531**（成功中位 2.10m / 失败 2.37m，分布重合）。
+阈值 2.0→8.0m 扫描**无任何净正操作点**（T=3.0：拦掉 5 个成功换 16 个失败，净 −5）。
+→ ep100 的 +4 SR 是轨迹扰动（path_length +0.73）撞运气，不是过滤生效。
+
+**J. §一bis D 的误杀红线已被突破（实测）。**
+`base_il_trainer_llm.py:3218` 主停止路径无 depth 合取项（深度仅经 `depth_confirm` 喂进
+rescue/override 分支），**21/65 集在四门全判 vetoed 时仍然停止**，其中成功 5 / 失败 16。
+误杀率 **5/21 = 24%**，预注册红线（=0）突破。
+→ **该漏洞不能堵**：堵上杀死 5 个成功 = 全部 20 个成功的 25%，而被拦的 16 集中位已在 9.53m 外。
+它是意外承重的，正在抵消 veto 的误杀。
+
+**K. 回溯空转。** offered 156 次 / applied **3** 次（接受率 1.9%，ep715/171/765），
+3 集均不在涨跌名单 → **对 SR 贡献为 0**。机制是通的，选择层几乎从不采纳 MOVE_BACK。
+⚠ `verify_smoke.py --mode backtrack` 在此接受率下会报**假 FAIL**（2 次 offer 观测到 apply 的
+概率约 4%），需加最小 offer 样本量判据。
+
+**L. 选择器不是坏，是弱；语义贡献≈1 点。**（n=656 决策点）
+
+| 策略 | 命中最优候选 |
+|---|---|
+| **LLM 选择器** | **36.7%** |
+| 步长最长（平凡几何启发式） | 35.7% |
+| 转向角最小 | 32.9% |
+| raw_rank 最小 | 30.0% |
+| 随机 | 27.7% |
+
+9B 比随机强 9.0 点，**比"永远选最长的一步"只强 1.0 点**。无系统性方向/步长偏差，
+错误分散，不存在廉价偏置修正。
+
+**M. beeline regret 已验证为有效优化目标**（这是 L 的前提，单独验过）：
+- 换成 `reference_path` 口径反而更弱（选择器比随机 +6.6 vs 目标口径 +9.0）→ 口径没错。
+- regret 预测成败：全集平均 **AUROC 0.773**、**前 3 步平均 0.662**（因果早于结局，
+  排除末段混淆）；对照集长仅 0.523 → 非长度伪影；控制初始难度后近半 0.777 → 非难度代理。
+
+**N. 离线复算方法（不需要重跑，后续都用这个）**：目标位置在
+`data/datasets/R2R_VLNCE_v1-2_preprocessed/val_unseen/OpenNav_R2R-CE_100_bertidx.json.gz`；
+候选世界坐标由 `step_start` 位姿 + `waypoint_candidates` 的 angle_rad/distance 重建，
+约定 **θ = −heading − angle_rad**，`x+=d·sin(θ)`，`z−=d·cos(θ)`。
+该约定是**标定出来的**（四种候选约定预测误差中位 1.821/1.670/1.338/**0.000** m）。
+欧氏 vs 测地相关 0.854、中位低估 0.81m。
 
 ## 二、执行队列（预注册成功线见 [[项目总控]] §3）
 
-1. **depth veto A/B**（关键路径，代码就绪）：smoke（从 6 早停集挑 2–3 含 ep377，验 veto 触发 + depth_reading 非 null）→ ep100 单开关。判读：配对 McNemar、靶集逐集翻转表、误杀率（真到达被 veto）。
-2. **backtracking A/B**（代码就绪）：veto 之后跑。看 SPL（回溯耗步）与 MOVE_BACK offer/拾取/执行三率；拾取率 ~100% 则如实定性为"触发器直接执行"。
+1. ~~**depth veto smoke**~~ ✅ **20260718 通过**（ep377，见 §一bis B）。
+2. ~~**veto + 回溯 合并 ep100**~~ ✅ **20260719 跑完，双双证伪**（见 §一ter I/J/K）。
+   **结论：停止投入 depth veto 与回溯。** 不是关掉（SR 20 是目前最好实测值，关掉有真实期望
+   代价），而是不再往这两个方向花时间——前者已证无信息量（AUROC 0.531），后者已证无影响
+   （采纳率 1.9%、贡献 0）。当前配置维持 `DEPTH_STOP_VETO=True` / `BACKTRACK=True` 不动。
+2bis. **终局俯视视角 ENDGAME_TILT_VIEW**（20260718 实现，20260719 修预算错配 + ep1 冒烟通过）：
+   **成因是几何不是模型**——`utils.py:155` 把 12 路相机的 pitch 硬编码为 0.0，动作空间也无 LOOK_UP/DOWN，故 VFOV 90° + 相机高 ~1.25m 下**正前方地面 1.25m 内不在任何一张图里**。R2R 目标大量是地面/矮家具，这是"近距欠检测 46%"的一部分成因。
+   **它是队列里第一个落在转化侧的杠杆**（veto/回溯全在 OSR 侧）。
+   触发器（全 oracle-free）：武装 = 终点目标近 3 步可见 ∨ 步数 ≥0.7×预算；击发 = 武装态下有 STOP
+   提出；限流 = 位姿去重 0.5m/15° + 间隔 ≥3 步 + 每集 ≤4 次；**外加 `ALWAYS_ON_STOP` 在
+   `action_pre_step` 收口点无条件补一发终局样本**。刻意**不用 phase**（见 §一bis G）。
+   ⚠ **`ARM_ON_FINAL_CLAUSE` 已默认关**：step=1 时 `completed_action_count` 中位已达 4/5，
+   **81/100 集在第 1 步就满足**——该信号 oracle-free 但不携带终局信息，开着会把预算烧在开局。
+   修复效果：总触发 296→**257**，覆盖提交-stop 时刻 21/65 (32%)→**65/65 (100%)**，成本反降 13%。
+   ⚠ **committed_stop 只覆盖 65/100 集**，另 35 集撞步数上限从不提交停止 → 下轮得到 65 个标定样本。
+   ⚠ **俯视的信号强度此前被高估，已更正**：−30° + 相机高 1.25m → 打到**空地板就是 2.50m**，
+   而实测俯视深度中位 2.20m。此前引用的"46% 眼平>3m 而俯视<3m"中 **55% 落在地板带是伪信号**，
+   真近物仅 27% → 真实信号约 12%。**"接进 veto 用 min(tilt,eye)"的提议已撤回**（反例：ep1 冒烟
+   step8 四门全 vetoed、俯视 1.90m、真实距目标 4.70m，min 口径会放行该拦的假停）。
+   事件已带 `floor_intersect_m` 字段防止后续再把地板当目标。
+
 3. **harness-off 9B**：转化率声明的合法对照。
-4. **目标锚点**（设计定稿，2026-07-06）：中距 sighting + 深度 + 位姿 → 注册目标空间锚点；写入门槛 = ≥2 连续帧 + 跨帧锚点位置一致（<1m，幻觉过滤器）；停止判据加"里程计距锚点 ≤2m"（绕过近距欠检测 46%，找回 oracle 移除后丢失的距离分辨力）；靠近后连续无法再确认则锚点作废。与 veto 共享深度基础设施，veto 落地后实现。
+3bis. ⭐ **选择层重排（Arm C）—— 20260719 起的主线**。方向已由 §一ter M 验证（beeline regret
+   预测成败 AUROC 0.773 / 前 3 步 0.662，非长度伪影、非难度代理；参考路径口径更弱故 beeline 口径
+   正确）。落地形态 = 填充 `agent_state.py:30-33` 那套 inert 的打分脚手架
+   （`geometry_score` / `grounding_score` / `novelty_score` / `final_prompt_rank`，trace 中全为 null）。
+   ⚠ **现实起点必须说清楚**：推理期不能用目标距离（oracle），§一ter L 的 regret 只能作**离线监督
+   标签**。可实现的重排只吃可观测特征，而当前最好的可观测启发式（步长最长）只有 35.7%，
+   LLM 是 36.7% —— **空间不是 36.7%→100%，而是"如何超过 35.7% 这个几何天花板"**。
+   **20260719 已实现（`candidate_prior.py` + `CANDIDATE_PRIOR` 开关，默认 ENABLED+LOG_ONLY）：**
+   5 维线性模型（`dist` / `ang` / `rank` / `ncand` / `nmatch`），权重离线拟合、推理期只读可观测量。
+   折外（GroupKFold-5 按集分组，5 种子）**44.1% ± 1.6**，对比 LLM 36.7% / 最好启发式 35.7% / 随机 27.1%。
+   运行时实现回放 45.3%（含训练集）与拟合一致。
+   **消融**：仅几何 4 维 = 36.7%（恰等于 9B）；仅语义 10 维 = 38.7%；几何 4 + `nmatch` = 41.8% 最优。
+   `grounding_score` 的 `s_room`/`s_dir`/`s_rel`/`s_dst` 四维权重**精确为 0.000 = 完全 inert**，
+   唯一有用的语义特征是 `nmatch`（视觉里匹配到的指令词数）。
+   **LLM 的选择不携带几何之外的可利用信息**：作为第 6 维特征加入后折外命中反而降到 40.4%。
+   但两者互补——386 组分歧中 LLM 对 105 / 先验对 136 / 都错 145，**完美仲裁器上界 57.5%**，
+   而没有任何可观测信号能仲裁 → 这是训练线（队列 6）的确切靶点。
+   ⚠ **两条未验证的路**：(a) `LOG_ONLY: False` 会按先验重排候选顺序再交给选择器，
+   而下游是否只按 `candidate_id` 取用**未审计**（重排若影响 images_dict/方向映射会静默出错）；
+   (b) 44.1% 是"命中最靠近目标的候选"，**不是 SR**，且权重拟合于 LLM 主导的轨迹分布（协变量偏移）。
+   → 先 LOG_ONLY 跑一轮验证运行时打分与离线一致，再谈翻 decision-active。
+4. **目标锚点**（设计定稿 2026-07-06）—— ⬇ **20260719 下调，前提被削弱**：中距 sighting + 深度 +
+   位姿 → 注册目标空间锚点；写入门槛 = ≥2 连续帧 + 跨帧锚点位置一致（<1m）；停止判据加
+   "里程计距锚点 ≤2m"；靠近后连续无法再确认则锚点作废。
+   ⚠ **它与 veto 共享深度基础设施，而 §一ter I 已证深度在停止时刻 AUROC=0.531 无信息量。**
+   锚点绑的是**目标**而非"前方有没有东西"，逻辑上仍不同；但"≤2m 阈值"这一支的可行性，
+   必须先用 2bis 修复后跑出的 65 个 committed_stop 俯视/深度样本重新论证，**不得直接实现**。
 5. **backbone 快筛**：ep20 × 候选小 VLM，产出 = E1 校准曲线对比（不看 SR），选信念不平躺的基座。
-6. **训练线开题**：选择层方向打分头（VLM 冻结，trace oracle 标签监督）。数据管道复用 p1_design §9 的 prompt 日志 + 标签流水线。目标：选中靠近候选率 31%→≥55%。
+6. **训练线开题** —— ⬆ **20260719 上调**：选择层方向打分头（VLM 冻结，trace oracle 标签监督）。
+   数据管道复用 p1_design §9 的 prompt 日志 + 标签流水线。目标：选中最优候选率 36.7%→≥55%。
+   **为什么上调**：§一ter L 显示 9B 的语义贡献仅比平凡几何启发式强 1 点，靠 prompt 工程压榨空间
+   已近枯竭；把 656 决策点/集的 regret 标签喂给一个轻量打分头，是绕开"小 VLM 语义弱"的正面路径。
+7. `verify_smoke.py` backtrack 模式加最小 offer 样本量判据，消除 §一ter K 的假 FAIL。
 
 ## 三、论文状态（无 DDL，随实验生长）
 
@@ -49,17 +189,31 @@ updated: 2026-07-06
 
 ## 四、开放问题
 
-1. 锚点写入门槛参数（帧数/一致性半径/注册距离带）——veto A/B 的 depth 日志可先离线标定。
+1. 锚点写入门槛参数（帧数/一致性半径/注册距离带）。**20260719 更新**：`≤2m` 阈值的第一份标定
+   依据要等 2bis 修复后的 65 个 committed_stop 样本；20260719 那轮的俯视数据**不可用于标定**
+   （采样窗口在开局，且 34% 落在地板带）。更根本的问题见 §一ter I —— 深度在停止时刻无区分力，
+   锚点若仍以深度为主判据，需先说明它凭什么不重蹈 veto 的覆辙。
 2. 训练线打分头形态：线性探针 on VLM 隐层 vs 独立小模型吃结构化特征——backbone 快筛结果影响选择。
 3. 84%/31% 覆盖口径与 GPU 机诊断脚本统一（阻塞论文 §4.3 定稿）。
 4. 下一个投稿目标：等 depth veto + 锚点 + 训练线首批数字后再定。
+5. **开口类目标怎么办**（20260718 新增，阻塞锚点设计）：VLN 大量目标是门口/楼梯口/刚进屋，此处中心深度天然 >3m。深度类判据对这一族天然失灵，锚点方案必须正面处理，否则会复制 veto 的误杀模式。
+   **20260719 实测**：误杀率不再是启发式估计——21 集在四门全 vetoed 时仍停止，其中 **5 集成功**
+   = 误杀率 24%、占全部成功的 25%。此前"6–8 集开口类"的文本估计与实测同量级，假设成立。
+6. **选择层的天花板在哪**（20260719 新增，阻塞 3bis 选型）：可观测启发式最好 35.7%（步长最长），
+   9B 36.7%，理论最优 100%。**中间那 64 个点里有多少是可观测特征原则上够得着的**，
+   目前无人知道。这个数决定 3bis 走特征工程还是直接上训练线打分头。
+   可做的廉价探路：用全部可观测特征（角度/步长/rank/各路描述文本长度等）拟合一个离线上界。
 
 ## 五、关键配置快照
 
 | 参数 | 当前值 |
 |---|---|
 | 基线 | clean_baseline_v1（9B，oracle-free，commit tag 锁定） |
-| 增量开关 | DEPTH_STOP_VETO / BACKTRACK 已合入、默认 OFF（tag increments_v2_staged） |
+| 增量开关 | DEPTH_STOP_VETO=True / BACKTRACK=True 写死在 yaml（**20260719 双双证伪但维持不动**，见 §一ter I/K）；ENDGAME_TILT_VIEW=True + LOG_ONLY=True（20260719 修预算错配：ARM_ON_FINAL_CLAUSE=False / ARM_STEP_FRAC=0.7 / MAX_PER_EPISODE=4 / MIN_STEP_GAP=3 / ALWAYS_ON_STOP=True）；GEOMETRY_INJECTION 仍 False（前测净负，待单独跑） |
+| 离线复算 | 目标位置 + 候选世界坐标可离线精确重建，**分析选择层不需要重跑**，方法见 §一ter N |
+| ⚠ 承重设计 | `generate_input` 必须跳过 `tilt_` 前缀键——RGB 按 `observations.keys()` **位置编号**、`construct_image_dicts` 再映射 1–12 到朝向，多一路传感器进扫描会**静默旋转整个方向映射**且不报错 |
+| 生效自检 | 起跑后 `[HARNESS SWITCHES]` 横幅，模型加载后数秒可见（`base_il_trainer_llm.py`） |
+| 互斥约束 | U1(PHASE_EVIDENCE) ↔ V4(MULTIMODAL_SELECTOR_CONTEXT) 不可同时决策生效；V1/memory/diagnostic 强制 LOG_ONLY |
 | 后端 | transformers direct-generate bf16，贪心（整个系列钉死，不换 vLLM） |
 | TRACE 真源 | logs/harness_traces/ep100/20260705/clean_baseline_v1 |
 | 数字真源 | paper_analysis/verify_paper_numbers.py + episode_metrics.json |

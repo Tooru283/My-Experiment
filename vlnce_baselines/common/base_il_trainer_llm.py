@@ -51,6 +51,7 @@ from vlnce_baselines.common.opennav_ext import (
     u_series_enabled,
     validate_a1_harness_config,
 )
+from vlnce_baselines.common.opennav_ext import candidate_prior
 from vlnce_baselines.common.opennav_ext.backtrack_policy import (
     BacktrackPolicy,
     MOVE_BACK_CANDIDATE,
@@ -283,6 +284,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         depth_index = 0
         for key in observations.keys():
             image_path = "./image_show/"
+            # The endgame tilt sensors must not enter this sweep: rgb_index /
+            # depth_index are positional and construct_image_dicts maps 1..12 to
+            # headings, so counting a 13th view here would rotate every direction.
+            # The tilt view is read directly from observations at the stop gate.
+            if str(key).startswith('tilt_'):
+                continue
             if 'rgb' in key:
                 image_path += f"{key}.jpg"
                 image = Image.fromarray(observations[key], mode="RGB")
@@ -868,7 +875,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             depth_veto_enabled = False
             depth_veto_dist = 3.0
             depth_veto_center_frac = 0.25
-            _depth_sensor_cfg = getattr(config.SIMULATOR, "DEPTH_SENSOR", None)
+            _sim_cfg = getattr(config.TASK_CONFIG, "SIMULATOR", None)
+            _depth_sensor_cfg = getattr(_sim_cfg, "DEPTH_SENSOR", None) if _sim_cfg is not None else None
             depth_veto_min = float(getattr(_depth_sensor_cfg, "MIN_DEPTH", 0.0)) if _depth_sensor_cfg is not None else 0.0
             depth_veto_max = float(getattr(_depth_sensor_cfg, "MAX_DEPTH", 10.0)) if _depth_sensor_cfg is not None else 10.0
             depth_veto_normalize = bool(getattr(_depth_sensor_cfg, "NORMALIZE_DEPTH", True)) if _depth_sensor_cfg is not None else True
@@ -880,6 +888,318 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     depth_veto_dist = float(getattr(_dveto_cfg, "MAX_TARGET_DIST_M", 3.0))
                     depth_veto_center_frac = float(getattr(_dveto_cfg, "CENTER_FRAC", 0.25))
 
+            # ---- Endgame tilt view: config, per-episode state, trigger ----------
+            tilt_enabled = False
+            tilt_log_only = True
+            tilt_pitch_deg = -30.0
+            tilt_arm_final_clause = False
+            tilt_arm_final_landmark = True
+            tilt_arm_step_frac = 0.7
+            tilt_max_per_episode = 4
+            tilt_min_step_gap = 3
+            tilt_always_on_stop = True
+            tilt_dedupe_dist = 0.5
+            tilt_dedupe_heading = 15.0
+            tilt_center_frac = 0.25
+            _tv_cfg = getattr(config.OPENNAV_HARNESS, "ENDGAME_TILT_VIEW", None)
+            if _tv_cfg is not None:
+                tilt_enabled = bool(getattr(_tv_cfg, "ENABLED", False))
+                tilt_log_only = bool(getattr(_tv_cfg, "LOG_ONLY", True))
+                tilt_pitch_deg = float(getattr(_tv_cfg, "PITCH_DEG", -30.0))
+                tilt_arm_final_clause = bool(getattr(_tv_cfg, "ARM_ON_FINAL_CLAUSE", False))
+                tilt_arm_final_landmark = bool(getattr(_tv_cfg, "ARM_ON_FINAL_LANDMARK", True))
+                tilt_arm_step_frac = float(getattr(_tv_cfg, "ARM_STEP_FRAC", 0.7))
+                tilt_max_per_episode = int(getattr(_tv_cfg, "MAX_PER_EPISODE", 4))
+                tilt_min_step_gap = int(getattr(_tv_cfg, "MIN_STEP_GAP", 3))
+                tilt_always_on_stop = bool(getattr(_tv_cfg, "ALWAYS_ON_STOP", True))
+                tilt_dedupe_dist = float(getattr(_tv_cfg, "DEDUPE_DIST_M", 0.5))
+                tilt_dedupe_heading = float(getattr(_tv_cfg, "DEDUPE_HEADING_DEG", 15.0))
+                tilt_center_frac = float(getattr(_tv_cfg, "CENTER_FRAC", 0.25))
+            # ---- Arm C: candidate prior config ---------------------------------
+            candidate_prior_enabled = False
+            candidate_prior_log_only = True
+            candidate_prior_min_gap = 0.10
+            _cp_cfg = getattr(config.OPENNAV_HARNESS, "CANDIDATE_PRIOR", None)
+            if _cp_cfg is not None:
+                candidate_prior_enabled = bool(getattr(_cp_cfg, "ENABLED", False))
+                candidate_prior_log_only = bool(getattr(_cp_cfg, "LOG_ONLY", True))
+                candidate_prior_min_gap = float(getattr(_cp_cfg, "MIN_PROB_GAP", 0.10))
+            # (scores, ranks) from this step's prior; consumed by the override hook
+            # after the selector has spoken. Reset each step alongside the candidates.
+            latest_candidate_prior = None
+            # ---- progress estimator mode ---------------------------------------
+            # "rule" skips the per-step text LLM call (15.7 s) and derives the
+            # executed-action list from the step counter. See default.py for the
+            # measurements that motivate it.
+            _ce_cfg = getattr(config.OPENNAV_HARNESS, "COMPLETION_ESTIMATION", None)
+            completion_mode = str(
+                getattr(_ce_cfg, "MODE", "llm") if _ce_cfg is not None else "llm"
+            ).lower()
+            if completion_mode not in {"llm", "rule"}:
+                completion_mode = "llm"
+
+            def _candidate_prior_override(selector_vp):
+                """Override the selector when the prior is decisively ahead.
+
+                Returns (final_vp, audit_payload). The prior CANNOT be delivered to
+                the selector any other way: the prompt's candidate order carries no
+                position bias (first-slot pick rate 27.1% vs 25.8% uniform, flat
+                across slots), and prompt-side geometry injection was already
+                measured net-negative (GEOMETRY_INJECTION=False). So overriding the
+                emitted choice is the only channel left.
+
+                Gate = softmax probability gap, not rank. Measured on the fitting run:
+
+                    full override (rank>=1)   60% intervention -> 41.8%
+                    gap > 0.10                29% intervention -> 41.5%
+                    gap > 0.20                10% intervention -> 39.5%
+                    LLM alone                  0% intervention -> 36.7%
+
+                gap>0.10 buys 96% of the benefit for half the intervention, so it is
+                the default. Never touches STOP or MOVE_BACK -- those are termination
+                decisions the prior has no label for.
+                """
+                if latest_candidate_prior is None or candidate_prior_log_only:
+                    return selector_vp, None
+                scores, ranks = latest_candidate_prior
+                if not scores or str(selector_vp) not in scores:
+                    return selector_vp, None
+                try:
+                    keys = list(scores)
+                    mx = max(scores.values())
+                    exp = {k: math.exp(scores[k] - mx) for k in keys}
+                    tot = sum(exp.values()) or 1.0
+                    prob = {k: exp[k] / tot for k in keys}
+                    top = max(prob, key=prob.get)
+                    gap = prob[top] - prob[str(selector_vp)]
+                    if top == str(selector_vp) or gap <= candidate_prior_min_gap:
+                        return selector_vp, None
+                    return top, {
+                        "selector_choice": str(selector_vp),
+                        "prior_choice": top,
+                        "prob_gap": gap,
+                        "min_prob_gap": candidate_prior_min_gap,
+                    }
+                except (KeyError, TypeError, ValueError, OverflowError):
+                    return selector_vp, None
+
+            def _parse_visual_evidence_candidates(ve_results):
+                """{candidate_id: entry} from the visual_evidence raw response.
+
+                The parsed candidate list is not exposed as a field, so this reads
+                `raw_response` the same way the offline fit did -- keeping the
+                runtime nmatch identical to the one the weights were trained on.
+                Returns {} on any parse surprise; the prior then scores nmatch=0,
+                which is exactly what the fit saw for unsampled candidates.
+                """
+                if not isinstance(ve_results, dict):
+                    return {}
+                try:
+                    raw = json.loads(ve_results.get("raw_response") or "{}")
+                    return {
+                        str(c["candidate_id"]): c
+                        for c in raw.get("candidates", [])
+                        if isinstance(c, dict) and "candidate_id" in c
+                    }
+                except (ValueError, TypeError, KeyError):
+                    return {}
+
+            # Geometric floor for the tilt reading: a -30deg ray from a 1.25m-high
+            # sensor hits flat empty floor at 2.50m, so a "close" tilt depth is only
+            # evidence of an object if it is meaningfully below this. Computed from
+            # the live sensor height so it stays correct if either value is retuned.
+            try:
+                _cam_h = float(
+                    getattr(config.TASK_CONFIG.SIMULATOR.DEPTH_SENSOR, "POSITION", [0, 1.25, 0])[1]
+                )
+                tilt_floor_intersect_m = _cam_h / math.sin(math.radians(abs(tilt_pitch_deg)))
+            except (AttributeError, IndexError, TypeError, ValueError, ZeroDivisionError):
+                tilt_floor_intersect_m = None
+            # Per-episode state; reset in the episode-boundary block below.
+            tilt_fire_count = 0
+            tilt_last_pose = None
+            tilt_last_fire_step = None
+            tilt_last_reading = None
+
+            def _tilt_endgame_armed():
+                """Is the agent in the instruction's final stage? (oracle-free)
+
+                Any one of the enabled signals arms it. Returns (armed, reason).
+                final_clause is off by default: measured on ep100 20260719 it is true
+                on step 1 in 81/100 episodes, because the LLM's completed_action_count
+                is already at action_count-1 before the agent has moved. It is clean of
+                oracle but carries no endgame information, and leaving it on spent the
+                whole budget in steps 1-3.
+                NOT keyed on phase_evidence.phase -- that field branches "recover"
+                on recent_distance_gains (simulator geodesic goal-distance deltas =
+                GT), so anything conditioned on it inherits an inference-time oracle.
+                completed/action_count come from _completed_action_count(estimation,
+                actions), which reads only instruction text and the LLM's own recap.
+                """
+                pe = latest_phase_evidence or {}
+                if tilt_arm_final_clause:
+                    try:
+                        n_actions = int(pe.get("action_count") or 0)
+                        n_done = int(pe.get("completed_action_count") or 0)
+                        if n_actions > 0 and n_done >= n_actions - 1:
+                            return True, "final_clause"
+                    except (TypeError, ValueError):
+                        pass
+                if tilt_arm_final_landmark and recent_ftv_window:
+                    # Final target reported visible recently == endgame. Last 3 steps,
+                    # matching the E3 carry-forward window already used for stop
+                    # evidence; the full 10-slot window would keep the tilt armed for
+                    # the rest of the episode after a single sighting.
+                    if any(bool(v) for v in recent_ftv_window[-3:]):
+                        return True, "final_landmark_seen"
+                if tilt_arm_step_frac > 0:
+                    try:
+                        if current_step >= tilt_arm_step_frac * float(step_length):
+                            return True, "step_budget"
+                    except (TypeError, ValueError, ZeroDivisionError):
+                        pass
+                return False, None
+
+            def _tilt_pose_is_new():
+                """Rate limit by pose: skip if we already tilted from ~here."""
+                if tilt_last_pose is None:
+                    return True
+                try:
+                    px, py, pz, ph = tilt_last_pose
+                    cx, cy, cz = positions[0]
+                    ch = float(headings[0])
+                    moved = float(np.linalg.norm(np.array([cx, cy, cz]) - np.array([px, py, pz])))
+                    turned = abs(np.degrees(ch - ph))
+                    turned = min(turned, 360.0 - turned)
+                    return moved >= tilt_dedupe_dist or turned >= tilt_dedupe_heading
+                except Exception:
+                    return True
+
+            def _tilt_observe(source_label, force=False):
+                """Observe the down-pitched view at an endgame stop gate.
+
+                Fires only when armed AND rate limits allow. Emits an
+                `endgame_tilt_view` event carrying the tilt depth center median and
+                the SpatialBot/RAM reading of the tilted frame -- the offline channel
+                for measuring how many near-field targets the eye-level rig misses.
+                Fail-open: any structural surprise logs nothing and changes nothing.
+                Returns the tilt reading dict, or None.
+
+                force=True is the committed-stop sample: it bypasses the budget, the
+                step gap, the arm test and the pose dedupe, because that one pose is
+                the whole point of the instrument and every rate limit above exists
+                only to ration the in-episode samples around it.
+                """
+                nonlocal tilt_fire_count, tilt_last_pose, tilt_last_fire_step
+                nonlocal tilt_last_reading
+                if not tilt_enabled:
+                    return None
+                if force and tilt_last_fire_step == current_step and tilt_last_reading:
+                    # A budget fire already sampled this exact pose this step. Re-label
+                    # it instead of paying for a second identical generation -- the
+                    # commit is what makes the sample interesting, not a new reading.
+                    reading = dict(tilt_last_reading)
+                    reading["source"] = source_label
+                    reading["arm_reason"] = "committed_stop"
+                    reading["committed_stop"] = True
+                    reading["deduped_from_budget_fire"] = True
+                    log_fallback_event(
+                        "endgame_tilt_view",
+                        current_episode_id,
+                        current_step,
+                        reading,
+                    )
+                    return reading
+                if not force:
+                    if tilt_fire_count >= tilt_max_per_episode:
+                        return None
+                    if (
+                        tilt_last_fire_step is not None
+                        and current_step - tilt_last_fire_step < tilt_min_step_gap
+                    ):
+                        return None
+                try:
+                    # Arm/dedupe live inside the guard too: they read episode-scoped
+                    # state (latest_phase_evidence, recent_ftv_window, positions) and
+                    # must never be able to break the main loop.
+                    armed, arm_reason = _tilt_endgame_armed()
+                    if force:
+                        arm_reason = "committed_stop"
+                    elif not armed:
+                        return None
+                    if not force and not _tilt_pose_is_new():
+                        return None
+                    obs0 = observations[0] if isinstance(observations, (list, tuple)) else observations
+                    if not isinstance(obs0, dict) or "tilt_rgb" not in obs0:
+                        return None
+                    tilt_depth_raw = obs0.get("tilt_depth")
+                    tilt_depth_m = _metric_depth_center_median(
+                        tilt_depth_raw, depth_veto_min, depth_veto_max,
+                        depth_veto_normalize, tilt_center_frac,
+                    )
+                    tilt_rgb_img = Image.fromarray(obs0["tilt_rgb"], mode="RGB")
+                    tilt_depth_img = None
+                    if tilt_depth_raw is not None:
+                        d = np.asarray(tilt_depth_raw, dtype=np.float32)
+                        if d.ndim == 3 and d.shape[-1] == 1:
+                            d = d[..., 0]
+                        span = float(np.max(d) - np.min(d))
+                        if span > 1e-6:
+                            tilt_depth_img = Image.fromarray(
+                                (255 * (d - np.min(d)) / span).astype(np.uint8)
+                            )
+                    description = None
+                    if tilt_depth_img is not None:
+                        description = navigator.spatial.observe_view(
+                            nav_logger,
+                            current_step,
+                            "tilt",
+                            {"rgb": tilt_rgb_img, "depth": tilt_depth_img},
+                        )
+                    tilt_fire_count += 1
+                    tilt_last_fire_step = current_step
+                    tilt_last_pose = (
+                        positions[0][0], positions[0][1], positions[0][2],
+                        float(headings[0]),
+                    )
+                    reading = {
+                        "source": source_label,
+                        "arm_reason": arm_reason,
+                        "committed_stop": bool(force),
+                        "pitch_deg": tilt_pitch_deg,
+                        # Range at which the pitched ray meets a flat empty floor
+                        # (camera_height / sin|pitch|). At -30deg with the 1.25m
+                        # sensor this is 2.50m, and the ep100 20260719 tilt median
+                        # was 2.20m -- i.e. most readings are floor, not object.
+                        # Any near-field claim must clear this by a real margin.
+                        "floor_intersect_m": tilt_floor_intersect_m,
+                        "tilt_depth_center_m": tilt_depth_m,
+                        "eye_level_depth_center_m": _metric_depth_center_median(
+                            _current_view_depth_array(observations),
+                            depth_veto_min, depth_veto_max,
+                            depth_veto_normalize, tilt_center_frac,
+                        ),
+                        "observation": description,
+                        "fire_index": tilt_fire_count,
+                        "log_only": tilt_log_only,
+                    }
+                    tilt_last_reading = reading
+                    log_fallback_event(
+                        "endgame_tilt_view",
+                        current_episode_id,
+                        current_step,
+                        reading,
+                    )
+                    return reading
+                except Exception as exc:
+                    log_fallback_event(
+                        "endgame_tilt_view",
+                        current_episode_id,
+                        current_step,
+                        {"source": source_label, "error": repr(exc)},
+                    )
+                    return None
+
             def _depth_stop_ok(source_label):
                 """Observable depth veto for a STOP-enabling gate. Returns (ok, reading).
 
@@ -888,6 +1208,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 call: this trace is the ONLY channel to measure hit / false-veto rate
                 offline, so it is emitted even when disabled=False is NOT the case.
                 """
+                # _depth_stop_ok is the shared choke point for every STOP-enabling
+                # gate, so the endgame tilt observation hangs here -- but ABOVE the
+                # disabled early-return, so the two switches stay independent
+                # (attribution: tilt must be runnable with the veto off).
+                _tilt_observe(source_label)
                 if not depth_veto_enabled:
                     return True, None
                 reading = _metric_depth_center_median(
@@ -935,6 +1260,30 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 if backtrack_enabled
                 else None
             )
+            # Resolved-switch banner. Printed BEFORE the episode loop so a mis-launch
+            # (e.g. YACS overrides not forwarded) is visible in seconds instead of
+            # after a ~9h ep100 run -- see the 20260718 run that silently reproduced
+            # the clean baseline byte-for-byte because DEPTH_STOP_VETO stayed False.
+            print(
+                "[HARNESS SWITCHES] depth_stop_veto={} (max_dist={}m) backtrack={} "
+                "(max/ep={}) endgame_tilt={} (pitch={}deg log_only={} cap={} "
+                "gap={} on_stop={} arm_fc={}) cand_prior={} (log_only={} min_gap={}) "
+                "completion={} u_series={} unit={} geometry_injection={}".format(
+                    depth_veto_enabled, depth_veto_dist,
+                    backtrack_enabled, backtrack_max_per_episode,
+                    tilt_enabled, tilt_pitch_deg, tilt_log_only,
+                    tilt_max_per_episode, tilt_min_step_gap,
+                    tilt_always_on_stop, tilt_arm_final_clause,
+                    candidate_prior_enabled, candidate_prior_log_only,
+                    candidate_prior_min_gap,
+                    completion_mode,
+                    u_module_enabled(config, "PHASE_EVIDENCE"),
+                    u_decision_unit,
+                    geometry_injection_enabled,
+                ),
+                flush=True,
+            )
+
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
@@ -1440,6 +1789,12 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 backtrack_budget_remaining = backtrack_max_per_episode
                 backtrack_blocked_headings = set()
                 just_backtracked = False
+                # Endgame tilt per-episode reset (budget and pose dedupe must not
+                # carry across episodes).
+                tilt_fire_count = 0
+                tilt_last_pose = None
+                tilt_last_fire_step = None
+                tilt_last_reading = None
                 write_navigation_record(
                     "episode_start",
                     episode_id=current_episode_id,
@@ -1514,6 +1869,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             
             images_dict, radius_dict, distance_dict = self.construct_image_dicts(batch_distances[-1], batch_angles, images_list)
             candidates = []
+            latest_candidate_prior = None
             geometry_results = []
             grounding_results = []
             visual_evidence_results = {}
@@ -1683,6 +2039,59 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         current_step,
                         sampling_payload,
                     )
+                # ---- Arm C: observable-feature candidate prior -------------------
+                # Placed here because it needs visual_evidence (nmatch) and must land
+                # before the selector context is built. Writes into the previously
+                # inert scaffold fields on the candidate records so any downstream
+                # consumer sees a populated geometry_score / final_prompt_rank.
+                # LOG_ONLY by default: scores are computed and logged but the
+                # candidate ORDER handed to the selector is untouched, so a
+                # LOG_ONLY run stays comparable to one with the prior off.
+                if candidate_prior_enabled and candidates:
+                    try:
+                        _ve_by_id = _parse_visual_evidence_candidates(
+                            visual_evidence_results
+                        )
+                        _prior_scores, _prior_ranks = candidate_prior.score_candidates(
+                            candidates, _ve_by_id
+                        )
+                        if _prior_scores:
+                            # candidates are CandidateState dataclasses at runtime
+                            # but plain dicts when this path is replayed from a
+                            # trace; write back through whichever shape applies.
+                            for _c in candidates:
+                                if isinstance(_c, dict):
+                                    _cid = str(_c.get("candidate_id"))
+                                else:
+                                    _cid = str(getattr(_c, "candidate_id", None))
+                                if _cid not in _prior_scores:
+                                    continue
+                                if isinstance(_c, dict):
+                                    _c["geometry_score"] = _prior_scores[_cid]
+                                    _c["final_prompt_rank"] = _prior_ranks[_cid]
+                                else:
+                                    _c.geometry_score = _prior_scores[_cid]
+                                    _c.final_prompt_rank = _prior_ranks[_cid]
+                            latest_candidate_prior = (_prior_scores, _prior_ranks)
+                            harness_logger.log_event(
+                                "candidate_prior",
+                                current_step,
+                                {
+                                    "log_only": candidate_prior_log_only,
+                                    "scores": _prior_scores,
+                                    "ranks": _prior_ranks,
+                                    "prior_top": min(
+                                        _prior_ranks, key=_prior_ranks.get
+                                    ),
+                                    "candidate_count": len(candidates),
+                                },
+                            )
+                    except Exception as _cp_exc:
+                        harness_logger.log_event(
+                            "candidate_prior",
+                            current_step,
+                            {"error": repr(_cp_exc)},
+                        )
                 visual_evidence_memory_results = run_harness_tool(
                     "visual_evidence_memory",
                     current_step,
@@ -1817,14 +2226,17 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     landmarks,
                     history_traj,
                     max_tokens=positive_token_cap(completion_max_tokens),
+                    mode=completion_mode,
+                    current_step=current_step,
                 )
                 record_runtime_latency(
                     "completion_estimation",
                     current_episode_id,
                     current_step,
                     time.perf_counter() - completion_start_time,
-                    category="text_llm",
+                    category="text_llm" if completion_mode == "llm" else "rule",
                     max_tokens=positive_token_cap(completion_max_tokens),
+                    mode=completion_mode,
                 )
                 write_navigation_record(
                     "completion_estimation",
@@ -2860,6 +3272,21 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         max_tokens=positive_token_cap(decision_max_tokens),
                         offer_move_back=offer_move_back,
                     )
+                    if next_vp not in (STOP_CANDIDATE, MOVE_BACK_CANDIDATE):
+                        next_vp, _cp_audit = _candidate_prior_override(next_vp)
+                        if _cp_audit is not None:
+                            record_u_override(
+                                build_decision_audit(
+                                    unit_enabled="candidate_prior",
+                                    original_action=_cp_audit["selector_choice"],
+                                    proposed_action=_cp_audit["prior_choice"],
+                                    final_action=next_vp,
+                                    override_reason="candidate_prior_prob_gap",
+                                    expected_failure_addressed="selection_regret",
+                                    source_stage="candidate_prior",
+                                    extra=_cp_audit,
+                                )
+                            )
                     record_runtime_latency(
                         "test_decision",
                         current_episode_id,
@@ -3125,6 +3552,22 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 max_tokens=positive_token_cap(decision_max_tokens),
                                 offer_move_back=offer_move_back,
                             )
+                            if next_vp not in (STOP_CANDIDATE, MOVE_BACK_CANDIDATE):
+                                next_vp, _cp_audit = _candidate_prior_override(next_vp)
+                                if _cp_audit is not None:
+                                    _cp_audit["path"] = "after_stop_rejection"
+                                    record_u_override(
+                                        build_decision_audit(
+                                            unit_enabled="candidate_prior",
+                                            original_action=_cp_audit["selector_choice"],
+                                            proposed_action=_cp_audit["prior_choice"],
+                                            final_action=next_vp,
+                                            override_reason="candidate_prior_prob_gap",
+                                            expected_failure_addressed="selection_regret",
+                                            source_stage="candidate_prior",
+                                            extra=_cp_audit,
+                                        )
+                                    )
                             record_runtime_latency(
                                 "test_decision_after_stop_rejection",
                                 current_episode_id,
@@ -3479,6 +3922,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     current_step,
                     decision_audit_payload,
                 )
+                # Committed-stop tilt sample. This is the single choke point where the
+                # stop is already decided and the current-step observations are still
+                # live (envs.step() has not run), so it is the only place that can
+                # recognise the terminal pose. Budget-free by design -- see
+                # ENDGAME_TILT_VIEW.ALWAYS_ON_STOP.
+                if stop_flag and tilt_enabled and tilt_always_on_stop:
+                    _tilt_observe("committed_stop", force=True)
                 write_navigation_record(
                     "action_pre_step",
                     episode_id=current_episode_id,
@@ -3640,7 +4090,23 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         ckpt_tmp = ckpt_path + ".tmp"
                         with open(ckpt_tmp, "w") as _ckpt_f:
                             json.dump(stats_episodes, _ckpt_f, indent=4)
+                            # os.replace is atomic against a *process* crash but not
+                            # against a host power loss: without this fsync the rename
+                            # metadata can reach disk while the data blocks are still in
+                            # page cache, leaving a 0-byte checkpoint. That is exactly
+                            # how run 20260720_004318 lost 8.8h of stats when the VM
+                            # dropped at 09:42 (the per-episode navigation_records were
+                            # the only reason those 82 episodes were recoverable).
+                            _ckpt_f.flush()
+                            os.fsync(_ckpt_f.fileno())
                         os.replace(ckpt_tmp, ckpt_path)
+                        # Persist the rename itself; if this is lost the previous
+                        # checkpoint survives intact, which is the safe failure mode.
+                        _ckpt_dir_fd = os.open(config.RESULTS_DIR, os.O_RDONLY)
+                        try:
+                            os.fsync(_ckpt_dir_fd)
+                        finally:
+                            os.close(_ckpt_dir_fd)
                     except Exception as _ckpt_exc:
                         nav_logger.info(f"Checkpoint write failed: {_ckpt_exc}")
                     write_navigation_record(
@@ -3899,6 +4365,29 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 setattr(config.SIMULATOR, camera_template, camera_config)
                 config.SIMULATOR.AGENT_0.SENSORS.append(camera_template)
                 resize_config.append((camera_template.lower(), resizer_size))
+        # Endgame tilt view: one extra down-pitched RGB+depth pair at forward yaw.
+        # Added ONLY when enabled, so a disabled run keeps the exact sensor set of
+        # clean_baseline_v1. The 'tilt_' uuid prefix is load-bearing: generate_input
+        # indexes rgb/depth keys POSITIONALLY into 1..12 and construct_image_dicts
+        # maps those indices to headings, so an extra sensor caught by that sweep
+        # would silently rotate the direction mapping. generate_input skips 'tilt_'.
+        _tilt_cfg = getattr(self.config.OPENNAV_HARNESS, "ENDGAME_TILT_VIEW", None)
+        if _tilt_cfg is not None and bool(getattr(_tilt_cfg, "ENABLED", False)):
+            tilt_pitch_rad = float(
+                np.radians(float(getattr(_tilt_cfg, "PITCH_DEG", -30.0)))
+            )
+            for sensor_type in ["RGB", "DEPTH"]:
+                resizer_size = dict(resize_config)[sensor_type.lower()]
+                camera_config = deepcopy(
+                    getattr(config.SIMULATOR, f"{sensor_type}_SENSOR")
+                )
+                camera_config.ORIENTATION = [tilt_pitch_rad, 0.0, 0.0]
+                camera_config.UUID = f"tilt_{sensor_type.lower()}"
+                camera_template = f"TILT_{sensor_type}"
+                setattr(config.SIMULATOR, camera_template, camera_config)
+                config.SIMULATOR.AGENT_0.SENSORS.append(camera_template)
+                resize_config.append((camera_config.UUID, resizer_size))
+
         self.config.RL.POLICY.OBS_TRANSFORMS.RESIZER_PER_SENSOR.SIZES = resize_config
         self.config.TASK_CONFIG = config
         self.config.SENSORS = config.SIMULATOR.AGENT_0.SENSORS

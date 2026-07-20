@@ -108,7 +108,7 @@ OPENNAV_HARNESS:
     # (ep377 @ 5.42 m), not every confident lie. Raw depth logged (event depth_stop_veto)
     # so the A/B run can measure hit / false-veto rate. Run separately from BACKTRACK.
     DEPTH_STOP_VETO:
-      ENABLED: False
+      ENABLED: True
       MAX_TARGET_DIST_M: 3.0    # == TASK.SUCCESS_DISTANCE
       CENTER_FRAC: 0.25
 
@@ -184,8 +184,46 @@ OPENNAV_HARNESS:
   # / candidate exhaustion, never goal distance. Anti-oscillation: budget-capped, never
   # two in a row, last_executed_move cleared after a backtrack. Run separately from
   # DEPTH_STOP_VETO (do not flip both at once -- attribution).
+  # Endgame tilt view (added 20260718; ships OFF in config/default.py, ON here).
+  # The 12-camera rig is yaw-only (pitch hardcoded 0.0 in get_camera_orientations),
+  # so floor closer than ~1.25m is outside every frame -- a geometric cause of the
+  # 46% near-distance under-detection. When ENABLED, one -30 deg RGB+depth pair is
+  # added and observed ONLY at endgame stop gates (armed by final clause / final
+  # landmark seen / step budget; never by phase, which is oracle-contaminated).
+  # Keep LOG_ONLY: True for the first run -- measure how many near-field targets the
+  # eye-level rig misses BEFORE letting it move any decision.
+  # Held at "llm" so this run is a single-variable test of CANDIDATE_PRIOR below.
+  # The "rule" mode (zero-cost progress estimate, saves ~3h/run) is a cost lever,
+  # not an SR lever -- it is queued for the run after this one.
+  COMPLETION_ESTIMATION:
+    MODE: llm
+
+  # Decision-active. MIN_PROB_GAP 0.00 = defer to the prior on every disagreement
+  # (~59% intervention). Out-of-fold scan (GroupKFold-5 by episode, 5 seeds):
+  #   0.00 43.8+-.6 | 0.05 44.2+-.8 | 0.10 42.5+-.4 | 0.20 39.2+-.6 | LLM alone 36.7
+  # 0.00 and 0.05 tie within noise, both beat the old 0.10 default by more than the
+  # seed spread. See default.py for the two caveats that ride along.
+  CANDIDATE_PRIOR:
+    ENABLED: True
+    LOG_ONLY: False
+    MIN_PROB_GAP: 0.00
+
+  ENDGAME_TILT_VIEW:
+    ENABLED: True
+    LOG_ONLY: True
+    PITCH_DEG: -30.0
+    ARM_ON_FINAL_CLAUSE: False
+    ARM_ON_FINAL_LANDMARK: True
+    ARM_STEP_FRAC: 0.7
+    MAX_PER_EPISODE: 4
+    MIN_STEP_GAP: 3
+    ALWAYS_ON_STOP: True
+    DEDUPE_DIST_M: 0.5
+    DEDUPE_HEADING_DEG: 15.0
+    CENTER_FRAC: 0.25
+
   BACKTRACK:
-    ENABLED: False
+    ENABLED: True
     MAX_BACKTRACKS_PER_EPISODE: 2
     STALL_WINDOW: 3
     DISP_EPS: 1.0
