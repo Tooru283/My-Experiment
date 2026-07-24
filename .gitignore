@@ -32,3 +32,6 @@ recognize_anything/
 external/
 rag/
 RAG/
+
+# 大体积派生产物 — 用 paper_analysis/scoring_head/collect_hidden_states.py 重新生成即可
+paper_analysis/scoring_head/*.npy

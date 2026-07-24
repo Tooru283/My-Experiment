@@ -184,6 +184,20 @@ rescue/override 分支），**21/65 集在四门全判 vetoed 时仍然停止**�
    collect 跑加 hook dump selector 前向候选 token 隐藏态（类比 p1_design §9.2 日志钩子加 tensor dump），
    一次 ep100 产出隐藏态 → 线性探针测 regret 可分性。**闸门：折外 regret ≤0.85（>下界 0.94、>LLM 0.99）**。
    不过 → 方案 A 死，退 backbone 快筛 / 最小可发表版（分析+诚实基线）。1 天出结果，不过不投第二天。
+   > **20260723 落地——由"在线 hook"改为"离线 re-forward"（无需改 harness、无需重跑 collect）**：
+   > 查明 ①`navigator_prompt` 事件（selector 完整 prompt + candidate_ids）**100/100 集已记录**在
+   > 20260719/clean_baseline_v1 trace 里（base_il_trainer_llm.py:3100，p1_design §9.2 已实装）；
+   > ②9B 选择器是 **lmdeploy HTTP 服务**（api.py→OpenAI client→:23333），该端点只回文本、拿不到隐藏态；
+   > ③贪心可复现。故最干净路径 = **离线 re-forward**：本地 `/root/models/Qwen3.5-9B` 逐 prompt 重跑一次
+   > `output_hidden_states=True`，抽候选块 token 隐藏态（mean + last 两种池化），喂进 g1 探针。零热路径改动、SR 基线不动。
+   > **坑**：Qwen3.5-9B 是 VLM（`Qwen3_5ForConditionalGeneration`，dims 在 `text_config`：32层/4096），
+   > 须用 **qwen35-serve 环境**（tf 5.9，与服务端一致的 chat 模板）+ `AutoModelForImageTextToText` 加载，纯文本前向跳过视觉塔。
+   > **保真自检**（HF↔lmdeploy 数值核不同，p1_design §9.5b）：HF 贪心须复现 `selector_final.selected_candidate`
+   > **≥95% PASS / 85–95% GRAY(留匹配子集) / <85% RERUN(退在线 hook)**。
+   > 脚本已就绪（CPU dry-run + 合成数据已验通，label 管线复现 n=656/10场景、base_reg=0.995）：
+   > `paper_analysis/scoring_head/collect_hidden_states.py`（离线 dump，带 `--dry`/`--smoke`/`--fidelity-only`）
+   > + `g1_hidden.py`（PCA→listwise 线性探针，扫 layer×pooling，出 G1 闸门判定）。
+   > **待办 = 用户手动起 GPU**：先 `--smoke 40 --fidelity-only` 过保真闸门 → 全量 `--out hidden_states.npy` → `g1_hidden.py`。
 4. **harness-off 9B**：转化率声明的合法对照。
 3bis. ⭐ **选择层重排（Arm C）—— 20260719 起的主线**。方向已由 §一ter M 验证（beeline regret
    预测成败 AUROC 0.773 / 前 3 步 0.662，非长度伪影、非难度代理；参考路径口径更弱故 beeline 口径
