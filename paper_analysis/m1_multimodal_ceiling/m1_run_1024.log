@@ -1,0 +1,127 @@
+loading /root/models/Qwen3.5-9B ...
+[transformers] The fast path is not available because one of the required library is not installed. Falling back to torch implementation. To install follow https://github.com/fla-org/flash-linear-attention#installation and https://github.com/Dao-AILab/causal-conv1d
+Loading weights:   0%|          | 0/760 [00:00<?, ?it/s]Loading weights:   0%|          | 1/760 [00:05<1:08:58,  5.45s/it]Loading weights:   0%|          | 2/760 [00:10<1:08:30,  5.42s/it]Loading weights:   1%|          | 7/760 [00:11<13:36,  1.08s/it]  Loading weights:   2%|▏         | 13/760 [00:11<06:03,  2.05it/s]Loading weights:   2%|▏         | 15/760 [00:11<05:27,  2.27it/s]Loading weights:   3%|▎         | 23/760 [00:12<02:38,  4.65it/s]Loading weights:   4%|▎         | 27/760 [00:12<02:13,  5.50it/s]Loading weights:   4%|▍         | 29/760 [00:13<02:22,  5.14it/s]Loading weights:   5%|▍         | 37/760 [00:13<01:23,  8.62it/s]Loading weights:   5%|▌         | 39/760 [00:13<01:16,  9.37it/s]Loading weights:   5%|▌         | 41/760 [00:13<01:18,  9.13it/s]Loading weights:   6%|▌         | 43/760 [00:14<01:40,  7.10it/s]Loading weights:   6%|▌         | 46/760 [00:14<01:29,  7.98it/s]Loading weights:   6%|▋         | 48/760 [00:15<01:52,  6.30it/s]Loading weights:   7%|▋         | 52/760 [00:15<01:17,  9.09it/s]Loading weights:   7%|▋         | 54/760 [00:15<01:16,  9.28it/s]Loading weights:   8%|▊         | 62/760 [00:15<00:44, 15.64it/s]Loading weights:   9%|▊         | 65/760 [00:15<00:44, 15.72it/s]Loading weights:   9%|▉         | 67/760 [00:16<01:09, 10.02it/s]Loading weights:   9%|▉         | 69/760 [00:16<01:15,  9.21it/s]Loading weights:  10%|█         | 76/760 [00:17<01:08,  9.98it/s]Loading weights:  11%|█         | 81/760 [00:17<00:56, 11.93it/s]Loading weights:  11%|█         | 83/760 [00:17<01:04, 10.55it/s]Loading weights:  12%|█▏        | 90/760 [00:18<00:47, 14.02it/s]Loading weights:  12%|█▏        | 94/760 [00:18<00:49, 13.36it/s]Loading weights:  13%|█▎        | 96/760 [00:19<01:10,  9.37it/s]Loading weights:  13%|█▎        | 99/760 [00:19<01:08,  9.71it/s]Loading weights:  13%|█▎        | 101/760 [00:19<01:26,  7.59it/s]Loading weights:  14%|█▍        | 105/760 [00:19<01:02, 10.56it/s]Loading weights:  14%|█▍        | 107/760 [00:20<01:03, 10.36it/s]Loading weights:  15%|█▍        | 112/760 [00:20<00:47, 13.74it/s]Loading weights:  16%|█▌        | 118/760 [00:20<00:45, 14.00it/s]Loading weights:  16%|█▌        | 120/760 [00:21<00:48, 13.24it/s]Loading weights:  16%|█▌        | 122/760 [00:21<00:50, 12.73it/s]Loading weights:  17%|█▋        | 129/760 [00:21<00:33, 18.67it/s]Loading weights:  17%|█▋        | 132/760 [00:21<00:34, 18.07it/s]Loading weights:  18%|█▊        | 134/760 [00:22<01:18,  8.00it/s]Loading weights:  19%|█▉        | 143/760 [00:22<00:42, 14.61it/s]Loading weights:  19%|█▉        | 146/760 [00:22<00:41, 14.80it/s]Loading weights:  20%|█▉        | 149/760 [00:23<01:13,  8.31it/s]Loading weights:  20%|██        | 152/760 [00:23<01:07,  9.02it/s]Loading weights:  20%|██        | 154/760 [00:24<01:27,  6.93it/s]Loading weights:  21%|██        | 158/760 [00:24<01:02,  9.61it/s]Loading weights:  21%|██        | 160/760 [00:24<01:01,  9.83it/s]Loading weights:  22%|██▏       | 168/760 [00:25<00:39, 15.08it/s]Loading weights:  23%|██▎       | 172/760 [00:25<00:42, 13.75it/s]Loading weights:  23%|██▎       | 174/760 [00:26<01:03,  9.29it/s]Loading weights:  24%|██▍       | 182/760 [00:26<00:39, 14.72it/s]Loading weights:  24%|██▍       | 185/760 [00:26<00:38, 15.09it/s]Loading weights:  25%|██▍       | 187/760 [00:27<00:59,  9.69it/s]Loading weights:  25%|██▍       | 189/760 [00:27<01:04,  8.92it/s]Loading weights:  26%|██▌       | 196/760 [00:27<00:39, 14.36it/s]Loading weights:  26%|██▌       | 199/760 [00:27<00:37, 14.96it/s]Loading weights:  26%|██▋       | 201/760 [00:28<00:57,  9.80it/s]Loading weights:  27%|██▋       | 203/760 [00:28<01:00,  9.26it/s]Loading weights:  27%|██▋       | 205/760 [00:28<01:01,  9.07it/s]Loading weights:  27%|██▋       | 207/760 [00:29<01:22,  6.66it/s]Loading weights:  28%|██▊       | 211/760 [00:29<00:54, 10.07it/s]Loading weights:  28%|██▊       | 213/760 [00:29<00:52, 10.44it/s]Loading weights:  29%|██▉       | 221/760 [00:29<00:30, 17.95it/s]Loading weights:  29%|██▉       | 224/760 [00:29<00:31, 16.85it/s]Loading weights:  30%|██▉       | 227/760 [00:30<00:59,  8.92it/s]Loading weights:  30%|███       | 231/760 [00:30<00:47, 11.06it/s]Loading weights:  31%|███       | 237/760 [00:31<00:44, 11.77it/s]Loading weights:  32%|███▏      | 240/760 [00:31<00:45, 11.54it/s]Loading weights:  32%|███▏      | 242/760 [00:31<00:50, 10.20it/s]Loading weights:  32%|███▎      | 247/760 [00:32<00:38, 13.41it/s]Loading weights:  33%|███▎      | 252/760 [00:32<00:30, 16.52it/s]Loading weights:  34%|███▎      | 255/760 [00:33<00:56,  8.97it/s]Loading weights:  34%|███▍      | 258/760 [00:33<00:53,  9.42it/s]Loading weights:  34%|███▍      | 260/760 [00:33<01:08,  7.34it/s]Loading weights:  35%|███▍      | 264/760 [00:34<00:56,  8.80it/s]Loading weights:  36%|███▌      | 271/760 [00:34<00:39, 12.50it/s]Loading weights:  37%|███▋      | 278/760 [00:35<00:47, 10.05it/s]Loading weights:  38%|███▊      | 286/760 [00:35<00:34, 13.87it/s]Loading weights:  38%|███▊      | 292/760 [00:36<00:45, 10.27it/s]Loading weights:  39%|███▉      | 300/760 [00:36<00:32, 14.21it/s]Loading weights:  40%|████      | 304/760 [00:36<00:29, 15.32it/s]Loading weights:  40%|████      | 307/760 [00:37<00:39, 11.51it/s]Loading weights:  41%|████      | 309/760 [00:37<00:42, 10.50it/s]Loading weights:  41%|████      | 311/760 [00:38<00:46,  9.65it/s]Loading weights:  41%|████      | 313/760 [00:38<01:01,  7.31it/s]Loading weights:  42%|████▏     | 317/760 [00:38<00:42, 10.33it/s]Loading weights:  42%|████▏     | 319/760 [00:38<00:42, 10.46it/s]Loading weights:  43%|████▎     | 327/760 [00:39<00:34, 12.73it/s]Loading weights:  43%|████▎     | 330/760 [00:39<00:30, 14.29it/s]Loading weights:  44%|████▎     | 332/760 [00:40<00:45,  9.35it/s]Loading weights:  44%|████▍     | 334/760 [00:40<00:53,  7.90it/s]Loading weights:  45%|████▍     | 339/760 [00:40<00:42,  9.84it/s]Loading weights:  45%|████▌     | 342/760 [00:41<00:36, 11.52it/s]Loading weights:  45%|████▌     | 344/760 [00:41<00:35, 11.57it/s]Loading weights:  46%|████▌     | 346/760 [00:41<00:54,  7.62it/s]Loading weights:  46%|████▌     | 348/760 [00:42<00:53,  7.63it/s]Loading weights:  47%|████▋     | 355/760 [00:42<00:29, 13.65it/s]Loading weights:  47%|████▋     | 357/760 [00:42<00:32, 12.52it/s]Loading weights:  47%|████▋     | 359/760 [00:42<00:36, 10.97it/s]Loading weights:  48%|████▊     | 361/760 [00:43<01:18,  5.11it/s]Loading weights:  48%|████▊     | 364/760 [00:44<01:16,  5.15it/s]Loading weights:  48%|████▊     | 366/760 [00:44<01:11,  5.48it/s]Loading weights:  49%|████▊     | 370/760 [00:44<00:46,  8.37it/s]Loading weights:  49%|████▉     | 372/760 [00:45<00:49,  7.82it/s]Loading weights:  50%|████▉     | 378/760 [00:45<00:44,  8.56it/s]Loading weights:  51%|█████     | 384/760 [00:46<00:35, 10.68it/s]Loading weights:  51%|█████     | 386/760 [00:46<00:45,  8.16it/s]Loading weights:  52%|█████▏    | 393/760 [00:46<00:29, 12.27it/s]Loading weights:  52%|█████▏    | 395/760 [00:46<00:28, 12.87it/s]Loading weights:  52%|█████▏    | 397/760 [00:47<00:26, 13.68it/s]Loading weights:  52%|█████▎    | 399/760 [00:47<00:52,  6.86it/s]Loading weights:  53%|█████▎    | 401/760 [00:48<00:59,  6.05it/s]Loading weights:  54%|█████▎    | 408/760 [00:48<00:38,  9.24it/s]Loading weights:  54%|█████▍    | 412/760 [00:49<00:36,  9.58it/s]Loading weights:  54%|█████▍    | 414/760 [00:49<00:47,  7.33it/s]Loading weights:  55%|█████▍    | 417/760 [00:50<00:46,  7.42it/s]Loading weights:  55%|█████▌    | 418/760 [00:50<01:06,  5.10it/s]Loading weights:  56%|█████▌    | 423/760 [00:50<00:39,  8.58it/s]Loading weights:  56%|█████▌    | 425/760 [00:51<00:38,  8.74it/s]Loading weights:  57%|█████▋    | 430/760 [00:51<00:25, 12.75it/s]Loading weights:  58%|█████▊    | 443/760 [00:51<00:11, 28.34it/s]Loading weights:  59%|█████▉    | 449/760 [00:51<00:11, 27.82it/s]Loading weights:  60%|██████    | 457/760 [00:51<00:08, 36.07it/s]Loading weights:  61%|██████    | 463/760 [00:51<00:07, 38.39it/s]Loading weights:  62%|██████▏   | 469/760 [00:51<00:06, 42.36it/s]Loading weights:  63%|██████▎   | 481/760 [00:52<00:04, 57.62it/s]Loading weights:  65%|██████▍   | 493/760 [00:52<00:03, 68.89it/s]Loading weights:  66%|██████▌   | 501/760 [00:52<00:03, 67.38it/s]Loading weights:  67%|██████▋   | 510/760 [00:52<00:03, 71.52it/s]Loading weights:  68%|██████▊   | 518/760 [00:52<00:03, 71.81it/s]Loading weights:  70%|██████▉   | 529/760 [00:52<00:02, 79.52it/s]Loading weights:  71%|███████   | 538/760 [00:52<00:02, 76.84it/s]Loading weights:  72%|███████▏  | 548/760 [00:52<00:02, 78.23it/s]Loading weights:  73%|███████▎  | 556/760 [00:52<00:02, 75.64it/s]Loading weights:  74%|███████▍  | 565/760 [00:53<00:02, 78.88it/s]Loading weights:  75%|███████▌  | 573/760 [00:53<00:02, 78.15it/s]Loading weights:  76%|███████▋  | 581/760 [00:53<00:02, 77.38it/s]Loading weights:  78%|███████▊  | 589/760 [00:53<00:02, 77.92it/s]Loading weights:  79%|███████▉  | 599/760 [00:53<00:02, 80.06it/s]Loading weights:  80%|████████  | 608/760 [00:53<00:02, 75.42it/s]Loading weights:  81%|████████  | 616/760 [00:53<00:02, 61.31it/s]Loading weights:  82%|████████▏ | 626/760 [00:53<00:01, 69.09it/s]Loading weights:  83%|████████▎ | 634/760 [00:54<00:01, 67.63it/s]Loading weights:  84%|████████▍ | 642/760 [00:54<00:01, 68.97it/s]Loading weights:  86%|████████▌ | 650/760 [00:54<00:01, 58.22it/s]Loading weights:  87%|████████▋ | 663/760 [00:54<00:01, 69.74it/s]Loading weights:  89%|████████▊ | 673/760 [00:54<00:01, 74.26it/s]Loading weights:  90%|█████████ | 685/760 [00:54<00:01, 73.54it/s]Loading weights:  92%|█████████▏| 700/760 [00:54<00:00, 90.91it/s]Loading weights:  93%|█████████▎| 710/760 [00:54<00:00, 88.49it/s]Loading weights:  95%|█████████▍| 721/760 [00:55<00:00, 91.57it/s]Loading weights:  96%|█████████▋| 732/760 [00:55<00:00, 87.14it/s]Loading weights:  98%|█████████▊| 745/760 [00:55<00:00, 93.70it/s]Loading weights:  99%|█████████▉| 755/760 [00:55<00:00, 57.95it/s]Loading weights: 100%|██████████| 760/760 [00:55<00:00, 13.63it/s]
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+  [img] 20/100  0.6min elapsed
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+  [img] 40/100  1.0min elapsed
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+  [img] 60/100  1.5min elapsed
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+  [img] 80/100  1.9min elapsed
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+[transformers] Setting `pad_token_id` to `eos_token_id`:248044 for open-end generation.
+  [img] 100/100  2.4min elapsed
+[img] done, 未解析 0/100
+saved -> paper_analysis/m1_multimodal_ceiling/m1_answers_1024.json  (2.4 min)
+
+=== 全部抽样点（主判据） (n=100) ===
+arm                               命中最优候选      米制regret     未解析
+IMG 图像臂                         40.0%        0.902        0
+9B在线(完整harness)                 29.0%        1.102        0
+最长步启发式                          43.0%        1.036        0
+随机基线                            25.7%        1.224        0
+
+=== 嵌套子集: 在线9B regret>1m 的点（预注册子集） (n=45) ===
+arm                               命中最优候选      米制regret     未解析
+IMG 图像臂                         28.9%        1.408        0
+9B在线(完整harness)                  0.0%        2.191        0
+最长步启发式                          46.7%        1.005        0
+随机基线                            25.2%        1.363        0
+
+=== M1 闸门 ===
+图像选路命中 40.0%  闸门 >=50%  -> 不过：换赛道/收口（见 current_task §一septem 分叉表）

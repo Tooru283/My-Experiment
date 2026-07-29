@@ -6,7 +6,7 @@ HABITAT_LAB_DIR="${HABITAT_LAB_DIR:-${PROJECT_ROOT}/external/habitat-lab-v0.1.7}
 
 cd "$PROJECT_ROOT"
 
-EPISODE_COUNT="${EPISODE_COUNT:-100}"
+EPISODE_COUNT="${EPISODE_COUNT:-10}"
 EXP_NAME="${EXP_NAME:-ep${EPISODE_COUNT}_series_m4$(date +%Y%m%d_%H%M%S)}"
 
 if [[ -d "${HABITAT_LAB_DIR}/habitat" ]]; then
