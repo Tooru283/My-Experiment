@@ -1,0 +1,15 @@
+diff --git a/habitat/tasks/vln/vln.py b/habitat/tasks/vln/vln.py
+index eb7b624b1..2019adea2 100644
+--- a/habitat/tasks/vln/vln.py
++++ b/habitat/tasks/vln/vln.py
+@@ -57,7 +57,9 @@ class VLNEpisode(NavigationEpisode):
+ class InstructionSensor(Sensor):
+     def __init__(self, **kwargs):
+         self.uuid = "instruction"
+-        self.observation_space = spaces.Discrete(0)
++        # Gym >=0.26 rejects Discrete(0); the VLN instruction payload is
++        # returned as a dict below, so this is only a non-empty placeholder.
++        self.observation_space = spaces.Discrete(1)
+ 
+     def _get_uuid(self, *args: Any, **kwargs: Any) -> str:
+         return self.uuid

@@ -346,10 +346,11 @@ OPENNAV_HARNESS:
 | `Controlled-Navigation-Harness/docs/experiment_record_20260612.md` | STOP 控制链路、Thought Fusion、V0/V1/V2 前置验证 |
 | `Controlled-Navigation-Harness/docs/experiment_record_20260614.md` | 100 episode / 小样本复盘、schema 修复和 STOP allow 修复 |
 | `Controlled-Navigation-Harness/docs/code_review_issues.md` | 当前代码风险、fallback 和 schema 待修问题 |
+| `MIGRATION.md` | 迁移到新机器的完整步骤:第三方库链接、habitat 补丁、环境重建、模型下载 |
 
 ## 依赖和大文件
 
-本仓库已提交当前实验日志和 OpenNav_R2R-CE_100 的 `val_unseen` 小规模评估数据。第三方源码库、模型快照和场景资产只作为本地依赖保留，不作为仓库内容提交。以下路径需要按本地环境自行准备:
+本仓库已提交当前实验日志和 OpenNav_R2R-CE_100 的 `val_unseen` 小规模评估数据。第三方源码库、模型快照和场景资产只作为本地依赖保留，不作为仓库内容提交。以下路径需要按本地环境自行准备(**逐条获取链接、版本号和校验和见 [`MIGRATION.md`](MIGRATION.md)**):
 
 ```text
 data/scene_datasets/mp3d/
