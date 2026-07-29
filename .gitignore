@@ -26,12 +26,13 @@ waypoint_prediction/checkpoints/
 recognize_anything/pretrained/
 
 # Local third-party/vendor repositories and model snapshots
-SpatialBot/
-SpatialBot3B/
-recognize_anything/
-external/
-rag/
-RAG/
+# 均锚定到仓库根，否则会连 patches/SpatialBot3B/ 这类归档目录一起排除
+/SpatialBot/
+/SpatialBot3B/
+/recognize_anything/
+/external/
+/rag/
+/RAG/
 
 # 大体积派生产物 — 用 paper_analysis/scoring_head/collect_hidden_states.py 重新生成即可
 paper_analysis/scoring_head/*.npy

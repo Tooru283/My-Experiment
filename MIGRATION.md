@@ -38,7 +38,12 @@ git clone https://github.com/xinyu1205/recognize-anything.git recognize_anything
 git -C recognize_anything checkout 7cb804a         # 旧机器状态，无本地改动
 
 git clone https://huggingface.co/RussRobin/SpatialBot-3B SpatialBot3B
+# ⚠️ 必须覆盖两个本地改动文件，否则 SigLIP vision tower 会去连 HF hub 而非本地目录
+cp patches/SpatialBot3B/modeling_bunny_phi.py patches/SpatialBot3B/__init__.py SpatialBot3B/
 ```
+
+`SpatialBot3B` 的本地改动无 diff 可用（旧机器上该目录的 git 无任何 commit），
+故 `patches/SpatialBot3B/` 直接存整份文件。详见 `patches/README.md`。
 
 ### habitat-lab —— 必须打补丁
 
@@ -122,7 +127,23 @@ EOF
 - `paper_analysis/scoring_head/hidden_states.npy` — 由 `paper_analysis/scoring_head/collect_hidden_states.py` 生成
 - `cache_files/`、`image_show/`、各处 `__pycache__/` — 运行时产物
 
-## 7. 不在本仓库内的研究上下文
+## 7. 研究上下文
 
-实验决策链记录在旧机器的 `~/.claude/projects/-root/memory/`（19 个文件），
-以及家目录下的 `对话交接-决策记忆-*.md`。这些不随本仓库迁移，需单独备份。
+实验决策链记录（oracle 泄漏排查、M1/G1 结算、选择层瓶颈定量、SOTA 差距分析等）
+已归档至 `docs/research_memory/`，随本仓库迁移，无需另行备份。
+入口是 `docs/research_memory/MEMORY.md`（索引），其余为逐条记录。
+
+原位置是旧机器的 `~/.claude/projects/-root/memory/`。若新机器继续使用同一套
+记忆机制，可拷回该目录：
+
+```bash
+mkdir -p ~/.claude/projects/-root/memory
+cp docs/research_memory/*.md ~/.claude/projects/-root/memory/
+```
+
+## 8. 仍需单独备份的
+
+以下不在本仓库内，也未归档，按需自行拷贝：
+
+- shell / 工具配置：`~/.bashrc`、`~/.tmux.conf`、`~/.condarc`
+- `~/.ssh/`（GitHub 部署密钥等）——**不要入库**
