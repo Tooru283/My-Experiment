@@ -108,7 +108,15 @@ wget -P /root/models/google-siglip-so400m-patch14-384 \
 | `recognize_anything/pretrained/ram_swin_large_14m.pth` | 5.6G | `15c729c793af28b9d107c69f85836a1356d76ea830d4714699fb62e55fcc08ed` |
 | `waypoint_prediction/checkpoints/check_val_best_avg_wayscore` | 1.1G | `fc2a1b92d25a9de8f947f3a6cbb125a7d559503c5c02418b252c551e7158beb1` |
 | `data/pretrained_models/ddppo-models/gibson-2plus-resnet50.pth` | 48M | `a6a600277efacf5fd98e293267221185d843eb3012aeff62fabfeee24c2bcdad` |
-| `data/scene_datasets/mp3d/` | 21G | 目录，未计算；MP3D 需先签署使用协议 |
+| `data/scene_datasets/mp3d/` | 21G | 目录，未计算；见下方专门说明 |
+
+### MP3D 场景数据集
+
+官方下载脚本**已在本仓库内**：`data/scene_datasets/download_mp.py`
+（Matterport 官方脚本，Python 2 编写，依赖 `urllib2`）。
+
+先签署使用协议 <http://kaldir.vc.in.tum.de/matterport/MP_TOS.pdf> 取得下载权限，
+再按脚本说明拉取。完整 release 是 1.3TB，本项目只需 habitat 用的场景子集（约 21G）。
 
 下载后建议先校验：
 
@@ -147,3 +155,20 @@ cp docs/research_memory/*.md ~/.claude/projects/-root/memory/
 
 - shell / 工具配置：`~/.bashrc`、`~/.tmux.conf`、`~/.condarc`
 - `~/.ssh/`（GitHub 部署密钥等）——**不要入库**
+- 可选：`~/.claude-mem/claude-mem.db`（1.3M，工具侧观测库）、
+  `~/.claude/projects/-root/*.jsonl`（43M，原始会话转录）。
+  两者的结论已提炼进 `docs/research_memory/`，仅在需要回溯原始过程时才有价值。
+
+## 9. 已确认无需迁移的
+
+复查结论，避免下次重复排查：
+
+| 项 | 结论 |
+| --- | --- |
+| `logs/checkpoints/` | 88 个目录**全为空**，无断点续跑机制，无内容 |
+| `cache_files/R2R/actions_cache.json` | 36K 运行时缓存，自动重建 |
+| `~/.codex/memories/raw_memories.md` | 内容为 "No raw memories yet"，空 |
+| `Controlled-Navigation-Harness/archive/` 下各方案文档 | 已在库内，含"近目标终止"系列 |
+| `SpatialBot/`、`recognize_anything/` | 干净 clone，无本地改动（已逐一 `git status` 核对） |
+| `logs/navigation_records/`、`logs/harness_traces/` | 150/150、2471/2471 全部入库 |
+| git stash / 未推送 ref / submodule / LFS | 均无 |
