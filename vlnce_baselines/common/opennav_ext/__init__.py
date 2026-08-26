@@ -36,6 +36,11 @@ from vlnce_baselines.common.opennav_ext.oracle_metrics import (
 from vlnce_baselines.common.opennav_ext.visual_graph_memory import (
     VisualGraphMemoryDiagnostic,
 )
+# ACN 20260805 -- L0 / L1 / M2 / L4. All ship LOG_ONLY (design principle P5).
+from vlnce_baselines.common.opennav_ext.anchor_chain import build_anchor_chain
+from vlnce_baselines.common.opennav_ext.progress_locator import ConstraintQueueLocator
+from vlnce_baselines.common.opennav_ext.landmark_pool import LandmarkPool
+from vlnce_baselines.common.opennav_ext.terminal_gate import TerminalGate
 from vlnce_baselines.common.opennav_ext.visual_evidence import VisualEvidenceLogger
 from vlnce_baselines.common.opennav_ext.visual_evidence import (
     STOP_CURRENT_VIEW_CANDIDATE_ID,
@@ -62,6 +67,10 @@ from vlnce_baselines.common.opennav_ext.decision_audit import build_decision_aud
 from vlnce_baselines.common.opennav_ext.arrival_gate import ArrivalGate
 
 __all__ = [
+    "build_anchor_chain",
+    "ConstraintQueueLocator",
+    "LandmarkPool",
+    "TerminalGate",
     "CandidateState",
     "AgentState",
     "ContextBuilder",

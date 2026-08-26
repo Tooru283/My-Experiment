@@ -286,13 +286,30 @@ def validate_a1_harness_config(config: Any) -> None:
         "VISUAL_TARGET_VERIFIER",
         "VISUAL_EVIDENCE_MEMORY",
         "MULTIMODAL_SELECTOR_CONTEXT",
+        # ACN 20260805
+        "ANCHOR_CHAIN",
+        "PROGRESS_LOCATOR",
+        "LANDMARK_POOL",
+        "TERMINAL_GATE",
     ):
         if module_enabled(config, module_name) and not module_log_only(
             config, module_name
         ):
             if (
                 module_name
-                in ("VISUAL_TARGET_VERIFIER", "MULTIMODAL_SELECTOR_CONTEXT")
+                in (
+                    "VISUAL_TARGET_VERIFIER",
+                    "MULTIMODAL_SELECTOR_CONTEXT",
+                    # C5 (20260805): MEMORY_DIAGNOSTIC may go decision-active. Its only
+                    # effect is appending G_topo's alert text to the navigator prompt --
+                    # it never filters candidates and never touches the STOP path.
+                    "MEMORY_DIAGNOSTIC",
+                    # ACN (20260805): L1 replaces the estimation string, L4 can block a
+                    # stop. Both still require ENABLE_DECISION_EFFECT to be on, so an
+                    # accidental LOG_ONLY=false in a yaml still fails loudly.
+                    "PROGRESS_LOCATOR",
+                    "TERMINAL_GATE",
+                )
                 and decision_effect_enabled(config)
             ):
                 continue

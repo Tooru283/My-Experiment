@@ -615,6 +615,7 @@ class Open_Nav():
         temperature=0,
         return_prompt=False,
         offer_move_back=False,
+        spatial_alert="",
     ):
         # P1: k>1 draws multiple samples so the (dormant) thought_fusion can arbitrate;
         # temperature>0 gives diversity. k=1, temperature=0 -> byte-identical to prior behavior.
@@ -641,7 +642,9 @@ class Open_Nav():
             history_traj,
             estimation,
             observation,
-        ) + move_back_hint
+        ) + move_back_hint + (spatial_alert or "")
+        # C5 (GTA S_alert): spatial_alert is "" unless MEMORY_DIAGNOSTIC is decision-active,
+        # so the assembled prompt stays byte-identical when the switch is off.
         for _ in range(max(1, k)):
             decision_reasoning = self.llm.gpt_infer(
                 NAVIGATOR['system'],

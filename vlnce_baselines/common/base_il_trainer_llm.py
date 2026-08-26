@@ -1,4 +1,5 @@
 import json
+import re
 import sys
 import jsonlines
 import os
@@ -31,6 +32,13 @@ from vlnce_baselines.common.opennav_ext import (
     STOP_CURRENT_VIEW_CANDIDATE_ID,
     VisualTargetVerifier,
     VisualGraphMemoryDiagnostic,
+    build_anchor_chain,
+    ConstraintQueueLocator,
+    LandmarkPool,
+    TerminalGate,
+)
+from vlnce_baselines.common.opennav_ext.landmark_matching import (
+    final_landmark_terms,
     arrival_gate_config,
     arrival_gate_enabled,
     proactive_stop_gate_config,
@@ -544,6 +552,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         multimodal_selector_context = None
         multimodal_selector_context_decision_effect = False
         memory_diagnostic = None
+        memory_alert_decision_effect = False
+        # ACN (20260805): L0/L1/M2/L4. All LOG_ONLY -- they write trace and change nothing.
+        anchor_chain_enabled = False
+        progress_locator = None
+        progress_locator_decision_effect = False
+        landmark_pool = None
+        terminal_gate = None
+        terminal_gate_decision_effect = False
         context_builder = None
         u_series_active = False
         u_decision_unit = "none"
@@ -689,7 +705,79 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     and not module_log_only(config, "MULTIMODAL_SELECTOR_CONTEXT")
                 )
             if module_enabled(config, "MEMORY_DIAGNOSTIC"):
-                memory_diagnostic = VisualGraphMemoryDiagnostic()
+                _mem_cfg = config.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC
+                memory_diagnostic = VisualGraphMemoryDiagnostic(
+                    revisit_radius=float(
+                        getattr(_mem_cfg, "REVISIT_RADIUS_M", 1.0)
+                    ),
+                    merge_radius=float(getattr(_mem_cfg, "MERGE_RADIUS_M", 0.8)),
+                    loop_alert_threshold=int(
+                        getattr(_mem_cfg, "LOOP_ALERT_THRESHOLD", 3)
+                    ),
+                    vertical_alert_m=float(
+                        getattr(_mem_cfg, "VERTICAL_ALERT_M", 0.3)
+                    ),
+                    enable_vertical_alert=bool(
+                        getattr(_mem_cfg, "ENABLE_VERTICAL_ALERT", False)
+                    ),
+                    floor_height_m=float(getattr(_mem_cfg, "FLOOR_HEIGHT_M", 1.5)),
+                )
+                # C5: decision effect = append G_topo's alert to the navigator prompt.
+                memory_alert_decision_effect = (
+                    decision_effect_enabled(config)
+                    and not module_log_only(config, "MEMORY_DIAGNOSTIC")
+                )
+            # ---- ACN L0 / L1 / M2 / L4 (20260805) ----
+            anchor_chain_enabled = module_enabled(config, "ANCHOR_CHAIN")
+            if module_enabled(config, "PROGRESS_LOCATOR"):
+                _pl_cfg = config.OPENNAV_HARNESS.PROGRESS_LOCATOR
+                progress_locator = ConstraintQueueLocator(
+                    object_radius_m=float(getattr(_pl_cfg, "OBJECT_RADIUS_M", 3.0)),
+                    direction_window=int(getattr(_pl_cfg, "DIRECTION_WINDOW", 2)),
+                    turn_deg=float(getattr(_pl_cfg, "TURN_DEG", 35.0)),
+                    around_deg=float(getattr(_pl_cfg, "AROUND_DEG", 120.0)),
+                    forward_m=float(getattr(_pl_cfg, "FORWARD_M", 1.0)),
+                    heading_sign=float(getattr(_pl_cfg, "HEADING_SIGN", -1.0)),
+                    enable_location=bool(getattr(_pl_cfg, "ENABLE_LOCATION", True)),
+                    location_dominance=float(
+                        getattr(_pl_cfg, "LOCATION_DOMINANCE", 0.5)
+                    ),
+                    vacuous_unknown=bool(
+                        getattr(_pl_cfg, "VACUOUS_UNKNOWN", True)
+                    ),
+                )
+                # decision effect = the queue's text replaces the LLM `estimation` string
+                progress_locator_decision_effect = (
+                    decision_effect_enabled(config)
+                    and not module_log_only(config, "PROGRESS_LOCATOR")
+                )
+            if module_enabled(config, "LANDMARK_POOL"):
+                _lp_cfg = config.OPENNAV_HARNESS.LANDMARK_POOL
+                landmark_pool = LandmarkPool(
+                    arrival_radius_m=float(getattr(_lp_cfg, "ARRIVAL_RADIUS_M", 3.0)),
+                    merge_radius_m=float(getattr(_lp_cfg, "MERGE_RADIUS_M", 2.0)),
+                    drop_stopwords=bool(getattr(_lp_cfg, "DROP_STOPWORDS", True)),
+                    restrict_to_vocabulary=bool(
+                        getattr(_lp_cfg, "RESTRICT_TO_VOCABULARY", True)
+                    ),
+                )
+            if module_enabled(config, "TERMINAL_GATE"):
+                _tg_cfg = config.OPENNAV_HARNESS.TERMINAL_GATE
+                terminal_gate = TerminalGate(
+                    require_chain_complete=bool(
+                        getattr(_tg_cfg, "REQUIRE_CHAIN_COMPLETE", True)
+                    ),
+                    require_all_verified=bool(
+                        getattr(_tg_cfg, "REQUIRE_ALL_VERIFIED", True)
+                    ),
+                    require_landmark_evidence=bool(
+                        getattr(_tg_cfg, "REQUIRE_LANDMARK_EVIDENCE", True)
+                    ),
+                )
+                terminal_gate_decision_effect = (
+                    decision_effect_enabled(config)
+                    and not module_log_only(config, "TERMINAL_GATE")
+                )
             if module_enabled(config, "CONTEXT_BUILDER"):
                 context_builder = ContextBuilder()
             if u_series_enabled(config):
@@ -1283,6 +1371,44 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 ),
                 flush=True,
             )
+            # C0 / C2 / C5 / ACN switches. Added 20260805: the banner above predates all
+            # of them, so a mis-launch of exactly the levers now queued would NOT have
+            # been visible -- which is the failure mode the banner exists to prevent.
+            _vtv = config.OPENNAV_HARNESS.VISUAL_TARGET_VERIFIER
+            _nav_rt = getattr(config.OPENNAV_HARNESS, "NAVIGATION_RUNTIME", None)
+            _mem = config.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC
+            print(
+                "[HARNESS SWITCHES 2] C0.min_steps_before_allow={} | "
+                "C2.step_limit short/long={}/{} | "
+                "C5.memory log_only={} tau={} merge_r={}m vertical={} | "
+                "ACN anchor_chain={} locator(log_only={} location={} dom={}) "
+                "pool(log_only={} restrict={}) terminal_gate(log_only={})".format(
+                    getattr(_vtv, "MIN_STEPS_BEFORE_ALLOW", None),
+                    getattr(_nav_rt, "SHORT_ACTION_STEP_LIMIT", None),
+                    getattr(_nav_rt, "LONG_ACTION_STEP_LIMIT", None),
+                    module_log_only(config, "MEMORY_DIAGNOSTIC"),
+                    getattr(_mem, "LOOP_ALERT_THRESHOLD", None),
+                    getattr(_mem, "MERGE_RADIUS_M", None),
+                    getattr(_mem, "ENABLE_VERTICAL_ALERT", None),
+                    module_enabled(config, "ANCHOR_CHAIN"),
+                    module_log_only(config, "PROGRESS_LOCATOR"),
+                    getattr(
+                        config.OPENNAV_HARNESS.PROGRESS_LOCATOR,
+                        "ENABLE_LOCATION", None,
+                    ),
+                    getattr(
+                        config.OPENNAV_HARNESS.PROGRESS_LOCATOR,
+                        "LOCATION_DOMINANCE", None,
+                    ),
+                    module_log_only(config, "LANDMARK_POOL"),
+                    getattr(
+                        config.OPENNAV_HARNESS.LANDMARK_POOL,
+                        "RESTRICT_TO_VOCABULARY", None,
+                    ),
+                    module_log_only(config, "TERMINAL_GATE"),
+                ),
+                flush=True,
+            )
 
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
@@ -1774,6 +1900,37 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 landmarks = actions_cache[instruction]["landmarks"]
             nav_logger.info("Actions: "+actions)
             nav_logger.info("Landmarks: " + landmarks)
+            # ---- ACN L0: build the anchor chain and arm L1/M2 for this episode ----
+            # Placed here (not in the harness reset block above) because it needs
+            # actions/landmarks, which are produced a few lines up. Deterministic and
+            # cache-backed, so this adds no LLM call.
+            anchor_chain_result = {}
+            if anchor_chain_enabled and harness_enabled and harness_logger is not None:
+                anchor_chain_result = run_harness_tool(
+                    "anchor_chain", 0, {}, build_anchor_chain, actions, landmarks
+                ) or {}
+                harness_logger.log_event("anchor_chain", 0, anchor_chain_result)
+            _anchors = (
+                anchor_chain_result.get("anchors", [])
+                if isinstance(anchor_chain_result, dict)
+                else []
+            )
+            if progress_locator is not None:
+                run_harness_tool(
+                    "progress_locator_reset", 0, None,
+                    progress_locator.reset_episode, _anchors,
+                )
+            if landmark_pool is not None:
+                # M2 vocabulary = the categories the anchor chain asks about. Without it
+                # the pool is a RAM tag dump (median 92 entries) and L4's evidence
+                # conjunct is vacuously true in every episode.
+                _pool_vocab = [a.get("key") for a in _anchors if a.get("key")] + [
+                    a.get("landmark") for a in _anchors if a.get("landmark")
+                ]
+                run_harness_tool(
+                    "landmark_pool_reset", 0, None, landmark_pool.reset_episode,
+                    _pool_vocab,
+                )
             if active_navigation_episode_id != current_episode_id:
                 active_navigation_episode_id = current_episode_id
                 recent_distance_gains = []
@@ -1876,6 +2033,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             stop_current_view_evidence_results = None
             visual_evidence_memory_results = {}
             memory_results = {}
+            memory_spatial_alert = ""
+            progress_locator_results = {}
+            landmark_pool_results = {}
+            terminal_gate_results = {}
             if harness_enabled and harness_logger is not None:
                 candidates = build_candidate_records(
                     radius_dict,
@@ -2183,10 +2344,83 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     candidates,
                 )
                 if memory_diagnostic is not None:
+                    # C5: the ONLY decision effect -- hand G_topo's alert text to the
+                    # navigator prompt. Candidate set, STOP path and scoring untouched.
+                    _alert = (
+                        memory_results.get("alert_text", "")
+                        if isinstance(memory_results, dict)
+                        else ""
+                    )
+                    memory_alert_applied = bool(
+                        memory_alert_decision_effect and _alert
+                    )
+                    memory_spatial_alert = _alert if memory_alert_applied else ""
+                    if isinstance(memory_results, dict):
+                        memory_results["decision_effect_enabled"] = (
+                            memory_alert_decision_effect
+                        )
+                        memory_results["applied"] = memory_alert_applied
                     harness_logger.log_event(
                         "memory_diagnostic",
                         current_step,
                         memory_results,
+                    )
+
+                # ---- ACN L1 / M2 per step (LOG_ONLY by default) ----
+                # Both read only the agent's own perception + odometry: RAM tags out of
+                # observe_dict and the waypoint geometry already in `candidates`. No GT,
+                # no new model, no LLM call.
+                _view_tags, _view_geometry = {}, {}
+                for _cand in candidates or []:
+                    _cid = str(getattr(_cand, "candidate_id", ""))
+                    if not _cid:
+                        continue
+                    _view_geometry[_cid] = {
+                        "angle_rad": getattr(_cand, "angle_rad", None),
+                        "distance": getattr(_cand, "distance", None),
+                    }
+                for _cid, _text in (observe_dict or {}).items():
+                    _m = re.search(r"scene objects:(.*)", str(_text), re.I | re.S)
+                    if _m:
+                        _view_tags[str(_cid)] = [
+                            t.strip().lower()
+                            for t in _m.group(1).split("|")
+                            if t.strip()
+                        ]
+                _cur_pos = positions[0] if positions else None
+                _cur_head = headings[0] if headings else None
+                if progress_locator is not None:
+                    progress_locator_results = run_harness_tool(
+                        "progress_locator", current_step, {},
+                        progress_locator.update,
+                        current_step, _cur_pos, _cur_head, _view_tags, _view_geometry,
+                    ) or {}
+                    harness_logger.log_event(
+                        "progress_locator", current_step, progress_locator_results
+                    )
+                if landmark_pool is not None:
+                    landmark_pool_results = run_harness_tool(
+                        "landmark_pool", current_step, {},
+                        landmark_pool.update,
+                        current_step, _cur_pos, _cur_head, _view_tags, _view_geometry,
+                    ) or {}
+                    harness_logger.log_event(
+                        "landmark_pool", current_step, landmark_pool_results
+                    )
+                if terminal_gate is not None:
+                    terminal_gate_results = run_harness_tool(
+                        "terminal_gate", current_step, {},
+                        terminal_gate.evaluate,
+                        progress_locator_results,
+                        landmark_pool,
+                        (final_landmark_terms(landmarks) or [None])[-1],
+                    ) or {}
+                    if isinstance(terminal_gate_results, dict):
+                        terminal_gate_results["decision_effect_enabled"] = (
+                            terminal_gate_decision_effect
+                        )
+                    harness_logger.log_event(
+                        "terminal_gate", current_step, terminal_gate_results
                     )
                 diagnostic_context = run_harness_tool(
                     "context_builder",
@@ -2238,12 +2472,31 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     max_tokens=positive_token_cap(completion_max_tokens),
                     mode=completion_mode,
                 )
+                # ---- ACN L1 decision effect ----
+                # When PROGRESS_LOCATOR.LOG_ONLY=False, the constraint queue's text
+                # REPLACES the LLM estimation string. The LLM call above still runs this
+                # round so the two can be compared in one trace; the cost saving
+                # (~15.7 s/step) only lands once the switch is validated and the call is
+                # skipped. Keeping both for now is deliberate: single-switch attribution
+                # beats saving time on a round whose purpose is measurement.
+                _locator_estimation = None
+                if (
+                    progress_locator is not None
+                    and progress_locator_decision_effect
+                    and isinstance(progress_locator_results, dict)
+                    and not progress_locator_results.get("degenerate")
+                ):
+                    _locator_estimation = progress_locator.completion_text()
                 write_navigation_record(
                     "completion_estimation",
                     episode_id=current_episode_id,
                     step=current_step,
                     estimation=estimation,
+                    locator_estimation=_locator_estimation,
+                    locator_applied=bool(_locator_estimation),
                 )
+                if _locator_estimation:
+                    estimation = _locator_estimation
                 latest_phase_evidence = run_harness_tool(
                     "phase_evidence",
                     current_step,
@@ -3091,6 +3344,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         max_tokens=positive_token_cap(navigator_max_tokens),
                         return_prompt=True,
                         offer_move_back=offer_move_back,
+                        spatial_alert=memory_spatial_alert,
                     )
                     # P1 (Path B): log the exact assembled navigator prompt so offline
                     # dispersion calibration can replay it verbatim (zero reconstruction).

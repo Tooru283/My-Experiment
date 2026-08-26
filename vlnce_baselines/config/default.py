@@ -56,9 +56,111 @@ _C.OPENNAV_HARNESS.GROUNDER_DIAGNOSTIC = CN()
 _C.OPENNAV_HARNESS.GROUNDER_DIAGNOSTIC.ENABLED = True
 _C.OPENNAV_HARNESS.GROUNDER_DIAGNOSTIC.LOG_ONLY = True
 
+# C5 -- topological memory (G_topo), ported from GTA (arXiv:2602.15400 §IV-A-b, Alg.1
+# L8-L12). Node = <metric position, visit count>; merge a new pose into the nearest node
+# when d < MERGE_RADIUS_M, else open a new node; when the CURRENT node's count reaches
+# LOOP_ALERT_THRESHOLD, a text alert is appended to the navigator prompt (GTA's S_alert).
+#
+# LOG_ONLY: True keeps this a pure diagnostic -> a run stays byte-identical to
+# clean_baseline_v1. Flipping to False is the whole of C5; nothing else changes.
+#
+# Calibration on the 100-episode clean_baseline_v1 trace (724 steps) -- LEGACY step-based
+# counter, superseded by the node-based numbers in the C5 replay:
+#   legacy loop_flag  -> 298 steps (41.2%)  <-- far too dense, DO NOT use as the trigger
+#   visit_count >= 3  -> 134 steps (18.5%), 47 episodes
+#   visit_count >= 4  ->  71 steps ( 9.8%), 27 episodes
+# THRESHOLD default 3 follows the paper's intent (a repeat visit, not mere proximity).
+#
+# ANTI-STOP GUARD: the alert wording explicitly states it is not arrival evidence and not
+# a reason to STOP. The project already carries 45 false stops; an alarm-toned alert
+# ("CRITICAL: Potential Loop Detected", the paper's literal string) is a plausible STOP
+# trigger. Failure-mode monitoring for the A/B is therefore false-stop count, not SR.
 _C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC = CN()
 _C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.ENABLED = True
 _C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.LOG_ONLY = True
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.REVISIT_RADIUS_M = 1.0     # legacy diagnostic only
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.MERGE_RADIUS_M = 0.8       # GTA delta_merge
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.LOOP_ALERT_THRESHOLD = 3   # GTA tau_loop
+# Vertical awareness (GTA §IV-C-a): |dh| > 0.3 m -> "upstairs"/"downstairs". Ships OFF so
+# C5's first A/B moves exactly one thing (the loop alert).
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.ENABLE_VERTICAL_ALERT = False
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.VERTICAL_ALERT_M = 0.3
+_C.OPENNAV_HARNESS.MEMORY_DIAGNOSTIC.FLOOR_HEIGHT_M = 1.5   # ACN M1 floor quantisation
+
+# ---------------------------------------------------------------------------
+# ACN (Anchor-Chain Navigation) -- 20260805. Design: docs/新框架设计-ACN锚点链导航.
+#
+# ⚠ ALL FOUR SHIP ENABLED=True / LOG_ONLY=True, per the design's own principle P5:
+# a new component writes trace only until offline and online agree. With LOG_ONLY=True
+# none of them can change a single decision, so a run stays comparable to the baseline.
+#
+# ⚠ The design's own §5.0 says the whole L1 section is conditional on gate S0, which has
+# NOT been run. Code existing is not the same as the design being validated.
+# ---------------------------------------------------------------------------
+
+# L0: align ACTION_DETECTION's sub-actions with LANDMARK_DETECTION's landmarks into an
+# ordered anchor chain. Deterministic, zero new LLM calls, once per episode.
+_C.OPENNAV_HARNESS.ANCHOR_CHAIN = CN()
+_C.OPENNAV_HARNESS.ANCHOR_CHAIN.ENABLED = True
+_C.OPENNAV_HARNESS.ANCHOR_CHAIN.LOG_ONLY = True
+
+# L1: constraint-queue progress location. Replaces COMPLETION_ESTIMATION's per-step LLM
+# call with a monotone state machine (hot path: zero LLM, ~15.7 s/step saved).
+# OBJECT_RADIUS_M must be calibrated, NOT copied from CA-Nav's 5 m -- our candidate step
+# median is 1.50 m, so 5 m would satisfy nearly every object constraint. 2x step median.
+# ENABLE_LOCATION stays False: there is no location detector yet, and the resulting
+# abstain rate is the measured value of that channel. Do not fake it.
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR = CN()
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.ENABLED = True
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.LOG_ONLY = True
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.OBJECT_RADIUS_M = 3.0
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.DIRECTION_WINDOW = 2
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.TURN_DEG = 35.0
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.AROUND_DEG = 120.0
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.FORWARD_M = 1.0
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.HEADING_SIGN = -1.0   # calibrated, log §一quater
+# Location detector, added 20260805 after the first replay measured 51.9% of all stalled
+# steps sitting on location constraints. NO NEW MODEL: RAM already emits room categories
+# (the required room word appears somewhere in RAM's tags for 93.8% of location
+# constraints). What RAM lacks is selectivity, so the rule is DOMINANCE, not presence:
+# the room must be visible in >= LOCATION_DOMINANCE of the current directions.
+# Measured satisfied-step share (median) / first-satisfied position:
+#   any direction        88% / step 0   <- would reproduce the "100% at step 1" defect
+#   >= 50% of directions 60% / step 0
+#   >= 50% + stoplist    33% / 9%       <- chosen
+#   >= 75% + stoplist    25% / 18%      (41% never satisfied -- too strict)
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.ENABLE_LOCATION = True
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.LOCATION_DOMINANCE = 0.5
+# An anchor that parsed to no constraint verifies nothing, and abstaining on it blocks the
+# queue permanently. Measured: unparsed anchors are 9.2% of anchors but caused 20.3% of
+# stalled steps. Passing through is strictly better than blocking on an empty slot.
+_C.OPENNAV_HARNESS.PROGRESS_LOCATOR.VACUOUS_UNKNOWN = True
+
+# M2: cross-step landmark pool. Fuses RAM tags with waypoint geometry; supplies L4's
+# evidence conjunct. ⚠ Never fuses SpatialBot's reported distances (negative asset).
+_C.OPENNAV_HARNESS.LANDMARK_POOL = CN()
+_C.OPENNAV_HARNESS.LANDMARK_POOL.ENABLED = True
+_C.OPENNAV_HARNESS.LANDMARK_POOL.LOG_ONLY = True
+_C.OPENNAV_HARNESS.LANDMARK_POOL.ARRIVAL_RADIUS_M = 3.0    # == TASK.SUCCESS_DISTANCE
+_C.OPENNAV_HARNESS.LANDMARK_POOL.MERGE_RADIUS_M = 2.0
+_C.OPENNAV_HARNESS.LANDMARK_POOL.DROP_STOPWORDS = True
+# Admit only the categories the anchor chain actually asks about. Measured 20260805:
+# unrestricted -> median pool 92 entries and "final landmark arrived" true in 100/100
+# episodes (the conjunct carried zero information). Restricted -> median pool 10 and the
+# conjunct is true in 65/100, i.e. it discriminates. Do not turn this off.
+_C.OPENNAV_HARNESS.LANDMARK_POOL.RESTRICT_TO_VOCABULARY = True
+
+# L4: triple-conjunction termination -- chain complete AND all earlier anchors verified
+# AND the final landmark has arrival evidence in the pool.
+# ⚠ Depth is deliberately not a conjunct (AUROC 0.531 at stop time = no information).
+# ⚠ L4 can only block a stop, never cause one -> a decision-active run must watch the
+# exhaustion count, which is the failure mode false stops get converted into.
+_C.OPENNAV_HARNESS.TERMINAL_GATE = CN()
+_C.OPENNAV_HARNESS.TERMINAL_GATE.ENABLED = True
+_C.OPENNAV_HARNESS.TERMINAL_GATE.LOG_ONLY = True
+_C.OPENNAV_HARNESS.TERMINAL_GATE.REQUIRE_CHAIN_COMPLETE = True
+_C.OPENNAV_HARNESS.TERMINAL_GATE.REQUIRE_ALL_VERIFIED = True
+_C.OPENNAV_HARNESS.TERMINAL_GATE.REQUIRE_LANDMARK_EVIDENCE = True
 
 _C.OPENNAV_HARNESS.CONTEXT_BUILDER = CN()
 _C.OPENNAV_HARNESS.CONTEXT_BUILDER.ENABLED = True
