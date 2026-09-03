@@ -539,6 +539,10 @@ class StopEvidenceVerifier:
             )
 
         recent_progress = phase.get("recent_progress") or {}
+        # Do not let simulator goal-distance deltas become a hidden rescue gate. A
+        # future observable progress signal may opt in explicitly with
+        # ``decision_effect=True``; the current distance field is audit-only.
+        progress_decision_effect = bool(recent_progress.get("decision_effect"))
         recent_gains = [
             _safe_float(gain)
             for gain in (recent_progress.get("recent_distance_gains") or [])
@@ -550,7 +554,8 @@ class StopEvidenceVerifier:
                 recent_progress.get("non_positive_gain_count") or 0
             )
         if (
-            non_positive_gain_count > self.rescue_max_non_positive_gains
+            progress_decision_effect
+            and non_positive_gain_count > self.rescue_max_non_positive_gains
             and not base_current_view_supported
         ):
             blockers.append(
@@ -559,7 +564,11 @@ class StopEvidenceVerifier:
                     self.rescue_max_non_positive_gains,
                 )
             )
-        if self.rescue_require_positive_recent_gain and not base_current_view_supported:
+        if (
+            progress_decision_effect
+            and self.rescue_require_positive_recent_gain
+            and not base_current_view_supported
+        ):
             latest_gain = recent_gains[-1] if recent_gains else None
             if latest_gain is None or latest_gain <= 0:
                 blockers.append("latest_recent_gain_not_positive")

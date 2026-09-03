@@ -59,6 +59,17 @@ OPENNAV_HARNESS:
   LOG_IMAGES: False
   FAIL_OPEN: True
 
+  # ACN L1 is the only completion-progress provider; no LLM fallback exists.
+  PIPELINE:
+    PROGRESS_PROVIDER: acn_l1
+    STOP_POLICY: coordinated_v1
+    ACTION_COMPILER: action_compiler.v1
+
+  # L1 writes authoritative progress into selector and STOP context.
+  PROGRESS_LOCATOR:
+    ENABLED: True
+    LOG_ONLY: false
+
   # P0 ablation switch: inject WaypointBert sensor distance into navigator
   # observations ([Waypoint distance: X m]). Set False for the clean baseline
   # (tuned-9B without P0) to isolate P0's effect. See docs/architecture_optimization_20260701.md.
@@ -74,8 +85,8 @@ OPENNAV_HARNESS:
     ENABLED: True
     LOG_ONLY: True
     BASE_URL: http://127.0.0.1:23333/v1
-    # MODEL: /root/models/Qwen3.5-4B  # 4B (RTX 3090 / ~12GB VRAM)
-    MODEL: /root/models/Qwen3.5-9B    # 9B (RTX 4090 / ~24GB VRAM)
+    MODEL: /root/models/Qwen3.5-4B
+    # Override OPENNAV_LLM_BASE_URL and OPENNAV_LLM_MODEL together for another backend
     MAX_CANDIDATES: 5
     MAX_IMAGE_EDGE: 384
     MAX_TOKENS: 768
@@ -133,14 +144,9 @@ OPENNAV_HARNESS:
 
   # Low-risk runtime reduction: cap verbose text LLM outputs while keeping the
   # same decision flow and candidate set. Set a value <=0 to disable a cap.
-  # NOTE: token caps are model-dependent. 9B produces longer CoT and gets
-  # truncated before emitting "Prediction: X" at the 4B-tuned caps (empty-pred
-  # fallback 22.4% vs 4B 6.9%). See model_switch_guide.md "LLM_RUNTIME 参数".
+  # Token caps tuned for the local Qwen3.5-4B runtime.
   LLM_RUNTIME:
-    # 4B:  COMPLETION_MAX_TOKENS: 512
-    COMPLETION_MAX_TOKENS: 768   # 9B
-    # 4B:  NAVIGATOR_MAX_TOKENS: 1024
-    NAVIGATOR_MAX_TOKENS: 2048    # 9B (fixes 22.4% empty-pred fallback from truncation)
+    NAVIGATOR_MAX_TOKENS: 1024
     THOUGHT_FUSION_MAX_TOKENS: 256
     DECISION_MAX_TOKENS: 64
 
@@ -177,26 +183,8 @@ OPENNAV_HARNESS:
     DIST_THRESHOLD: 3.5
     COMMIT_DIST_THRESHOLD: 2.0
 
-  # Backtracking (hunk 4, default OFF -> clean baseline byte-identical). When ENABLED,
-  # MOVE_BACK is offered to the navigator only on an observable ego displacement stall
-  # OR a waypoint dead-end (len(radius_dict)==0); selecting it retraces the last move
-  # (turn 180, same distance). Oracle-free: triggers read only the agent's own odometry
-  # / candidate exhaustion, never goal distance. Anti-oscillation: budget-capped, never
-  # two in a row, last_executed_move cleared after a backtrack. Run separately from
-  # DEPTH_STOP_VETO (do not flip both at once -- attribution).
-  # Endgame tilt view (added 20260718; ships OFF in config/default.py, ON here).
-  # The 12-camera rig is yaw-only (pitch hardcoded 0.0 in get_camera_orientations),
-  # so floor closer than ~1.25m is outside every frame -- a geometric cause of the
-  # 46% near-distance under-detection. When ENABLED, one -30 deg RGB+depth pair is
-  # added and observed ONLY at endgame stop gates (armed by final clause / final
-  # landmark seen / step budget; never by phase, which is oracle-contaminated).
-  # Keep LOG_ONLY: True for the first run -- measure how many near-field targets the
-  # eye-level rig misses BEFORE letting it move any decision.
-  # Held at "llm" so this run is a single-variable test of CANDIDATE_PRIOR below.
-  # The "rule" mode (zero-cost progress estimate, saves ~3h/run) is a cost lever,
-  # not an SR lever -- it is queued for the run after this one.
-  COMPLETION_ESTIMATION:
-    MODE: llm
+  # Backtracking and endgame-tilt settings follow below. Completion progress is
+  # provided exclusively by OPENNAV_HARNESS.PIPELINE.PROGRESS_PROVIDER=acn_l1.
 
   # Decision-active. MIN_PROB_GAP 0.00 = defer to the prior on every disagreement
   # (~59% intervention). Out-of-fold scan (GroupKFold-5 by episode, 5 seeds):
@@ -229,16 +217,16 @@ OPENNAV_HARNESS:
     DISP_EPS: 1.0
     DISP_RATIO: 0.35
 
-  # Max config: all U-series units active with decision effect.
-  # DECISION_EFFECT_UNIT=combined activates U1+U2+U3 simultaneously.
+  # Oracle-free baseline: keep U-series outputs in trace until each unit passes calibration.
+  # RouteState records U-series evidence, but this config does not let it alter actions.
   U_SERIES:
     ENABLED: True
-    DECISION_EFFECT_UNIT: combined
+    DECISION_EFFECT_UNIT: none
 
     # U1: phase-aware evidence scaffolding — injects phase-gated context into selector.
     PHASE_EVIDENCE:
       ENABLED: True
-      LOG_ONLY: false
+      LOG_ONLY: true
       UNKNOWN_CONFIDENCE_THRESHOLD: 0.4
       LATE_STEP_THRESHOLD: 4
 
@@ -246,7 +234,7 @@ OPENNAV_HARNESS:
     # visual evidence is strong enough (complements V2 gating).
     STOP_EVIDENCE_VERIFIER:
       ENABLED: True
-      LOG_ONLY: false
+      LOG_ONLY: true
       ENABLE_RESCUE: true
       ENABLE_RELATION_CHECK: true
       ENABLE_WEAK_TARGET_ADJUSTMENT: true
@@ -284,7 +272,7 @@ OPENNAV_HARNESS:
     # ENABLE_RESELECT required for decision effect.
     FAILURE_RECOVERY:
       ENABLED: True
-      LOG_ONLY: false
+      LOG_ONLY: true
       ENABLE_RESELECT: true
       MAX_RECOVERY_PER_EPISODE: 2
       NEGATIVE_GAIN_WINDOW: 2

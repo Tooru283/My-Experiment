@@ -1,0 +1,715 @@
+API_KEY: <redacted>
+BASE_TASK_CONFIG_PATH: habitat_extensions/config/vlnce_task.yaml
+CHECKPOINT_FOLDER: logs/checkpoints/anchor_chain_v2_realcase_smoke
+CHECKPOINT_INTERVAL: -1
+CMD_TRAILING_OPTS:
+- SIMULATOR_GPU_IDS
+- '[0]'
+- TORCH_GPU_ID
+- '0'
+- TORCH_GPU_IDS
+- '[0]'
+- EVAL.SPLIT
+- val_unseen
+- EVAL.EPISODE_COUNT
+- '1'
+- OPENNAV_HARNESS.TRACE_DIR
+- logs/harness_traces/clean_baseline_v1/anchor_chain_v2_realcase_smoke
+ENV_NAME: VLNCEDaggerEnv
+EVAL:
+  EPISODE_COUNT: 1
+  EVAL_NONLEARNING: false
+  LANGUAGES:
+  - en-US
+  - en-IN
+  NONLEARNING:
+    AGENT: RandomAgent
+  SAMPLE: false
+  SAVE_RESULTS: true
+  SPLIT: val_unseen
+  USE_CKPT_CONFIG: false
+EVAL_CKPT_PATH_DIR: logs/checkpoints/anchor_chain_v2_realcase_smoke
+FORCE_BLIND_POLICY: false
+GPU_NUMBERS: 1
+IL:
+  DAGGER:
+    expert_policy_sensor: SHORTEST_PATH_SENSOR
+    expert_policy_sensor_uuid: shortest_path_sensor
+    iterations: 10
+    lmdb_commit_frequency: 500
+    lmdb_features_dir: data/trajectories_dirs/debug/trajectories.lmdb
+    lmdb_fp16: false
+    lmdb_map_size: 1000000000000.0
+    load_space: false
+    p: 0.75
+    preload_lmdb_features: false
+    update_size: 5000
+  RECOLLECT_TRAINER:
+    effective_batch_size: -1
+    gt_file: data/datasets/RxR_VLNCE_v0/{split}/{split}_{role}_gt.json.gz
+    max_traj_len: -1
+    preload_size: 30
+    preload_trajectories_file: true
+    trajectories_file: data/trajectories_dirs/debug/trajectories.json.gz
+    use_iw: true
+  batch_size: 5
+  ckpt_to_load: data/checkpoints/ckpt.0.pth
+  epochs: 4
+  inflection_weight_coef: 3.2
+  is_requeue: false
+  load_from_ckpt: false
+  lr: 0.00025
+  use_iw: true
+INFERENCE:
+  CKPT_PATH: data/checkpoints/CMA_PM_DA_Aug.pth
+  FORMAT: r2r
+  INFERENCE_NONLEARNING: false
+  LANGUAGES:
+  - en-US
+  - en-IN
+  NONLEARNING:
+    AGENT: RandomAgent
+  PREDICTIONS_FILE: predictions.json
+  SAMPLE: false
+  SPLIT: test
+  USE_CKPT_CONFIG: true
+LLM: Qwen/Qwen3.5-4B
+LOG_FILE: anchor_chain_v2_realcase_smoke_train.log
+LOG_INTERVAL: 10
+MODEL:
+  DEPTH_ENCODER:
+    backbone: resnet50
+    cnn_type: VlnResnetDepthEncoder
+    ddppo_checkpoint: data/pretrained_models/ddppo-models/gibson-2plus-resnet50.pth
+    encode_size: 128
+    output_size: 256
+  INSTRUCTION_ENCODER:
+    bidirectional: true
+    dataset_vocab: data/datasets/R2R_VLNCE_v1-2_preprocessed/train/train.json.gz
+    embedding_file: data/datasets/R2R_VLNCE_v1-2_preprocessed/embeddings.json.gz
+    embedding_size: 256
+    final_state_only: true
+    fine_tune_embeddings: false
+    hidden_size: 256
+    rnn_type: LSTM
+    sensor_uuid: instruction
+    use_pretrained_embeddings: false
+    vocab_size: 2504
+  PROGRESS_MONITOR:
+    alpha: 1.0
+    use: false
+  RGB_ENCODER:
+    cnn_type: TorchVisionResNet50
+    encode_size: 2048
+    output_size: 512
+  SEQ2SEQ:
+    use_prev_action: false
+  STATE_ENCODER:
+    hidden_size: 512
+    rnn_type: GRU
+  VISUAL_DIM:
+    directional: 64
+    vis_hidden: 512
+  ablate_depth: false
+  ablate_instruction: false
+  ablate_rgb: false
+  policy_name: PolicyViewSelectionCMA
+  spatial_output: false
+NUM_CHECKPOINTS: 10
+NUM_ENVIRONMENTS: 1
+NUM_PROCESSES: -1
+NUM_UPDATES: 10000
+OPENNAV_HARNESS:
+  ANCHOR_CHAIN:
+    ENABLED: true
+    LOG_ONLY: true
+  ARRIVAL_GATE:
+    ALLOWED_PHASES:
+    - approach
+    - verify
+    - recover
+    - unknown
+    DIST_THRESHOLD: 4.0
+    ENABLED: true
+    MIN_TRIGGER_STEP: 1
+  BACKTRACK:
+    DISP_EPS: 1.0
+    DISP_RATIO: 0.35
+    ENABLED: true
+    MAX_BACKTRACKS_PER_EPISODE: 2
+    STALL_WINDOW: 3
+  CANDIDATE_PRIOR:
+    ENABLED: true
+    LOG_ONLY: false
+    MIN_PROB_GAP: 0.0
+  CONTEXT_BUILDER:
+    ENABLED: true
+    LOG_ONLY: true
+  ENABLED: true
+  ENABLE_DECISION_EFFECT: true
+  ENABLE_HARNESS_LOGGING: true
+  ENDGAME_TILT_VIEW:
+    ALWAYS_ON_STOP: true
+    ARM_ON_FINAL_CLAUSE: false
+    ARM_ON_FINAL_LANDMARK: true
+    ARM_STEP_FRAC: 0.7
+    CENTER_FRAC: 0.25
+    DEDUPE_DIST_M: 0.5
+    DEDUPE_HEADING_DEG: 15.0
+    ENABLED: true
+    LOG_ONLY: true
+    MAX_PER_EPISODE: 4
+    MIN_STEP_GAP: 3
+    PITCH_DEG: -30.0
+  FAIL_OPEN: true
+  GEOMETRY_INJECTION: false
+  GEOMETRY_QUERY:
+    ENABLED: true
+    LOG_ONLY: true
+  GROUNDER_DIAGNOSTIC:
+    ENABLED: true
+    LOG_ONLY: true
+  LANDMARK_POOL:
+    ARRIVAL_RADIUS_M: 3.0
+    DROP_STOPWORDS: true
+    ENABLED: true
+    LOG_ONLY: true
+    MERGE_RADIUS_M: 2.0
+    RESTRICT_TO_VOCABULARY: true
+  LLM_RUNTIME:
+    DECISION_MAX_TOKENS: 64
+    NAVIGATOR_MAX_TOKENS: 1024
+    THOUGHT_FUSION_MAX_TOKENS: 256
+  LOG_IMAGES: false
+  MEMORY_DIAGNOSTIC:
+    ENABLED: true
+    ENABLE_VERTICAL_ALERT: false
+    FLOOR_HEIGHT_M: 1.5
+    LOG_ONLY: true
+    LOOP_ALERT_THRESHOLD: 3
+    MERGE_RADIUS_M: 0.8
+    REVISIT_RADIUS_M: 1.0
+    VERTICAL_ALERT_M: 0.3
+  MULTIMODAL_SELECTOR_CONTEXT:
+    APPLY_PHASES:
+    - search
+    - approach
+    - verify
+    DECISION_MODE: phase_gated_u1
+    ENABLED: true
+    INCLUDE_MEMORY_SUFFIX: false
+    LOG_ONLY: true
+    MAX_SUMMARY_CHARS: 180
+    MIN_CONFIDENCE_FOR_TARGET_HINT: 0.9
+    SUPPRESS_TARGET_ARRIVAL_FOR_SELECTOR: true
+  NAVIGATION_RUNTIME:
+    BLOCK_WEAK_FINAL_TARGET_COMPLETION_STOP: true
+    LONG_ACTION_STEP_LIMIT: 12
+    MIN_STEPS_FOR_WEAK_FINAL_TARGET_COMPLETION_STOP: 8
+    SHORT_ACTION_COUNT_THRESHOLD: 6
+    SHORT_ACTION_STEP_LIMIT: 10
+  ORACLE_METRICS:
+    ENABLED: true
+    LOG_ONLY: true
+  PIPELINE:
+    ACTION_COMPILER: action_compiler.v1
+    PROGRESS_PROVIDER: acn_l1
+    STOP_POLICY: coordinated_v1
+  PROACTIVE_STOP_GATE:
+    COMMIT_DIST_THRESHOLD: 2.0
+    DIST_THRESHOLD: 3.5
+    ENABLED: true
+  PROGRESS_LOCATOR:
+    AROUND_DEG: 120.0
+    DIRECTION_WINDOW: 2
+    ENABLED: true
+    ENABLE_LOCATION: true
+    FORWARD_M: 1.0
+    HEADING_SIGN: -1.0
+    LOCATION_DOMINANCE: 0.5
+    LOG_ONLY: false
+    OBJECT_RADIUS_M: 3.0
+    TURN_DEG: 35.0
+    VACUOUS_UNKNOWN: true
+  TERMINAL_GATE:
+    ENABLED: true
+    LOG_ONLY: true
+    REQUIRE_ALL_VERIFIED: true
+    REQUIRE_CHAIN_COMPLETE: true
+    REQUIRE_LANDMARK_EVIDENCE: true
+  TRACE_DIR: logs/harness_traces/ep1/20260902/clean_baseline_v1/anchor_chain_v2_realcase_smoke
+  TRACE_FORMAT: jsonl
+  U_SERIES:
+    DECISION_EFFECT_UNIT: none
+    ENABLED: true
+    FAILURE_RECOVERY:
+      ENABLED: true
+      ENABLE_RESELECT: true
+      LOG_ONLY: true
+      MAX_RECOVERY_PER_EPISODE: 2
+      NEGATIVE_GAIN_WINDOW: 2
+    PHASE_EVIDENCE:
+      CLEAR_FAILURE_ON_POSITIVE_GAIN_COUNT: 2
+      ENABLED: true
+      FAILURE_SIGNAL_TTL_STEPS: 2
+      LATE_STEP_THRESHOLD: 4
+      LOG_ONLY: true
+      UNKNOWN_CONFIDENCE_THRESHOLD: 0.4
+    STOP_EVIDENCE_VERIFIER:
+      E3_ABSTAIN_DIST: 3.0
+      E3_ARRIVAL_OVERRIDE_DIST: 3.0
+      ENABLED: true
+      ENABLE_RELATION_CHECK: true
+      ENABLE_RESCUE: true
+      ENABLE_WEAK_TARGET_ADJUSTMENT: true
+      LOG_ONLY: true
+      RESCUE_ALLOW_PHASE_VERIFY: true
+      RESCUE_CONFIDENCE_THRESHOLD: 0.95
+      RESCUE_MAX_GOAL_DIST: 4.0
+      RESCUE_MAX_NON_POSITIVE_GAINS: 99
+      RESCUE_MIN_STEP: 3
+      RESCUE_REQUIRE_POSITIVE_RECENT_GAIN: false
+      TRAJECTORY_BYPASS_DIST: 3.5
+  VISUAL_EVIDENCE:
+    BASE_URL: http://127.0.0.1:23333/v1
+    COMPACT_JSON: true
+    ENABLED: true
+    IMAGE_JPEG_QUALITY: 70
+    LOG_ONLY: true
+    MAX_CANDIDATES: 5
+    MAX_IMAGE_EDGE: 384
+    MAX_TOKENS: 768
+    METADATA_OBSERVATION_CHARS: 300
+    MODEL: /root/models/Qwen3.5-4B
+    TIMEOUT_SECONDS: 60.0
+  VISUAL_EVIDENCE_MEMORY:
+    ENABLED: true
+    LOG_ONLY: true
+    MAX_HISTORY: 64
+    MAX_NOTES_CHARS: 240
+  VISUAL_TARGET_VERIFIER:
+    BLOCK_GENERIC_FINAL_TERMS_FOR_ALLOW: true
+    CONFIDENCE_THRESHOLD: 0.9
+    DEPTH_STOP_VETO:
+      CENTER_FRAC: 0.25
+      ENABLED: true
+      MAX_TARGET_DIST_M: 3.0
+    ENABLED: true
+    LOG_ONLY: false
+    MIN_STEPS_BEFORE_ALLOW: 3
+    REJECT_ON_MISSING_FINAL_LANDMARKS: true
+    REJECT_ON_UNCERTAIN: true
+    REQUIRE_ARRIVAL_EVIDENCE: true
+    REQUIRE_COMPLETION_FOR_SELECTOR_STOP: true
+    REQUIRE_CURRENT_VIEW_TEXT_CORROBORATION_FOR_ALLOW: false
+    REQUIRE_FULL_COVERAGE_FOR_ALLOW: true
+ORBSLAM2:
+  ANGLE_TH: 0.2617993877991494
+  BETA: 100
+  CAMERA_HEIGHT: 1.25
+  DEPTH_DENORM: 10.0
+  DIST_REACHED_TH: 0.15
+  DIST_TO_STOP: 0.05
+  D_OBSTACLE_MAX: 4.0
+  D_OBSTACLE_MIN: 0.1
+  H_OBSTACLE_MAX: 1.25
+  H_OBSTACLE_MIN: 0.375
+  MAP_CELL_SIZE: 0.1
+  MAP_SIZE: 40
+  MIN_PTS_IN_OBSTACLE: 320.0
+  NEXT_WAYPOINT_TH: 0.5
+  NUM_ACTIONS: 3
+  PLANNER_MAX_STEPS: 500
+  PREPROCESS_MAP: true
+  SLAM_SETTINGS_PATH: habitat_baselines/slambased/data/mp3d3_small1k.yaml
+  SLAM_VOCAB_PATH: habitat_baselines/slambased/data/ORBvoc.txt
+PROFILING:
+  CAPTURE_START_STEP: -1
+  NUM_STEPS_TO_CAPTURE: -1
+RESULTS_DIR: logs/eval_results/ep1/20260902/anchor_chain_v2_realcase_smoke
+RL:
+  DDPPO:
+    backbone: resnet18
+    distrib_backend: GLOO
+    force_distributed: false
+    num_recurrent_layers: 1
+    pretrained: false
+    pretrained_encoder: false
+    pretrained_weights: data/ddppo-models/gibson-2plus-resnet50.pth
+    reset_critic: true
+    rnn_type: GRU
+    sync_frac: 0.6
+    train_encoder: true
+  POLICY:
+    OBS_TRANSFORMS:
+      CENTER_CROPPER:
+        HEIGHT: 256
+        WIDTH: 256
+      CENTER_CROPPER_PER_SENSOR:
+        SENSOR_CROPS:
+        - &id001
+          - rgb
+          - - 224
+            - 224
+        - &id002
+          - depth
+          - - 256
+            - 256
+      CUBE2EQ:
+        HEIGHT: 256
+        SENSOR_UUIDS: []
+        WIDTH: 512
+      CUBE2FISH:
+        FOV: 180
+        HEIGHT: 256
+        PARAMS:
+        - 0.2
+        - 0.2
+        - 0.2
+        SENSOR_UUIDS: []
+        WIDTH: 256
+      ENABLED_TRANSFORMS:
+      - CenterCropperPerSensor
+      EQ2CUBE:
+        HEIGHT: 256
+        SENSOR_UUIDS: []
+        WIDTH: 256
+      RESIZER_PER_SENSOR:
+        SIZES:
+        - *id001
+        - *id002
+      RESIZE_SHORTEST_EDGE:
+        SIZE: 256
+    name: PointNavResNetPolicy
+  PPO:
+    clip_param: 0.2
+    entropy_coef: 0.01
+    eps: 1.0e-05
+    gamma: 0.99
+    hidden_size: 512
+    lr: 0.00025
+    max_grad_norm: 0.5
+    num_mini_batch: 2
+    num_steps: 5
+    ppo_epoch: 4
+    reward_window_size: 50
+    tau: 0.95
+    use_double_buffered_sampler: false
+    use_gae: true
+    use_linear_clip_decay: false
+    use_linear_lr_decay: false
+    use_normalized_advantage: false
+    value_loss_coef: 0.5
+  REWARD_MEASURE: distance_to_goal
+  SLACK_REWARD: -0.01
+  SUCCESS_MEASURE: spl
+  SUCCESS_REWARD: 2.5
+SENSORS:
+- RGB_SENSOR
+- DEPTH_SENSOR
+SIMULATOR_GPU_IDS:
+- 0
+TASK_CONFIG:
+  DATASET:
+    CONTENT_SCENES:
+    - '*'
+    DATA_PATH: data/datasets/R2R_VLNCE_v1-2_preprocessed/{split}/OpenNav_R2R-CE_100_bertidx.json.gz
+    EPISODES_ALLOWED: null
+    EPISODES_TO_LOAD: 100
+    LANGUAGES:
+    - '*'
+    ROLES:
+    - guide
+    SCENES_DIR: data/scene_datasets/
+    SPLIT: val_unseen
+    TYPE: VLN-CE-v1
+  ENVIRONMENT:
+    ITERATOR_OPTIONS:
+      CYCLE: true
+      GROUP_BY_SCENE: true
+      MAX_SCENE_REPEAT_EPISODES: -1
+      MAX_SCENE_REPEAT_STEPS: 10000
+      NUM_EPISODE_SAMPLE: -1
+      SHUFFLE: true
+      STEP_REPETITION_RANGE: 0.2
+    MAX_EPISODE_SECONDS: 10000000
+    MAX_EPISODE_STEPS: 20
+  PYROBOT:
+    BASE_CONTROLLER: proportional
+    BASE_PLANNER: none
+    BUMP_SENSOR:
+      TYPE: PyRobotBumpSensor
+    DEPTH_SENSOR:
+      CENTER_CROP: false
+      HEIGHT: 480
+      MAX_DEPTH: 5.0
+      MIN_DEPTH: 0.0
+      NORMALIZE_DEPTH: true
+      TYPE: PyRobotDepthSensor
+      WIDTH: 640
+    LOCOBOT:
+      ACTIONS:
+      - BASE_ACTIONS
+      - CAMERA_ACTIONS
+      BASE_ACTIONS:
+      - go_to_relative
+      - go_to_absolute
+      CAMERA_ACTIONS:
+      - set_pan
+      - set_tilt
+      - set_pan_tilt
+    RGB_SENSOR:
+      CENTER_CROP: false
+      HEIGHT: 480
+      TYPE: PyRobotRGBSensor
+      WIDTH: 640
+    ROBOT: locobot
+    ROBOTS:
+    - locobot
+    SENSORS:
+    - RGB_SENSOR
+    - DEPTH_SENSOR
+    - BUMP_SENSOR
+  SEED: 0
+  SIMULATOR:
+    ACTION_SPACE_CONFIG: v0
+    AGENTS:
+    - AGENT_0
+    AGENT_0:
+      ANGULAR_ACCELERATION: 12.56
+      ANGULAR_FRICTION: 1.0
+      COEFFICIENT_OF_RESTITUTION: 0.0
+      HEIGHT: 1.5
+      IS_SET_START_STATE: false
+      LINEAR_ACCELERATION: 20.0
+      LINEAR_FRICTION: 0.5
+      MASS: 32.0
+      RADIUS: 0.1
+      SENSORS:
+      - RGB_SENSOR
+      - DEPTH_SENSOR
+      START_POSITION:
+      - 0
+      - 0
+      - 0
+      START_ROTATION:
+      - 0
+      - 0
+      - 0
+      - 1
+    DEFAULT_AGENT_ID: 0
+    DEPTH_SENSOR:
+      HEIGHT: 256
+      HFOV: 90
+      MAX_DEPTH: 10.0
+      MIN_DEPTH: 0.0
+      NORMALIZE_DEPTH: true
+      ORIENTATION:
+      - 0.0
+      - 0.0
+      - 0.0
+      POSITION:
+      - 0
+      - 1.25
+      - 0
+      TYPE: HabitatSimDepthSensor
+      WIDTH: 256
+    FORWARD_STEP_SIZE: 0.25
+    HABITAT_SIM_V0:
+      ALLOW_SLIDING: true
+      ENABLE_PHYSICS: false
+      GPU_DEVICE_ID: 0
+      GPU_GPU: false
+      PHYSICS_CONFIG_FILE: ./data/default.physics_config.json
+    RGB_SENSOR:
+      HEIGHT: 224
+      HFOV: 90
+      ORIENTATION:
+      - 0.0
+      - 0.0
+      - 0.0
+      POSITION:
+      - 0
+      - 1.25
+      - 0
+      TYPE: HabitatSimRGBSensor
+      WIDTH: 224
+    SCENE: data/scene_datasets/habitat-test-scenes/van-gogh-room.glb
+    SEED: 100
+    SEMANTIC_SENSOR:
+      HEIGHT: 480
+      HFOV: 90
+      ORIENTATION:
+      - 0.0
+      - 0.0
+      - 0.0
+      POSITION:
+      - 0
+      - 1.25
+      - 0
+      TYPE: HabitatSimSemanticSensor
+      WIDTH: 640
+    TILT_ANGLE: 15
+    TURN_ANGLE: 15
+    TYPE: Sim-v1
+  TASK:
+    ACTIONS:
+      ANSWER:
+        TYPE: AnswerAction
+      HIGHTOLOW:
+        TYPE: MoveHighToLowAction
+      HIGHTOLOWEVAL:
+        TYPE: MoveHighToLowActionEval
+      HIGHTOLOWINFER:
+        TYPE: MoveHighToLowActionInfer
+      LOOK_DOWN:
+        TYPE: LookDownAction
+      LOOK_UP:
+        TYPE: LookUpAction
+      MOVE_FORWARD:
+        TYPE: MoveForwardAction
+      STOP:
+        TYPE: StopAction
+      TELEPORT:
+        TYPE: TeleportAction
+      TURN_LEFT:
+        TYPE: TurnLeftAction
+      TURN_RIGHT:
+        TYPE: TurnRightAction
+    ANSWER_ACCURACY:
+      TYPE: AnswerAccuracy
+    COLLISIONS:
+      TYPE: Collisions
+    COMPASS_SENSOR:
+      TYPE: CompassSensor
+    CORRECT_ANSWER:
+      TYPE: CorrectAnswer
+    DISTANCE_TO_GOAL:
+      DISTANCE_TO: POINT
+      TYPE: DistanceToGoal
+    EPISODE_INFO:
+      TYPE: EpisodeInfo
+    GLOBAL_GPS_SENSOR:
+      DIMENSIONALITY: 3
+      TYPE: GlobalGPSSensor
+    GOAL_SENSOR_UUID: pointgoal
+    GPS_SENSOR:
+      DIMENSIONALITY: 2
+      TYPE: GPSSensor
+    HEADING_SENSOR:
+      TYPE: HeadingSensor
+    IMAGEGOAL_SENSOR:
+      TYPE: ImageGoalSensor
+    INSTRUCTION_SENSOR:
+      TYPE: InstructionSensor
+    INSTRUCTION_SENSOR_UUID: instruction
+    MEASUREMENTS: []
+    NDTW:
+      FDTW: true
+      GT_PATH: data/datasets/R2R_VLNCE_v1-2_preprocessed/{split}/{split}_gt.json.gz
+      SPLIT: val_seen
+      SUCCESS_DISTANCE: 3.0
+      TYPE: NDTW
+    OBJECTGOAL_SENSOR:
+      GOAL_SPEC: TASK_CATEGORY_ID
+      GOAL_SPEC_MAX_VAL: 50
+      TYPE: ObjectGoalSensor
+    ORACLE_NAVIGATION_ERROR:
+      TYPE: OracleNavigationError
+    ORACLE_SPL:
+      TYPE: OracleSPL
+    ORACLE_SUCCESS:
+      SUCCESS_DISTANCE: 3.0
+      TYPE: OracleSuccess
+    PATH_LENGTH:
+      TYPE: PathLength
+    POINTGOAL_SENSOR:
+      DIMENSIONALITY: 2
+      GOAL_FORMAT: POLAR
+      TYPE: PointGoalSensor
+    POINTGOAL_WITH_GPS_COMPASS_SENSOR:
+      DIMENSIONALITY: 2
+      GOAL_FORMAT: POLAR
+      TYPE: PointGoalWithGPSCompassSensor
+    POSITION:
+      TYPE: Position
+    POSSIBLE_ACTIONS:
+    - STOP
+    - MOVE_FORWARD
+    - TURN_LEFT
+    - TURN_RIGHT
+    - HIGHTOLOW
+    PROXIMITY_SENSOR:
+      MAX_DETECTION_RADIUS: 2.0
+      TYPE: ProximitySensor
+    QUESTION_SENSOR:
+      TYPE: QuestionSensor
+    RXR_INSTRUCTION_SENSOR:
+      TYPE: RxRInstructionSensor
+      features_path: data/datasets/RxR_VLNCE_v0/text_features/rxr_{split}/{id:06}_{lang}_text_features.npz
+    SDTW:
+      GT_PATH: data/datasets/R2R_VLNCE_v1-2_preprocessed/{split}/{split}_gt.json.gz
+      SUCCESS_DISTANCE: 3.0
+      TYPE: SDTW
+    SENSORS:
+    - INSTRUCTION_SENSOR
+    - SHORTEST_PATH_SENSOR
+    - VLN_ORACLE_PROGRESS_SENSOR
+    SHORTEST_PATH_SENSOR:
+      GOAL_RADIUS: 0.5
+      TYPE: ShortestPathSensor
+      USE_ORIGINAL_FOLLOWER: false
+    SOFT_SPL:
+      TYPE: SoftSPL
+    SPL:
+      SUCCESS_DISTANCE: 3.0
+      TYPE: SPL
+    STEPS_TAKEN:
+      TYPE: StepsTaken
+    SUCCESS:
+      SUCCESS_DISTANCE: 3.0
+      TYPE: Success
+    SUCCESS_DISTANCE: 3.0
+    TOP_DOWN_MAP:
+      DRAW_BORDER: true
+      DRAW_GOAL_AABBS: true
+      DRAW_GOAL_POSITIONS: true
+      DRAW_SHORTEST_PATH: true
+      DRAW_SOURCE: true
+      DRAW_VIEW_POINTS: true
+      FOG_OF_WAR:
+        DRAW: true
+        FOV: 90
+        VISIBILITY_DIST: 5.0
+      MAP_PADDING: 3
+      MAP_RESOLUTION: 1024
+      MAX_EPISODE_STEPS: 1000
+      TYPE: TopDownMap
+    TOP_DOWN_MAP_VLNCE:
+      DRAW_BORDER: true
+      DRAW_FIXED_WAYPOINTS: true
+      DRAW_MP3D_AGENT_PATH: true
+      DRAW_REFERENCE_PATH: true
+      DRAW_SHORTEST_PATH: true
+      DRAW_SOURCE_AND_TARGET: true
+      FOG_OF_WAR:
+        DRAW: true
+        FOV: 79
+        VISIBILITY_DIST: 5.0
+      GRAPHS_FILE: data/connectivity_graphs.pkl
+      MAP_RESOLUTION: 1024
+      MAX_EPISODE_STEPS: 1000
+      TYPE: TopDownMapVLNCE
+    TYPE: VLN-v0
+    VLN_ORACLE_PROGRESS_SENSOR:
+      TYPE: VLNOracleProgressSensor
+TENSORBOARD_DIR: data/tensorboard_dirs/debug
+TORCH_GPU_ID: 0
+TORCH_GPU_IDS:
+- 0
+TOTAL_NUM_STEPS: -1.0
+TRAINER_NAME: schedulesampler-OPENNAV
+VERBOSE: true
+VIDEO_DIR: videos/debug
+VIDEO_OPTION: []
+local_rank: 0

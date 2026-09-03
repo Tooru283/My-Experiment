@@ -396,6 +396,10 @@ class VisualTargetVerifier:
             "verdict": verdict,
             "final_target_visible": final_target_visible,
             "arrival_evidence": arrival_evidence,
+            "target_direction_id": (
+                None if candidate.get("target_direction_id") is None
+                else str(candidate.get("target_direction_id"))
+            ),
             "confidence": confidence,
             "visible_landmarks": visible_terms,
             "matched_instruction_terms": matched_instruction_terms,
@@ -425,6 +429,7 @@ class VisualTargetVerifier:
             "verdict": str(best.get("verdict", "")),
             "final_target_visible": _as_bool(best.get("final_target_visible")),
             "arrival_evidence": _as_bool(best.get("arrival_evidence")),
+            "target_direction_id": best.get("target_direction_id"),
             "confidence": _as_float(best.get("confidence")),
             "visible_landmarks": _as_list(best.get("visible_landmarks")),
             "matched_instruction_terms": _as_list(
@@ -562,6 +567,8 @@ class VisualTargetVerifier:
         return unique_normalized(tokens)
 
     def _requires_current_view_corroboration(self, term: str) -> bool:
+        if _norm(term) in self.generic_final_terms:
+            return True
         tokens = self._meaningful_tokens(term)
         if len(tokens) < 2:
             return False

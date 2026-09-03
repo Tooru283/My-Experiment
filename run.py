@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import os
+import hashlib
+import json
+import re
 import torch
 import random
 import argparse
@@ -36,6 +39,78 @@ def _apply_trace_log_layout(trace_dir: str, episode_group: str, run_date: str) -
         variant = trace_dir[len(trace_prefix) :]
         return os.path.join(trace_root, episode_group, run_date, variant)
     return os.path.join(trace_dir, episode_group, run_date)
+
+
+
+def _sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _write_run_manifest(config, exp_config: str, opts) -> dict:
+    """Persist the resolved, secret-redacted config before an evaluation starts."""
+    resolved_config = re.sub(
+        r"(?m)^(\s*(?:API_KEY|DASHSCOPE_API_KEY)\s*:\s*).*$",
+        r"\1<redacted>",
+        config.dump(),
+    )
+    config_path = os.path.abspath(exp_config)
+    try:
+        with open(config_path, "rb") as config_file:
+            source_hash = _sha256_bytes(config_file.read())
+    except OSError:
+        source_hash = None
+
+    result_dir = os.path.abspath(config.RESULTS_DIR)
+    os.makedirs(result_dir, exist_ok=True)
+    snapshot_path = os.path.join(result_dir, "resolved_config.yaml")
+    with open(snapshot_path, "w", encoding="utf-8") as snapshot_file:
+        snapshot_file.write(resolved_config)
+
+    resolved_hash = _sha256_bytes(resolved_config.encode("utf-8"))
+    harness = config.OPENNAV_HARNESS
+    manifest = {
+        "schema_version": "opennav.run_manifest.v1",
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "exp_config": config_path,
+        "exp_config_sha256": source_hash,
+        "resolved_config": snapshot_path,
+        "resolved_config_sha256": resolved_hash,
+        "command_line_overrides": list(opts or []),
+        "model": {
+            "llm": config.LLM,
+            "visual_evidence_model": os.environ.get("OPENNAV_LLM_MODEL"),
+            "visual_evidence_base_url": os.environ.get("OPENNAV_LLM_BASE_URL"),
+        },
+        "evaluation": {
+            "split": config.EVAL.SPLIT,
+            "episode_count": config.EVAL.EPISODE_COUNT,
+            "seed": config.TASK_CONFIG.SEED,
+            "task_config": config.BASE_TASK_CONFIG_PATH,
+        },
+        "harness": {
+            "trace_dir": harness.TRACE_DIR,
+            "progress_provider": harness.PIPELINE.PROGRESS_PROVIDER,
+            "stop_policy": harness.PIPELINE.STOP_POLICY,
+            "action_compiler": harness.PIPELINE.ACTION_COMPILER,
+            "decision_effect_enabled": harness.ENABLE_DECISION_EFFECT,
+            "geometry_injection": harness.GEOMETRY_INJECTION,
+            "min_steps_before_allow": harness.VISUAL_TARGET_VERIFIER.MIN_STEPS_BEFORE_ALLOW,
+            "short_action_step_limit": harness.NAVIGATION_RUNTIME.SHORT_ACTION_STEP_LIMIT,
+            "long_action_step_limit": harness.NAVIGATION_RUNTIME.LONG_ACTION_STEP_LIMIT,
+            "progress_locator_log_only": harness.PROGRESS_LOCATOR.LOG_ONLY,
+            "terminal_gate_log_only": harness.TERMINAL_GATE.LOG_ONLY,
+            "phase_evidence_log_only": harness.U_SERIES.PHASE_EVIDENCE.LOG_ONLY,
+        },
+    }
+    manifest_path = os.path.join(result_dir, "run_manifest.json")
+    with open(manifest_path, "w", encoding="utf-8") as manifest_file:
+        json.dump(manifest, manifest_file, ensure_ascii=False, indent=2, sort_keys=True)
+        manifest_file.write("\n")
+
+    os.environ["OPENNAV_CONFIG_SNAPSHOT"] = snapshot_path
+    os.environ["OPENNAV_CONFIG_SHA256"] = resolved_hash
+    os.environ["OPENNAV_EXP_CONFIG_SHA256"] = source_hash or ""
+    return manifest
 
 
 def main():
@@ -119,6 +194,8 @@ def run_exp(exp_name: str, exp_config: str,
         config.LLM = llm
     if api_key is not None:
         config.API_KEY = api_key
+
+    _write_run_manifest(config, exp_config, opts)
 
     config.freeze()
     

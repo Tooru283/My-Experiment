@@ -165,6 +165,7 @@ class ConstraintQueueLocator:
         self.anchors: List[Dict[str, Any]] = list(anchors or [])
         self.j = 0
         self.ever_satisfied: Set[int] = set()
+        self.hit_streaks: Dict[int, int] = {}
         self.pose_history: List[Dict[str, Any]] = []
         self.j_history: List[int] = []
         self.abstain_steps = 0
@@ -186,14 +187,16 @@ class ConstraintQueueLocator:
             return None
 
     def _satisfy_object(
-        self, key: str, view_tags: Dict[str, Iterable[str]], view_geometry: Dict[str, Any]
+        self, key: str, view_tags: Dict[str, Iterable[str]], view_geometry: Dict[str, Any],
+        max_distance_m: Optional[float] = None,
     ) -> bool:
         if not key:
             return False
         head = key.split()[-1]
+        radius = self.object_radius_m if max_distance_m is None else float(max_distance_m)
         for direction_id, tags in view_tags.items():
             dist = self._distance_of(view_geometry.get(direction_id))
-            if dist is None or dist > self.object_radius_m:
+            if dist is None or dist > radius:
                 continue
             for tag in tags:
                 t = str(tag).strip().lower()
@@ -241,7 +244,8 @@ class ConstraintQueueLocator:
         return False
 
     def _satisfy_location(
-        self, key: str, view_tags: Dict[str, Iterable[str]]
+        self, key: str, view_tags: Dict[str, Iterable[str]],
+        min_view_ratio: Optional[float] = None,
     ) -> Optional[bool]:
         """Dominance rule. Returns True/False, or None to abstain (no evidence at all)."""
         if not key:
@@ -255,7 +259,8 @@ class ConstraintQueueLocator:
         hits = sum(
             1 for tags in view_tags.values() if self._tag_matches_room(tags, key, head)
         )
-        return (hits / len(view_tags)) >= self.location_dominance
+        threshold = self.location_dominance if min_view_ratio is None else float(min_view_ratio)
+        return (hits / len(view_tags)) >= threshold
 
     def _satisfy(
         self,
@@ -265,21 +270,37 @@ class ConstraintQueueLocator:
     ) -> bool:
         kind = anchor.get("kind")
         key = anchor.get("key")
+        verification = anchor.get("verification")
+        parameters = verification.get("parameters", {}) if isinstance(verification, dict) else {}
         if kind == "object":
-            return self._satisfy_object(str(key or ""), view_tags, view_geometry)
+            return self._satisfy_object(
+                str(key or ""), view_tags, view_geometry,
+                parameters.get("max_waypoint_distance_m"),
+            )
         if kind == "direction":
             return self._satisfy_direction(str(key or ""))
         if kind == "location" and self.enable_location:
-            return bool(self._satisfy_location(str(key or ""), view_tags))
-        if kind == "unknown" and self.vacuous_unknown:
-            # An anchor we could not parse into any constraint imposes nothing that can
-            # be verified. Abstaining on it blocks the queue FOREVER: measured, unknown
-            # anchors are 9.2% of all anchors but caused 20.3% of all stalled steps,
-            # precisely because a stall is permanent while an anchor is only 1/N.
-            # Passing through is strictly better than blocking on a slot with no content.
-            return True
-        # location with the detector off, or unparsed anchors -> abstain
+            return bool(self._satisfy_location(
+                str(key or ""), view_tags, parameters.get("min_view_ratio")
+            ))
+        # Unknown anchors are handled by their explicit verification policy in update().
         return False
+
+    @staticmethod
+    def _verification_policy(anchor: Dict[str, Any]) -> str:
+        verification = anchor.get("verification")
+        if isinstance(verification, dict):
+            return str(verification.get("on_unverifiable") or "abstain")
+        return "skip" if anchor.get("kind") == "unknown" else "abstain"
+
+    @staticmethod
+    def _required_hits(anchor: Dict[str, Any]) -> int:
+        verification = anchor.get("verification")
+        parameters = verification.get("parameters", {}) if isinstance(verification, dict) else {}
+        try:
+            return max(1, int(parameters.get("min_consecutive_hits", 1)))
+        except (TypeError, ValueError):
+            return 1
 
     # ---------------- step ----------------
 
@@ -313,7 +334,15 @@ class ConstraintQueueLocator:
         for idx, anchor in enumerate(self.anchors):
             if idx in self.ever_satisfied:
                 continue
+            if anchor.get("kind") == "unknown":
+                if self._verification_policy(anchor) == "skip":
+                    self.ever_satisfied.add(idx)
+                continue
             if self._satisfy(anchor, view_tags, view_geometry):
+                self.hit_streaks[idx] = self.hit_streaks.get(idx, 0) + 1
+            else:
+                self.hit_streaks[idx] = 0
+            if self.hit_streaks.get(idx, 0) >= self._required_hits(anchor):
                 self.ever_satisfied.add(idx)
 
         advanced = 0
@@ -344,6 +373,7 @@ class ConstraintQueueLocator:
                                         and self.j_history[-1] == self.j_history[-2]),
             "abstain_steps": self.abstain_steps,
             "ever_satisfied": sorted(self.ever_satisfied),
+            "hit_streaks": dict(self.hit_streaks),
             "distinct_j_values": len(set(self.j_history)),
             # structural guarantee, asserted rather than hoped for
             "regressions": sum(

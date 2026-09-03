@@ -24,7 +24,8 @@ def _candidate_next_position(
         return None
     try:
         heading_value = float(heading) if heading is not None else 0.0
-        angle = heading_value + float(candidate.angle_rad)
+        # Match M2 waypoint geometry: Habitat heading and candidate angles use the inverse sign.
+        angle = -heading_value - float(candidate.angle_rad)
         distance = float(candidate.distance)
         return [
             position[0] + distance * math.sin(angle),

@@ -23,7 +23,7 @@ set -euo pipefail
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ---- configuration (all overridable) ----------------------------------------
-MODEL="${MODEL:-/root/models/Qwen3.5-9B}"     # 9B default; set to Qwen3.5-4B for the 4B
+MODEL="${MODEL:-/root/models/Qwen3.5-4B}"     # 4B default for the local 12GB GPU
 PORT="${PORT:-23333}"                          # must match OPENNAV_LLM_BASE_URL
 HOST="${HOST:-0.0.0.0}"
 DEVICE="${DEVICE:-cuda:0}"
@@ -32,6 +32,8 @@ REASONING="${REASONING:-off}"
 SERVE_ENV="${SERVE_ENV:-qwen35-serve}"          # conda env holding `transformers serve`
 READY_TIMEOUT="${READY_TIMEOUT:-600}"           # seconds to wait for model load
 
+SESSION_NAME="${SESSION_NAME:-qwen_${PORT}}"
+TRANSFORMERS_BIN="${TRANSFORMERS_BIN:-/root/miniconda3/envs/${SERVE_ENV}/bin/transformers}"
 LOG_DIR="${PROJECT_ROOT}/logs/qwen_server"
 PID_FILE="${LOG_DIR}/serve_${PORT}.pid"
 BASE_URL="http://127.0.0.1:${PORT}/v1"
@@ -82,8 +84,11 @@ cmd_status() {
 }
 
 cmd_stop() {
-  # Match every process bound to this port — the `conda run` wrapper AND the
-  # actual `transformers serve` child — so we don't orphan the real server.
+  # Stop the persistent screen session first, then clean up any remaining children.
+  if command -v screen >/dev/null 2>&1 && screen -S "$SESSION_NAME" -Q select . >/dev/null 2>&1; then
+    screen -S "$SESSION_NAME" -X quit >/dev/null 2>&1 || true
+    sleep 1
+  fi
   local pids; pids="$(pgrep -f "transformers serve .*--port ${PORT}" 2>/dev/null || true)"
   if [[ -z "$pids" ]]; then
     echo "nothing to stop on port $PORT"
@@ -118,17 +123,17 @@ cmd_start() {
   echo "  host=$HOST port=$PORT device=$DEVICE dtype=$DTYPE reasoning=$REASONING env=$SERVE_ENV"
   echo "  log -> $log"
 
-  nohup conda run -n "$SERVE_ENV" --no-capture-output \
-    transformers serve "$MODEL" \
-      --host "$HOST" \
-      --port "$PORT" \
-      --device "$DEVICE" \
-      --dtype "$DTYPE" \
-      --reasoning "$REASONING" \
+  screen -dmS "$SESSION_NAME" bash -lc \
+    "exec \"$TRANSFORMERS_BIN\" serve \"$MODEL\" \
+      --host \"$HOST\" \
+      --port \"$PORT\" \
+      --device \"$DEVICE\" \
+      --dtype \"$DTYPE\" \
+      --reasoning \"$REASONING\" \
       --log-level info \
-    > "$log" 2>&1 &
+      > \"$log\" 2>&1"
 
-  echo "$!" > "$PID_FILE"
+  echo "screen:$SESSION_NAME" > "$PID_FILE"
   echo -n "waiting for model to load (up to ${READY_TIMEOUT}s) "
   local waited=0
   while (( waited < READY_TIMEOUT )); do

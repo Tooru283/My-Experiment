@@ -85,9 +85,14 @@ class FailureDiagnostic:
             confidence = 0.65
             reasons.append("no valid candidate available")
 
+        # ``recent_distance_gains`` is simulator goal-distance information. It may be
+        # reported for audit comparison, but it cannot manufacture a recoverable
+        # failure signal in an oracle-free run.
+        recent_progress = phase_evidence.get("recent_progress") or {}
         if (
             failure_type == "unknown"
             and phase_evidence.get("phase") == "recover"
+            and bool(recent_progress.get("decision_effect"))
             and non_positive_count >= self.negative_gain_window
         ):
             failure_type = "progress_drift"

@@ -28,22 +28,6 @@ THOUGHT_SUMMARY = {
     'user': "Given Thought Process \"{}\", Summarization:"
 }
 
-# Estimate Completion
-COMPLETION_ESTIMATION = {
-    'system': "You are a completion estimation expert. Your task is to estimate what actions in the instruction have been executed based on navigation history and landmarks. \
-                All actions in the instruction are given following the temporal order. Your answer must use exactly two section headers in this order: \"Executed Actions:\" and \"Thought:\". \
-                In \"Executed Actions:\", output one executed original action per line using the format \"<number>. <original action>\". \
-                If no action has been executed, output exactly \"None\" under \"Executed Actions:\". \
-                In the \"Thought\", you must follow procedures to analyze what actions have been executed: \
-                (1) What given landmarks of actions have appeared in the navigation history? \
-                (2) Analyze the direction change at each step in the navigation history. \
-                (3) Estimate each action in the instruction based on each step in the navigation history to check their completion. \
-                (4) You must estimate actions in order. This means that if action 1 is not completed, you can not completed actions 2. \
-                Do not omit the \"Executed Actions:\" header. \
-                You must strictly refer original actions in the given instruction to estimate.",
-    'user': "Given Navigation History \"{}\" and Landmarks in the instruction \"{}\", estimate what actions in instruction \"{}\" have been executed. Return exactly:\nExecuted Actions:\n<number>. <original executed action or None>\nThought: <brief analysis>"
-}
-
 # Main Navigator
 NAVIGATOR = {
     'system': "You are a navigation agent who follows instruction to move in an indoor environment with the least action steps. \

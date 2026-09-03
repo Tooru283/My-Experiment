@@ -104,7 +104,7 @@ _C.OPENNAV_HARNESS.ANCHOR_CHAIN = CN()
 _C.OPENNAV_HARNESS.ANCHOR_CHAIN.ENABLED = True
 _C.OPENNAV_HARNESS.ANCHOR_CHAIN.LOG_ONLY = True
 
-# L1: constraint-queue progress location. Replaces COMPLETION_ESTIMATION's per-step LLM
+# L1: constraint-queue progress location; this is the sole progress provider
 # call with a monotone state machine (hot path: zero LLM, ~15.7 s/step saved).
 # OBJECT_RADIUS_M must be calibrated, NOT copied from CA-Nav's 5 m -- our candidate step
 # median is 1.50 m, so 5 m would satisfy nearly every object constraint. 2x step median.
@@ -131,11 +131,10 @@ _C.OPENNAV_HARNESS.PROGRESS_LOCATOR.HEADING_SIGN = -1.0   # calibrated, log §�
 #   >= 75% + stoplist    25% / 18%      (41% never satisfied -- too strict)
 _C.OPENNAV_HARNESS.PROGRESS_LOCATOR.ENABLE_LOCATION = True
 _C.OPENNAV_HARNESS.PROGRESS_LOCATOR.LOCATION_DOMINANCE = 0.5
-# An anchor that parsed to no constraint verifies nothing, and abstaining on it blocks the
-# queue permanently. Measured: unparsed anchors are 9.2% of anchors but caused 20.3% of
-# stalled steps. Passing through is strictly better than blocking on an empty slot.
+# Backward-compatible constructor flag for legacy anchors. Anchor v2 ignores this broad
+# switch and uses each anchors verification.on_unverifiable policy: unsupported actions
+# skip explicitly, while true parse failures abstain.
 _C.OPENNAV_HARNESS.PROGRESS_LOCATOR.VACUOUS_UNKNOWN = True
-
 # M2: cross-step landmark pool. Fuses RAM tags with waypoint geometry; supplies L4's
 # evidence conjunct. ⚠ Never fuses SpatialBot's reported distances (negative asset).
 _C.OPENNAV_HARNESS.LANDMARK_POOL = CN()
@@ -286,27 +285,11 @@ _C.OPENNAV_HARNESS.CANDIDATE_PRIOR.LOG_ONLY = True
 # STOP / MOVE_BACK are never overridden -- the prior has no termination label.
 _C.OPENNAV_HARNESS.CANDIDATE_PRIOR.MIN_PROB_GAP = 0.00
 
-# Progress estimator mode. "llm" calls the text LLM every step (15.7 s, 29% of a
-# full ep100 run); "rule" derives the executed-action list from the step counter at
-# zero cost.
-#
-# Measured on ep100_series_m420260719_130559 (n=635 steps with usable progress):
-# correlation between the reported progress fraction and true progress toward goal --
-#     LLM estimation      r = 0.122      rule k=min(step, a)   r = 0.325
-# and, controlling for step number (within-step, weighted over steps 1-10),
-# the LLM contributes  r = +0.037  -- i.e. nearly all of its apparent signal is the
-# step counter, which is free. It turns negative from step 6 on (step 9: -0.208).
-# Failure modes behind that number: 69/94 episodes report the instruction 100%
-# complete at step 1 before moving; 414/687 steps saturate at 1.0; 18/93 episodes
-# emit a byte-identical string all episode; and the executed-action count DECREASES
-# between adjacent steps 75 times, which is impossible and shows it re-invents the
-# answer each step rather than tracking state.
-#
-# This matters beyond cost: the estimate drives 47.7% of phase assignments, so
-# 70/95 episodes enter phase "verify" at step 1 -- the state machine starts at its
-# terminal state. See docs/experiment_record_20260719.md section 10.
-_C.OPENNAV_HARNESS.COMPLETION_ESTIMATION = CN()
-_C.OPENNAV_HARNESS.COMPLETION_ESTIMATION.MODE = "llm"
+# Progress provider. LLM completion was removed; ACN L1 is authoritative.
+_C.OPENNAV_HARNESS.PIPELINE = CN()
+_C.OPENNAV_HARNESS.PIPELINE.PROGRESS_PROVIDER = "acn_l1"
+_C.OPENNAV_HARNESS.PIPELINE.STOP_POLICY = "coordinated_v1"
+_C.OPENNAV_HARNESS.PIPELINE.ACTION_COMPILER = "action_compiler.v1"
 
 _C.OPENNAV_HARNESS.VISUAL_EVIDENCE_MEMORY = CN()
 _C.OPENNAV_HARNESS.VISUAL_EVIDENCE_MEMORY.ENABLED = False
@@ -328,7 +311,6 @@ _C.OPENNAV_HARNESS.MULTIMODAL_SELECTOR_CONTEXT.SUPPRESS_TARGET_ARRIVAL_FOR_SELEC
 _C.OPENNAV_HARNESS.MULTIMODAL_SELECTOR_CONTEXT.MIN_CONFIDENCE_FOR_TARGET_HINT = 0.9
 
 _C.OPENNAV_HARNESS.LLM_RUNTIME = CN()
-_C.OPENNAV_HARNESS.LLM_RUNTIME.COMPLETION_MAX_TOKENS = 0
 _C.OPENNAV_HARNESS.LLM_RUNTIME.NAVIGATOR_MAX_TOKENS = 0
 _C.OPENNAV_HARNESS.LLM_RUNTIME.THOUGHT_FUSION_MAX_TOKENS = 0
 _C.OPENNAV_HARNESS.LLM_RUNTIME.DECISION_MAX_TOKENS = 0

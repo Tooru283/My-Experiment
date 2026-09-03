@@ -111,59 +111,6 @@ class Open_Nav():
         logger.info("History: " + nav_history_str)
         return nav_history_str
     
-    def _rule_completion(self, actions, current_step):
-        """Zero-cost stand-in for the LLM progress estimator: assume one instruction
-        action lands per step, k = min(step, len(actions)).
-
-        Emits the same numbered format the LLM path returns, so
-        phase_evidence._completed_action_count parses it identically and the
-        selector prompt keeps its shape -- only the content changes.
-        """
-        action_list = self._split_actions(actions)
-        if not action_list:
-            return ""
-        k = max(0, min(int(current_step or 0), len(action_list)))
-        if k <= 0:
-            return "1. None"
-        return "\n".join(
-            "{}. {}".format(i + 1, item) for i, item in enumerate(action_list[:k])
-        )
-
-    def estimate_completion(
-        self,
-        logger,
-        actions,
-        landmarks,
-        history_traj,
-        max_tokens=None,
-        mode="llm",
-        current_step=None,
-    ):
-        if str(mode).lower() == "rule":
-            estimation = self._rule_completion(actions, current_step)
-            logger.info("Executed Actions (rule mode) " + estimation)
-            return estimation
-        response = self.llm.gpt_infer(
-            COMPLETION_ESTIMATION['system'],
-            COMPLETION_ESTIMATION['user'].format(history_traj, landmarks, actions),
-            max_tokens=max_tokens,
-        )
-        executed_markers = list(
-            re.finditer(r"\bExecuted Actions\s*:?", response, flags=re.I)
-        )
-        if executed_markers:
-            logger.info("Executed Actions " + response)
-            marker = executed_markers[-1]
-            executed = response[marker.end():].strip()
-            thought_marker = re.search(r"\bThought\s*:", executed, flags=re.I)
-            if thought_marker:
-                executed = executed[:thought_marker.start()].strip()
-            return executed.strip()
-        logger.info("Completion estimator response missing Executed Actions marker: " + response)
-        recovered = self._recover_executed_actions_from_response(actions, response)
-        if recovered:
-            logger.info("Recovered executed actions from unstructured completion response: " + recovered)
-        return recovered
 
     def _normalize_action_text(self, text):
         text = str(text or "").lower()

@@ -1,0 +1,42 @@
+{
+  "command_line_overrides": [
+    "SIMULATOR_GPU_IDS",
+    "[0]",
+    "TORCH_GPU_ID",
+    "0",
+    "TORCH_GPU_IDS",
+    "[0]",
+    "EVAL.SPLIT",
+    "val_unseen",
+    "EVAL.EPISODE_COUNT",
+    "1"
+  ],
+  "created_at": "2026-09-01T19:37:52",
+  "evaluation": {
+    "episode_count": 1,
+    "seed": 0,
+    "split": "val_unseen",
+    "task_config": "habitat_extensions/config/vlnce_task.yaml"
+  },
+  "exp_config": "/root/My-Experiment/run_OpenNav.yaml",
+  "exp_config_sha256": "8df6f566c33fbfbb7d17794b0a05eeb5e3314c1cef1437ae9a99655efa9f426d",
+  "harness": {
+    "decision_effect_enabled": true,
+    "geometry_injection": false,
+    "long_action_step_limit": 12,
+    "min_steps_before_allow": 3,
+    "phase_evidence_log_only": true,
+    "progress_locator_log_only": true,
+    "short_action_step_limit": 10,
+    "terminal_gate_log_only": true,
+    "trace_dir": "logs/harness_traces/ep1/20260901/clean_baseline_v1"
+  },
+  "model": {
+    "llm": "Qwen/qwen-vl-max",
+    "visual_evidence_base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "visual_evidence_model": "qwen-vl-max"
+  },
+  "resolved_config": "/root/My-Experiment/logs/eval_results/ep1/20260901/ep1_series_m420260901_193746/resolved_config.yaml",
+  "resolved_config_sha256": "d543944cdbb58d37bc17ab023b69f32b33a024833edbaa04559ef883982e41f1",
+  "schema_version": "opennav.run_manifest.v1"
+}

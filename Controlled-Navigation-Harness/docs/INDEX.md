@@ -1,47 +1,87 @@
 ---
 date: 2026-07-06
-tags:
-  - index
-  - 归档
-updated: 2026-07-06
+updated: 2026-09-03
+tags: [index, 归档]
 ---
 
-# 文档索引与归档说明（2026-07-06 整理）
+# 文档索引与归档说明
 
-> 整理原则：**只移动不删除**。三层分类：现行有效（驱动行动）/ 长期参考（不驱动行动但有据证价值）/ 归档（superseded 或过时代际）。
-> 背景：2026-07-06 决策放弃 AAAI-27 DDL，项目重定义为"性能+创新点"，训练解禁、backbone 可换。
+> 整理原则：只移动、不删除。`docs/` 只保留会驱动当前工作或运行所需的文档；历史记录和证据保存在与 `docs/` 平级的 `archive/`。
+>
+> 事实状态、设计提案和历史证据分开管理。归档不表示内容错误，只表示它不再直接定义当前实施动作。
 
-## 一、现行有效（读这些就够了）
+## 一、当前执行入口
 
-| 文档 | 价值 |
+建议按以下顺序阅读：
+
+| 顺序 | 文档 | 作用 |
+|---:|---|---|
+| 0 | [[导航系统通俗全链路说明-20260903]] | 面向非技术读者：从自然语言指令、RGB-D 观察到移动、STOP、运行命令和日志 |
+| 1 | [[空间状态工作任务-20260901]] | 当前任务、证据口径、实验队列和 Go/No-Go 条件 |
+| 1.5 | [[当前全链路输入输出图解-20260902]] | 当前代码的详细模块输入输出、TerminalTrack 和统一 STOP 数据流 |
+| 2 | [[全链路状态与模块输入输出-20260901]] | 当前源码和配置实际运行链，不等于目标架构 |
+| 3 | [[主Pipeline重构设计-20260901]] | RouteState 驱动的新主链目标、迁移阶段和验收契约 |
+| 4 | [[current_task]] | 历史指标与滚动状态；引用数字前需核对更新时间 |
+
+## 二、当前框架与运维
+
+| 文档 | 作用 |
 |---|---|
-| [[项目总控]] | 项目入口（**待更新**至新战略） |
-| [[current_task]] | 滚动任务状态（**待更新**至新战略） |
-| [[experiment_report_20260706_group_meeting]] | 最新周期总结：冲顶→证伪→审计→重置，当前事实的权威快照 |
-| [[实验框架-路线状态外置-20260713]] | **当前实验框架 v1.1**（两轨 A/B、预算表、闸门状态） |
-| [[backtracking_design_20260703]] | 已 staged 的回溯机制设计（默认关，待 A/B） |
-| [[model_switch_guide]] / [[qwen35_4b_local_deployment]] | 运维手册——backbone 扫描马上要用 |
-| `../../paper_analysis/` | 论文草稿（tex+中文版）、核数脚本 `verify_paper_numbers.py`、`episode_metrics.json`、`e1_clean9b.txt`、图表——**全部数字经 trace 复核的唯一真源** |
+| [[实验框架-路线状态外置-20260713]] | 两轨 A/B、预算、配对和预注册框架 |
+| [[backtracking_design_20260703]] | 回溯机制设计；在线实验中作为独立决策面固定或单独测试 |
+| [[model_switch_guide]] | 模型切换操作说明 |
+| [[qwen35_4b_local_deployment]] | Qwen 本地部署说明 |
 
-## 二、长期参考（有据证价值，不驱动行动）
+## 三、长期参考归档
 
-| 文档 | 价值 |
-|---|---|
-| experiment_record_20260610 ~ 20260719（11 篇） | 实验台账，链式不可变记录；论文 provenance 与复盘依据。**20260719 = veto/回溯双双证伪 + 选择层瓶颈定量，读它之前先读 [[current_task]] §一ter** |
-| experiment_report_20260624 / 20260629 | 历史组会报告，展示指标演进链 |
-| [[p1_design_20260702]] | P1 路线已关闭，但 §9 的**离线校准流水线**（共享采样器/真实 prompt 日志/预注册闸门/预算配平消融）是可复用方法论——训练线的标签管道会直接用到 |
-| [[architecture_optimization_20260701]] | P0/P3 路线的关闭证据（waypoint 覆盖诊断、几何注入设计）——论文 §4.3/§4.5 的出处 |
-| e1_calibration / e1_calibration_20260630 / e1_calibration_20260702 | 三代校准图表（A0/max 代、4B 代、9B 干净代各不相同，勿去重）；最新数据以 paper_analysis/e1_clean9b.txt 为准 |
+路径均相对于 `Controlled-Navigation-Harness/`。
 
-## 三、归档（archive/，停止引用）
-
-| 位置 | 内容 | 归档原因 |
+| 位置 | 内容 | 使用规则 |
 |---|---|---|
-| `archive/superseded_方案/` | 总方案四代（异构pipeline→可靠终止→AAAI上升版→性能优先）、aaai_execution_plan、近目标终止两篇、M2 方案、对话交接-20260626 | 战略代际更替：终止叙事被转化率封顶否定 → 性能优先被 oracle 审计重置 → AAAI 路线被 7/6 弃 DDL 决策终结。各文件头部有 superseded 标注与指针 |
-| `archive/era_0610-0623/` | code_1、code_review 两篇、sr_/v_series_ 五篇、latest_run_comparison | V/U 系列早期代际的工作文档，已被后续代际完全消化 |
-| `archive/duplicates/` | 文件名带 `1` 后缀的两份 | 同步产生的重复副本（一份逐位相同、一份为缺 superseded 头的旧版） |
+| `archive/reference/experiment_records/` | 2026-06 至 2026-07 的逐轮实验台账和汇总日志 | 保留原始 provenance；不能用旧配置覆盖新实验口径 |
+| `archive/reference/reports/` | 历史组会、方向和风格审查报告 | 用于复盘，不直接定义当前任务 |
+| `archive/reference/design_evidence/` | ACN/L1/C5 规格、全链路审查、OSR 与动作接口分析等 | 作为设计依据；结论以当前执行入口的勘误为准 |
+| `archive/reference/calibration/` | 三代 E1 校准图表和说明 | 各代模型与数据口径不同，不合并或去重 |
 
-## 四、整理时发现的待办
+主要历史判断的当前位置：
 
-1. [[项目总控]] 与 [[current_task]] 尚未更新至 7/6 新战略（弃 DDL、性能+创新、训练解禁、锚点机制入队）——下一次会话第一件事。
-2. 知识的时间线速查：**当前有效数字** = clean_baseline_v1（SR 16/OSR 21）；24% 及其之前的所有 SR 均带 oracle（见 20260706 组会报告 §6），引用历史数字时必须带此脚注。
+| 文档 | 当前位置 |
+|---|---|
+| [[状态串联项目-问题审查与下一步-20260831]] | `archive/reference/design_evidence/`；已由当前工作任务和主 Pipeline 设计承接 |
+| [[全链条重审-状态维度-20260730]] | `archive/reference/design_evidence/` |
+| [[ACN代码落地与首轮离线结果-20260805]] | `archive/reference/design_evidence/` |
+| [[L1规格-约束队列进度定位-20260802]] | `archive/reference/design_evidence/` |
+| [[C5规格-拓扑记忆接入决策-20260805]] | `archive/reference/design_evidence/` |
+
+## 四、停止引用的旧代际
+
+| 位置 | 内容 | 原因 |
+|---|---|---|
+| `archive/superseded_方案/` | 旧总方案、AAAI 执行计划、近目标终止和旧实验框架 | 已被后续战略、oracle 审计或新框架替代 |
+| `archive/era_0610-0623/` | 早期代码审查、SR/V 系列方案和运行比较 | 已被后续实现和证据链消化 |
+| `archive/duplicates/` | 同步产生的重复副本 | 只保留用于历史核对 |
+| `archive/*-封存-*.md` 等根级文件 | 早期 V/U/L 系列与自由工具调用方案 | 明确封存，不再驱动行动 |
+
+## 五、引用纪律
+
+1. 代码存在、离线结果和在线收益必须分别表述。
+2. 当前主链事实以 [[全链路状态与模块输入输出-20260901]] 和实际 resolved config 为准。
+3. 目标架构以 [[主Pipeline重构设计-20260901]] 为准，但其 `status: proposed`，不能写成已实现。
+4. 历史 SR/OSR 必须同时给出配置、episode 数和来源；SR 16/OSR 21 与 SR 20/OSR 25 不得混成同一基线。
+5. Wiki 链接按文件 basename 解析；移动到 archive 后仍保持唯一文件名，避免建立重复副本。
+
+## 六、目录边界
+
+```text
+Controlled-Navigation-Harness/
+├─ docs/                         当前执行入口、框架和运维
+└─ archive/
+   ├─ reference/                 有效历史证据，不驱动当前行动
+   │  ├─ experiment_records/
+   │  ├─ reports/
+   │  ├─ design_evidence/
+   │  └─ calibration/
+   ├─ superseded_方案/           已被替代方案
+   ├─ era_0610-0623/             早期代际
+   └─ duplicates/                重复副本
+```

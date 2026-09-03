@@ -102,7 +102,12 @@ def _safe_float(value: Any) -> Optional[float]:
 
 
 class PhaseEvidenceTracker:
-    """Builds U0/U1 phase evidence without changing navigation behavior."""
+    """Builds U0/U1 phase evidence from non-oracle inputs.
+
+    ``recent_distance_gains`` is retained only for trace compatibility and audit
+    comparison. It is simulator goal-distance information and must never choose a
+    phase or alter selector context.
+    """
 
     def __init__(
         self,
@@ -128,6 +133,8 @@ class PhaseEvidenceTracker:
         completed_count = _completed_action_count(estimation, action_list)
         action_count = len(action_list)
         final_action_completed = bool(action_count and completed_count >= action_count)
+        # Keep the historical field for offline comparison, but mark it explicitly as
+        # audit-only. The phase decision below must not branch on this list.
         gains = [
             value
             for value in (_safe_float(item) for item in (recent_distance_gains or []))
@@ -142,14 +149,10 @@ class PhaseEvidenceTracker:
         phase = "unknown"
         confidence = self.unknown_confidence_threshold
         reason = "no reliable phase signal"
-        if trigger_type in {"selector_empty", "stop_rejected", "negative_gain", "loop"}:
+        if trigger_type in {"selector_empty", "stop_rejected", "loop"}:
             phase = "recover"
             confidence = 0.78
             reason = "recent failure trigger: {}".format(trigger_type)
-        elif current_step >= self.late_step_threshold and non_positive_count >= 2:
-            phase = "recover"
-            confidence = 0.7
-            reason = "late step with repeated non-positive distance gain"
         elif final_action_completed or stop_gate_metadata.get("final_action_completed"):
             phase = "verify"
             confidence = 0.75
@@ -189,6 +192,9 @@ class PhaseEvidenceTracker:
             "recent_progress": {
                 "recent_distance_gains": gains,
                 "non_positive_gain_count": non_positive_count,
+                "source": "simulator_goal_distance_audit_only",
+                "decision_effect": False,
+                "abstained": True,
             },
             "last_failure": {
                 "trigger_type": trigger_type,

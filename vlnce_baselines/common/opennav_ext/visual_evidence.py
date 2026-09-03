@@ -450,6 +450,7 @@ class VisualEvidenceLogger:
                 '"missing_instruction_terms":["string"],'
                 '"final_target_visible":false,'
                 '"arrival_evidence":false,'
+                '"target_direction_id":"string|null",'
                 '"spatial_notes":"<=40 chars",'
                 '"confidence":0.0}}]}}\n'
                 "Keep arrays short: at most 5 visible, 5 matched, 5 missing."
@@ -480,6 +481,7 @@ class VisualEvidenceLogger:
             '      "missing_instruction_terms": ["string"],\n'
             '      "final_target_visible": false,\n'
             '      "arrival_evidence": false,\n'
+            '      "target_direction_id": "string|null",\n'
             '      "spatial_notes": "short string",\n'
             '      "confidence": 0.0\n'
             "    }}\n"
@@ -516,7 +518,9 @@ class VisualEvidenceLogger:
             "destination/STOP target is visible in the current panoramic view. "
             "Set arrival_evidence=true only when the current position appears "
             "at or immediately beside that target, not merely when the target "
-            "is visible down a path.\n"
+            "is visible down a path. Set target_direction_id to the exact "
+            "direction label of the tile containing the final target; use null "
+            "when it cannot be localized.\n"
             "The top-level JSON value must be an object with a \"candidates\" "
             "key. Return exactly one candidate whose candidate_id is "
             "{candidate_id}. Return minified JSON only, no markdown. Schema: "
@@ -526,6 +530,7 @@ class VisualEvidenceLogger:
             '"missing_instruction_terms":["string"],'
             '"final_target_visible":false,'
             '"arrival_evidence":false,'
+            '"target_direction_id":"string|null",'
             '"spatial_notes":"<=40 chars",'
             '"confidence":0.0}}]}}\n'
             "Keep arrays short: at most 5 visible, 5 matched, 5 missing."

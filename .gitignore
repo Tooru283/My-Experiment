@@ -14,6 +14,7 @@ logs/checkpoints/
 logs/**/*.pid
 
 # Datasets and local simulator assets
+config/bailian.env
 data/scene_datasets/mp3d/
 data/pretrained_models/ddppo-models/
 

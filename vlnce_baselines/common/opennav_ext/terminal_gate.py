@@ -89,3 +89,21 @@ class TerminalGate:
             ),
             "degenerate": False,
         }
+
+def gate_stop_request(
+    stop_requested: bool,
+    reason: str,
+    gate_result: Optional[Dict[str, Any]],
+    decision_effect_enabled: bool,
+):
+    """Return ``(stop_requested, reason, blocked)`` for L4 action wiring.
+
+    The function is intentionally independent of the trainer so a unit test can
+    prove that a logged L4 block becomes a non-STOP action when enabled.
+    """
+    if not stop_requested or not decision_effect_enabled:
+        return bool(stop_requested), reason, False
+    gate = gate_result if isinstance(gate_result, dict) else {}
+    if gate.get("allow_stop", True):
+        return True, reason, False
+    return False, "", True

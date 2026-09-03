@@ -143,6 +143,9 @@ def validate_a1_harness_config(config: Any) -> None:
     multimodal_selector_decision_effect = module_enabled(
         config, "MULTIMODAL_SELECTOR_CONTEXT"
     ) and not module_log_only(config, "MULTIMODAL_SELECTOR_CONTEXT")
+    progress_locator_decision_effect = module_enabled(
+        config, "PROGRESS_LOCATOR"
+    ) and not module_log_only(config, "PROGRESS_LOCATOR")
     u_unit = u_decision_effect_unit(config)
     u_phase_decision_effect = u_module_enabled(
         config, "PHASE_EVIDENCE"
@@ -159,6 +162,7 @@ def validate_a1_harness_config(config: Any) -> None:
     decision_effect_modules = (
         visual_target_verifier_decision_effect
         or multimodal_selector_decision_effect
+        or progress_locator_decision_effect
         or u_decision_effect_modules
     )
     if decision_effect_enabled(config) and not decision_effect_modules:
@@ -179,6 +183,38 @@ def validate_a1_harness_config(config: Any) -> None:
         )
     if not harness_logging_enabled(config):
         return
+    harness = _harness_node(config)
+    pipeline = _cfg_get(harness, "PIPELINE", None)
+    progress_provider = str(
+        _cfg_get(pipeline, "PROGRESS_PROVIDER", "acn_l1") or "acn_l1"
+    ).lower()
+    if progress_provider != "acn_l1":
+        raise ValueError(
+            "OPENNAV_HARNESS.PIPELINE.PROGRESS_PROVIDER must be acn_l1; "
+            "LLM completion fallback has been removed."
+        )
+    stop_policy = str(
+        _cfg_get(pipeline, "STOP_POLICY", "coordinated_v1")
+        or "coordinated_v1"
+    ).lower()
+    if stop_policy != "coordinated_v1":
+        raise ValueError(
+            "OPENNAV_HARNESS.PIPELINE.STOP_POLICY must be coordinated_v1; "
+            "parallel legacy STOP submission is not supported."
+        )
+    action_compiler = str(
+        _cfg_get(pipeline, "ACTION_COMPILER", "action_compiler.v1")
+        or "action_compiler.v1"
+    ).lower()
+    if action_compiler != "action_compiler.v1":
+        raise ValueError(
+            "OPENNAV_HARNESS.PIPELINE.ACTION_COMPILER must be action_compiler.v1."
+        )
+    if not progress_locator_decision_effect:
+        raise ValueError(
+            "PROGRESS_PROVIDER=acn_l1 requires PROGRESS_LOCATOR.ENABLED=true "
+            "and PROGRESS_LOCATOR.LOG_ONLY=false."
+        )
     if u_node is not None:
         valid_units = {"none", "U1", "U2", "U3", "combined"}
         if u_unit not in valid_units:

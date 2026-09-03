@@ -15,10 +15,9 @@ Output schema (strict, so offline spot-checks are cheap):
 
 `kind`/`key` are what L1's constraint queue consumes; the other fields are for auditing.
 
-⚠ Alignment rate is an input precondition for L1, not an output of it. Measured on the
-100-episode trace: landmarks align to the action sequence in 91/100 episodes. The other 9
-produce anchors with ``landmark=None`` and MUST take L1's abstain branch rather than being
-silently advanced past.
+Alignment failures are explicit in v2: supported-but-unverifiable actions use a logged
+``skip`` policy, while malformed parse failures abstain and cannot silently advance. Pure
+terminal directives are removed from the progress queue and recorded in terminal_policy.
 """
 import re
 from typing import Any, Dict, List, Optional
@@ -43,6 +42,13 @@ _ACTION_VERB = re.compile(
     re.I,
 )
 _SPLIT = re.compile(r"[,\n;]| then ", re.I)
+_LIST_PREFIX = re.compile(r"^\s*(?:[-*]\s*|\d+\s*[.):、-]\s*)")
+_TERMINAL_DIRECTIVE = re.compile(
+    r"^\s*(?:stop|wait|stay|stand|pause)\b", re.I
+)
+
+ANCHOR_CHAIN_SCHEMA_VERSION = "opennav.anchor_chain.v2"
+DEFAULT_CONSECUTIVE_HITS = 2
 
 
 def _split_list(value: Any) -> List[str]:
@@ -52,7 +58,43 @@ def _split_list(value: Any) -> List[str]:
         parts = [str(v) for v in value]
     else:
         parts = _SPLIT.split(str(value))
-    return [p.strip() for p in parts if p and p.strip()]
+    cleaned = []
+    for part in parts:
+        if not part or not str(part).strip():
+            continue
+        item = _LIST_PREFIX.sub("", str(part)).strip()
+        if item:
+            cleaned.append(item)
+    return cleaned
+
+
+def _verification(kind: str, parse_status: str) -> Dict[str, Any]:
+    if kind == "location":
+        return {
+            "predicate": "location_dominant",
+            "parameters": {"min_view_ratio": 0.5, "min_consecutive_hits": 2},
+            "on_unverifiable": "abstain",
+        }
+    if kind == "object":
+        return {
+            "predicate": "object_nearby",
+            "parameters": {
+                "max_waypoint_distance_m": 3.0,
+                "min_consecutive_hits": 2,
+            },
+            "on_unverifiable": "abstain",
+        }
+    if kind == "direction":
+        return {
+            "predicate": "odometry_motion",
+            "parameters": {"min_consecutive_hits": 1},
+            "on_unverifiable": "abstain",
+        }
+    return {
+        "predicate": "unverifiable",
+        "parameters": {"min_consecutive_hits": 1},
+        "on_unverifiable": "skip" if parse_status == "unsupported" else "abstain",
+    }
 
 
 def _room_in(text: str) -> Optional[str]:
@@ -79,15 +121,55 @@ def _action_verb(text: str) -> Optional[str]:
     return m.group(1).lower() if m else None
 
 
+def _coalesce_terminal_clauses(parts: List[str]) -> List[str]:
+    """Keep descriptive comma clauses attached to a preceding terminal action."""
+    merged: List[str] = []
+    for part in parts:
+        low = part.lower()
+        continuation = (
+            bool(merged)
+            and bool(_TERMINAL_DIRECTIVE.match(merged[-1].lower()))
+            and not _TERMINAL_DIRECTIVE.match(low)
+            and _action_verb(low) is None
+            and not _DIRECTION_VERB.search(low)
+        )
+        if continuation:
+            merged[-1] = merged[-1] + ", " + part
+        else:
+            merged.append(part)
+    return merged
+
+
+def _terminal_target(text: str, landmarks: List[str]) -> Optional[str]:
+    """Choose the earliest mentioned target; prefer the longest phrase on a tie."""
+    matches = []
+    for landmark in landmarks:
+        if not landmark:
+            continue
+        pos = text.find(landmark)
+        if pos >= 0:
+            matches.append((pos, -len(landmark), landmark))
+    return min(matches)[2] if matches else None
+
+
 def build_anchor_chain(actions: Any, landmarks: Any) -> Dict[str, Any]:
     """actions/landmarks -> ordered anchor chain. Pure function, no side effects."""
-    acts = _split_list(actions)
+    acts = _coalesce_terminal_clauses(_split_list(actions))
     lms = [l.lower() for l in _split_list(landmarks)]
     anchors: List[Dict[str, Any]] = []
+    terminal_directives: List[str] = []
+    terminal_targets: List[Optional[str]] = []
     used_landmarks = set()
 
     for idx, raw in enumerate(acts):
         low = raw.lower()
+        if _TERMINAL_DIRECTIVE.match(low):
+            terminal_directives.append(raw)
+            terminal_target = _terminal_target(low, lms)
+            terminal_targets.append(terminal_target)
+            if terminal_target is not None:
+                used_landmarks.add(terminal_target)
+            continue
         room = _room_in(low)
         # a landmark counts as aligned to this action only if it literally occurs in it;
         # this is conservative on purpose -- a wrong alignment is worse than an abstain
@@ -108,9 +190,12 @@ def build_anchor_chain(actions: Any, landmarks: Any) -> Dict[str, Any]:
         else:
             kind, key = "unknown", None
 
+        parse_status = "parsed" if kind != "unknown" else (
+            "unsupported" if _action_verb(low) is not None else "parse_failure"
+        )
         anchors.append(
             {
-                "idx": idx,
+                "idx": len(anchors),
                 "landmark": landmark,
                 "room": room,
                 "action": _action_verb(low),
@@ -118,14 +203,20 @@ def build_anchor_chain(actions: Any, landmarks: Any) -> Dict[str, Any]:
                 "terminal": False,
                 "kind": kind,
                 "key": key,
+                "parse_status": parse_status,
+                "verification": _verification(kind, parse_status),
+                "terminal_target": False,
             }
         )
 
     if anchors:
         anchors[-1]["terminal"] = True
+        anchors[-1]["terminal_target"] = not any(terminal_targets)
+        anchors[-1]["terminal_predecessor"] = bool(terminal_directives)
 
     aligned = sum(1 for a in anchors if a["landmark"] is not None or a["room"] is not None)
     return {
+        "schema_version": ANCHOR_CHAIN_SCHEMA_VERSION,
         "anchors": anchors,
         "n_anchors": len(anchors),
         "n_landmarks": len(lms),
@@ -138,4 +229,18 @@ def build_anchor_chain(actions: Any, landmarks: Any) -> Dict[str, Any]:
             for k in ("location", "object", "direction", "unknown")
         },
         "degenerate": not anchors,
+        "terminal_policy": {
+            "present": bool(terminal_directives),
+            "directives": terminal_directives,
+            "target": (
+                next((target for target in reversed(terminal_targets) if target), None)
+                or (anchors[-1].get("key") if anchors else None)
+            ),
+            "predicate": "coordinated_stop",
+            "requires": [
+                "chain_complete", "all_previous_verified",
+                "final_target_evidence", "stop_coordinator_allow",
+            ],
+            "in_progress_queue": False,
+        },
     }

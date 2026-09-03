@@ -36,29 +36,53 @@ from vlnce_baselines.common.opennav_ext import (
     ConstraintQueueLocator,
     LandmarkPool,
     TerminalGate,
+    gate_stop_request,
+    build_route_state,
+    ActionCommand,
+    DecisionRecord,
+    StopProposal,
+    StopEvidenceItem,
+    StopCoordinator,
+    ActionCompiler,
+    ResolvedAction,
+    build_m3_2_evidence_items,
+    build_action_receipt,
+    build_observation_frame,
+    RouteStateReducer,
+    ACNL1ProgressProvider,
+    direction_aligned_terminal_result,
+    weak_generic_close_is_confirmed,
+    TerminalEvidenceMemory,
+    TerminalInstanceTracker,
+    is_weak_generic_terminal,
+    terminal_target_is_confirmed,
 )
 from vlnce_baselines.common.opennav_ext.landmark_matching import (
     final_landmark_terms,
+)
+from vlnce_baselines.common.opennav_ext.harness_config import (
     arrival_gate_config,
     arrival_gate_enabled,
     proactive_stop_gate_config,
     proactive_stop_gate_enabled,
-    build_candidate_records,
     decision_effect_enabled,
     fail_open_enabled,
     get_trace_dir,
     harness_logging_enabled,
     module_enabled,
     module_log_only,
-    selected_distance_gain,
-    summarize_step_outputs,
-    build_decision_audit,
     u_decision_effect_unit,
     u_module_enabled,
     u_module_log_only,
     u_series_enabled,
     validate_a1_harness_config,
 )
+from vlnce_baselines.common.opennav_ext.agent_state import build_candidate_records
+from vlnce_baselines.common.opennav_ext.oracle_metrics import (
+    selected_distance_gain,
+    summarize_step_outputs,
+)
+from vlnce_baselines.common.opennav_ext.decision_audit import build_decision_audit
 from vlnce_baselines.common.opennav_ext import candidate_prior
 from vlnce_baselines.common.opennav_ext.backtrack_policy import (
     BacktrackPolicy,
@@ -155,6 +179,24 @@ def _current_view_depth_array(observations):
     return None
 
 
+def _direction_depth_array(observations, direction_id):
+    """Return the raw metric-depth frame for an observed panorama direction."""
+    try:
+        obs0 = observations[0] if isinstance(observations, (list, tuple)) else observations
+        if not isinstance(obs0, dict):
+            return None
+        index = int(direction_id)
+        depth_keys = [
+            key for key in obs0.keys()
+            if "depth" in str(key).lower() and not str(key).startswith("tilt_")
+        ]
+        if index < 0 or index >= len(depth_keys):
+            return None
+        return obs0[depth_keys[index]]
+    except (TypeError, ValueError, IndexError, KeyError):
+        return None
+
+
 def _metric_depth_center_median(depth_array, min_depth, max_depth, normalize, center_frac):
     """Median metric depth (m) of the center patch, or None if unusable (fail-open).
 
@@ -182,6 +224,33 @@ def _metric_depth_center_median(depth_array, min_depth, max_depth, normalize, ce
         if normalize:
             return median_val * (float(max_depth) - float(min_depth)) + float(min_depth)
         return median_val
+    except Exception:
+        return None
+
+
+def _metric_depth_near_surface(
+    depth_array, min_depth, max_depth, normalize, center_frac=0.70,
+    percentile=20.0,
+):
+    """Estimate distance to an opening's frame, not through its empty center."""
+    try:
+        arr = np.asarray(depth_array, dtype=np.float32)
+        if arr.ndim == 3 and arr.shape[-1] == 1:
+            arr = arr[..., 0]
+        if arr.ndim != 2 or arr.size == 0:
+            return None
+        h, w = arr.shape
+        half_h = max(1, int(h * float(center_frac) / 2.0))
+        half_w = max(1, int(w * float(center_frac) / 2.0))
+        cy, cx = h // 2, w // 2
+        patch = arr[cy - half_h:cy + half_h, cx - half_w:cx + half_w]
+        vals = patch[patch > 1e-6]
+        if vals.size == 0:
+            return None
+        value = float(np.percentile(vals, float(percentile)))
+        if normalize:
+            return value * (float(max_depth) - float(min_depth)) + float(min_depth)
+        return value
     except Exception:
         return None
 
@@ -561,6 +630,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         terminal_gate = None
         terminal_gate_decision_effect = False
         context_builder = None
+        route_state_reducer = None
+        progress_provider = None
+        stop_coordinator = StopCoordinator({
+            "required_evaluators": ("v2", "progress"),
+            "opposing_evaluators": ("v2", "progress"),
+            "policy_version": "coordinated_v2.independent_v2_progress",
+        })
+        action_compiler = ActionCompiler()
         u_series_active = False
         u_decision_unit = "none"
         phase_evidence_tracker = None
@@ -573,7 +650,6 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         recovery_policy_decision_effect = False
         max_recovery_per_episode = 2
         oracle_metrics_enabled = False
-        completion_max_tokens = 0
         navigator_max_tokens = 0
         thought_fusion_max_tokens = 0
         decision_max_tokens = 0
@@ -602,6 +678,20 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 fail_open=fail_open_enabled(config),
                 logger=nav_logger,
             )
+            harness_logger.log_event(
+                "run_metadata",
+                0,
+                {
+                    "config_snapshot": os.environ.get("OPENNAV_CONFIG_SNAPSHOT"),
+                    "resolved_config_sha256": os.environ.get("OPENNAV_CONFIG_SHA256"),
+                    "exp_config_sha256": os.environ.get("OPENNAV_EXP_CONFIG_SHA256"),
+                    "llm": config.LLM,
+                    "visual_evidence_model": os.environ.get("OPENNAV_LLM_MODEL"),
+                    "visual_evidence_base_url": os.environ.get("OPENNAV_LLM_BASE_URL"),
+                    "trace_dir": get_trace_dir(config),
+                },
+            )
+
             if module_enabled(config, "GEOMETRY_QUERY"):
                 geometry_query = GeometryQueryLogger()
             if module_enabled(config, "GROUNDER_DIAGNOSTIC"):
@@ -609,8 +699,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             if module_enabled(config, "VISUAL_EVIDENCE"):
                 visual_evidence_config = config.OPENNAV_HARNESS.VISUAL_EVIDENCE
                 visual_evidence = VisualEvidenceLogger(
-                    base_url=visual_evidence_config.BASE_URL,
-                    model=visual_evidence_config.MODEL,
+                    base_url=os.environ.get("OPENNAV_LLM_BASE_URL", visual_evidence_config.BASE_URL),
+                    model=os.environ.get("OPENNAV_LLM_MODEL", visual_evidence_config.MODEL),
+                    api_key=(
+                        os.environ.get("OPENNAV_LLM_API_KEY")
+                        or os.environ.get("DASHSCOPE_API_KEY")
+                        or getattr(config, "API_KEY", "not-needed")
+                    ),
                     max_candidates=visual_evidence_config.MAX_CANDIDATES,
                     max_image_edge=visual_evidence_config.MAX_IMAGE_EDGE,
                     max_tokens=visual_evidence_config.MAX_TOKENS,
@@ -780,6 +875,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 )
             if module_enabled(config, "CONTEXT_BUILDER"):
                 context_builder = ContextBuilder()
+            route_state_reducer = RouteStateReducer(
+                anchor_chain_enabled=anchor_chain_enabled,
+                progress_locator=progress_locator,
+                spatial_graph=memory_diagnostic,
+                landmark_pool=landmark_pool,
+                terminal_gate=terminal_gate,
+            )
+            progress_provider = ACNL1ProgressProvider(route_state_reducer)
             if u_series_enabled(config):
                 u_series_active = True
                 u_decision_unit = u_decision_effect_unit(config)
@@ -1015,16 +1118,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             # (scores, ranks) from this step's prior; consumed by the override hook
             # after the selector has spoken. Reset each step alongside the candidates.
             latest_candidate_prior = None
-            # ---- progress estimator mode ---------------------------------------
-            # "rule" skips the per-step text LLM call (15.7 s) and derives the
-            # executed-action list from the step counter. See default.py for the
-            # measurements that motivate it.
-            _ce_cfg = getattr(config.OPENNAV_HARNESS, "COMPLETION_ESTIMATION", None)
-            completion_mode = str(
-                getattr(_ce_cfg, "MODE", "llm") if _ce_cfg is not None else "llm"
-            ).lower()
-            if completion_mode not in {"llm", "rule"}:
-                completion_mode = "llm"
+            # ACN L1 is the only completion progress provider.
+            progress_provider_name = "acn_l1"
 
             def _candidate_prior_override(selector_vp):
                 """Override the selector when the prior is decisively ahead.
@@ -1356,7 +1451,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 "[HARNESS SWITCHES] depth_stop_veto={} (max_dist={}m) backtrack={} "
                 "(max/ep={}) endgame_tilt={} (pitch={}deg log_only={} cap={} "
                 "gap={} on_stop={} arm_fc={}) cand_prior={} (log_only={} min_gap={}) "
-                "completion={} u_series={} unit={} geometry_injection={}".format(
+                "progress_provider={} u_series={} unit={} geometry_injection={}".format(
                     depth_veto_enabled, depth_veto_dist,
                     backtrack_enabled, backtrack_max_per_episode,
                     tilt_enabled, tilt_pitch_deg, tilt_log_only,
@@ -1364,7 +1459,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     tilt_always_on_stop, tilt_arm_final_clause,
                     candidate_prior_enabled, candidate_prior_log_only,
                     candidate_prior_min_gap,
-                    completion_mode,
+                    progress_provider_name,
                     u_module_enabled(config, "PHASE_EVIDENCE"),
                     u_decision_unit,
                     geometry_injection_enabled,
@@ -1413,9 +1508,6 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             oracle_metrics_enabled = module_enabled(config, "ORACLE_METRICS")
             llm_runtime_config = getattr(config.OPENNAV_HARNESS, "LLM_RUNTIME", None)
             if llm_runtime_config is not None:
-                completion_max_tokens = getattr(
-                    llm_runtime_config, "COMPLETION_MAX_TOKENS", 0
-                )
                 navigator_max_tokens = getattr(
                     llm_runtime_config, "NAVIGATOR_MAX_TOKENS", 0
                 )
@@ -1465,7 +1557,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     )
                 )
 
-        def run_harness_tool(tool_name, step_id, fallback, func, *args, **kwargs):
+        def run_harness_tool(tool_name, trace_step_id, fallback, func, *args, **kwargs):
             if not harness_enabled or func is None:
                 return fallback
             start_time = time.perf_counter()
@@ -1474,7 +1566,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 return result
             except Exception as exc:
                 if harness_logger is not None:
-                    harness_logger.log_tool_failure(tool_name, step_id, exc)
+                    harness_logger.log_tool_failure(tool_name, trace_step_id, exc)
                 if isinstance(fallback, dict):
                     failure_payload = dict(fallback)
                     failure_payload.update(
@@ -1492,7 +1584,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 record_runtime_latency(
                     tool_name,
                     active_navigation_episode_id,
-                    step_id,
+                    trace_step_id,
                     time.perf_counter() - start_time,
                     category="harness_tool",
                 )
@@ -1657,6 +1749,54 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             )
             if harness_enabled and harness_logger is not None:
                 harness_logger.log_event(event_name, step, payload or {})
+
+        def log_route_state(stage, selected_candidate=None, stop_requested=False,
+                            stop_reason="", action_result=None):
+            if not harness_enabled or harness_logger is None:
+                return
+            state = build_route_state(
+                episode_id=current_episode_id,
+                step_id=current_step,
+                stage=stage,
+                instruction=instruction,
+                actions=actions,
+                landmarks=landmarks,
+                anchors=_anchors,
+                anchor_chain_result=anchor_chain_result,
+                progress_locator_result=progress_locator_results,
+                progress_update_result=(
+                    progress_update_contract.to_dict()
+                    if progress_update_contract is not None
+                    else None
+                ),
+                progress_locator_decision_effect=progress_locator_decision_effect,
+                phase_evidence=latest_phase_evidence,
+                spatial_memory_result=memory_results,
+                landmark_pool_result=landmark_pool_results,
+                failure_status=latest_failure_signal,
+                terminal_gate_result=terminal_gate_results,
+                stop_decision_result=(
+                    m3_stop_decision.to_dict()
+                    if m3_stop_decision is not None
+                    else None
+                ),
+                stop_evidence_items=[
+                    item.to_dict() for item in m3_stop_evidence_items
+                ],
+                candidate_ids=[getattr(c, "candidate_id", None) for c in candidates],
+                selected_candidate=selected_candidate,
+                stop_requested=stop_requested,
+                stop_reason=stop_reason,
+                step_limit=step_length,
+                action_result=action_result,
+            )
+            write_navigation_record(
+                "route_state",
+                episode_id=current_episode_id,
+                step=current_step,
+                state=state,
+            )
+            harness_logger.log_event("route_state", current_step, {"state": state})
 
         unit_override_records = []
 
@@ -1828,6 +1968,14 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         latest_phase_evidence = {}
         latest_failure_signal = {}
         recent_ftv_window: List[bool] = []
+        terminal_evidence_memory = TerminalEvidenceMemory(
+            max_age_steps=2, max_displacement_m=2.25
+        )
+        terminal_instance_tracker = TerminalInstanceTracker(
+            max_position_delta_m=2.25
+        )
+        episode_forward_translation_m = 0.0
+        episode_forward_move_steps = 0
         # Backtracking (hunk 4) episode-scoped state. Initialized pre-loop so the
         # per-step position append cannot NameError on an episode's first step
         # (the per-episode reset block runs later in the loop body). Reset again
@@ -1837,6 +1985,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
         backtrack_budget_remaining = backtrack_max_per_episode
         backtrack_blocked_headings: set = set()
         just_backtracked = False
+        active_anchor_chain_result = {}
+        active_anchors = []
         while envs.num_envs > 0 and len(stats_episodes) < episodes_to_eval:
             current_episodes = envs.current_episodes()
             positions = []; headings = []
@@ -1871,13 +2021,6 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         "headings": headings,
                     },
                 )
-                if memory_diagnostic is not None:
-                    run_harness_tool(
-                        "memory_reset",
-                        0,
-                        None,
-                        memory_diagnostic.reset_episode,
-                    )
                 if visual_evidence_memory is not None:
                     run_harness_tool(
                         "visual_evidence_memory_reset",
@@ -1898,47 +2041,55 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             else:
                 actions = actions_cache[instruction]["actions"]
                 landmarks = actions_cache[instruction]["landmarks"]
-            nav_logger.info("Actions: "+actions)
-            nav_logger.info("Landmarks: " + landmarks)
-            # ---- ACN L0: build the anchor chain and arm L1/M2 for this episode ----
-            # Placed here (not in the harness reset block above) because it needs
-            # actions/landmarks, which are produced a few lines up. Deterministic and
-            # cache-backed, so this adds no LLM call.
-            anchor_chain_result = {}
-            if anchor_chain_enabled and harness_enabled and harness_logger is not None:
-                anchor_chain_result = run_harness_tool(
-                    "anchor_chain", 0, {}, build_anchor_chain, actions, landmarks
-                ) or {}
-                harness_logger.log_event("anchor_chain", 0, anchor_chain_result)
-            _anchors = (
-                anchor_chain_result.get("anchors", [])
-                if isinstance(anchor_chain_result, dict)
-                else []
-            )
-            if progress_locator is not None:
-                run_harness_tool(
-                    "progress_locator_reset", 0, None,
-                    progress_locator.reset_episode, _anchors,
-                )
-            if landmark_pool is not None:
-                # M2 vocabulary = the categories the anchor chain asks about. Without it
-                # the pool is a RAM tag dump (median 92 entries) and L4's evidence
-                # conjunct is vacuously true in every episode.
-                _pool_vocab = [a.get("key") for a in _anchors if a.get("key")] + [
-                    a.get("landmark") for a in _anchors if a.get("landmark")
-                ]
-                run_harness_tool(
-                    "landmark_pool_reset", 0, None, landmark_pool.reset_episode,
-                    _pool_vocab,
-                )
+            # ACN state is episode-scoped. Keep the last chain for all later steps;
+            # resetting L1/M2 here would erase the very cross-step state they provide.
+            anchor_chain_result = active_anchor_chain_result
+            _anchors = active_anchors
             if active_navigation_episode_id != current_episode_id:
                 active_navigation_episode_id = current_episode_id
+                active_anchor_chain_result = run_harness_tool(
+                    "route_state_reducer_reset",
+                    0,
+                    {},
+                    route_state_reducer.reset_episode
+                    if route_state_reducer is not None
+                    else None,
+                    current_episode_id,
+                    actions,
+                    landmarks,
+                ) or {}
+                if progress_provider is None:
+                    raise RuntimeError(
+                        "ACN L1 progress provider is required; LLM completion fallback is disabled"
+                    )
+                progress_provider.reset_episode(current_episode_id)
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_event(
+                        "anchor_chain", 0, active_anchor_chain_result
+                    )
+                    harness_logger.log_event(
+                        "route_state_reducer_reset",
+                        0,
+                        route_state_reducer.snapshot(),
+                    )
+                active_anchors = (
+                    active_anchor_chain_result.get("anchors", [])
+                    if isinstance(active_anchor_chain_result, dict)
+                    else []
+                )
+                anchor_chain_result = active_anchor_chain_result
+                _anchors = active_anchors
                 recent_distance_gains = []
                 latest_goal_dist = None
                 recovery_budget_remaining = max_recovery_per_episode
                 latest_phase_evidence = {}
                 latest_failure_signal = {}
                 recent_ftv_window: List[bool] = []
+                terminal_evidence_memory.reset()
+                terminal_instance_tracker.reset(current_episode_id)
+                episode_forward_translation_m = 0.0
+                episode_forward_move_steps = 0
+                route_last_pre_action_position = None
                 # Backtracking per-episode reset (guarantees no cross-episode leakage
                 # into a firing decision; a firing needs a full fresh pose window).
                 recent_positions_history = []
@@ -1994,6 +2145,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             stop_flag = False
             stop_reason = ""
             current_step += 1
+            m3_stop_proposals = []
+            m3_stop_evidence_items = []
+            m3_stop_decision = None
+            m3_preplanner_stop_decided = False
             nav_logger.info(f"-------------------- Step {current_step} --------------------")
             write_navigation_record(
                 "step_start",
@@ -2037,6 +2192,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             progress_locator_results = {}
             landmark_pool_results = {}
             terminal_gate_results = {}
+            progress_update_contract = None
             if harness_enabled and harness_logger is not None:
                 candidates = build_candidate_records(
                     radius_dict,
@@ -2063,6 +2219,26 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             )
             selector_observation = observation
             selector_observe_dict = observe_dict
+            observation_frame_contract = run_harness_tool(
+                "pipeline_observation_frame",
+                current_step,
+                None,
+                build_observation_frame,
+                episode_id=current_episode_id,
+                step_id=current_step,
+                instruction=instruction,
+                candidates=candidates,
+                observe_dict=observe_dict,
+                position=positions[0] if positions else None,
+                heading=headings[0] if headings else None,
+                plan_ref="{}:plan".format(current_episode_id),
+            )
+            if observation_frame_contract is not None and harness_logger is not None:
+                harness_logger.log_event(
+                    "pipeline_observation_frame",
+                    current_step,
+                    observation_frame_contract.to_dict(),
+                )
             # Backtracking (hunk 4): decide whether MOVE_BACK is on the menu this step,
             # from observable signals only (ego displacement stall OR waypoint dead-end).
             # dead_end := len(radius_dict) == 0 (NO forward candidate). This is a
@@ -2335,7 +2511,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     "memory_diagnostic",
                     current_step,
                     {},
-                    memory_diagnostic.update
+                    route_state_reducer.update_spatial
                     if memory_diagnostic is not None
                     else None,
                     current_step,
@@ -2392,7 +2568,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 if progress_locator is not None:
                     progress_locator_results = run_harness_tool(
                         "progress_locator", current_step, {},
-                        progress_locator.update,
+                        route_state_reducer.update_progress,
                         current_step, _cur_pos, _cur_head, _view_tags, _view_geometry,
                     ) or {}
                     harness_logger.log_event(
@@ -2401,7 +2577,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 if landmark_pool is not None:
                     landmark_pool_results = run_harness_tool(
                         "landmark_pool", current_step, {},
-                        landmark_pool.update,
+                        route_state_reducer.update_landmarks,
                         current_step, _cur_pos, _cur_head, _view_tags, _view_geometry,
                     ) or {}
                     harness_logger.log_event(
@@ -2410,7 +2586,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 if terminal_gate is not None:
                     terminal_gate_results = run_harness_tool(
                         "terminal_gate", current_step, {},
-                        terminal_gate.evaluate,
+                        route_state_reducer.evaluate_stop,
                         progress_locator_results,
                         landmark_pool,
                         (final_landmark_terms(landmarks) or [None])[-1],
@@ -2422,6 +2598,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     harness_logger.log_event(
                         "terminal_gate", current_step, terminal_gate_results
                     )
+
                 diagnostic_context = run_harness_tool(
                     "context_builder",
                     current_step,
@@ -2452,51 +2629,42 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             )
 
             if not stop_flag:
-                nav_logger.info("========== Estimate Completion Progress ==========")
+                nav_logger.info("========== ACN L1 Progress ==========")
                 completion_start_time = time.perf_counter()
-                estimation = navigator.estimate_completion(
-                    nav_logger,
-                    actions,
-                    landmarks,
-                    history_traj,
-                    max_tokens=positive_token_cap(completion_max_tokens),
-                    mode=completion_mode,
-                    current_step=current_step,
+                if progress_provider is None:
+                    raise RuntimeError(
+                        "ACN L1 progress provider is required; LLM completion fallback is disabled"
+                    )
+                progress_update_contract = progress_provider.update(
+                    progress_locator_results,
+                    evidence_refs=(
+                        "progress_locator:{}".format(current_step),
+                    ),
                 )
+                estimation = progress_update_contract.display_text
                 record_runtime_latency(
-                    "completion_estimation",
+                    "acn_l1_progress",
                     current_episode_id,
                     current_step,
                     time.perf_counter() - completion_start_time,
-                    category="text_llm" if completion_mode == "llm" else "rule",
-                    max_tokens=positive_token_cap(completion_max_tokens),
-                    mode=completion_mode,
+                    category="state_reducer",
+                    provider="acn_l1",
                 )
-                # ---- ACN L1 decision effect ----
-                # When PROGRESS_LOCATOR.LOG_ONLY=False, the constraint queue's text
-                # REPLACES the LLM estimation string. The LLM call above still runs this
-                # round so the two can be compared in one trace; the cost saving
-                # (~15.7 s/step) only lands once the switch is validated and the call is
-                # skipped. Keeping both for now is deliberate: single-switch attribution
-                # beats saving time on a round whose purpose is measurement.
-                _locator_estimation = None
-                if (
-                    progress_locator is not None
-                    and progress_locator_decision_effect
-                    and isinstance(progress_locator_results, dict)
-                    and not progress_locator_results.get("degenerate")
-                ):
-                    _locator_estimation = progress_locator.completion_text()
                 write_navigation_record(
                     "completion_estimation",
                     episode_id=current_episode_id,
                     step=current_step,
                     estimation=estimation,
-                    locator_estimation=_locator_estimation,
-                    locator_applied=bool(_locator_estimation),
+                    provider="acn_l1",
+                    llm_called=False,
+                    progress_update=progress_update_contract.to_dict(),
                 )
-                if _locator_estimation:
-                    estimation = _locator_estimation
+                if harness_logger is not None:
+                    harness_logger.log_event(
+                        "pipeline_progress_update",
+                        current_step,
+                        progress_update_contract.to_dict(),
+                    )
                 latest_phase_evidence = run_harness_tool(
                     "phase_evidence",
                     current_step,
@@ -3023,6 +3191,165 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     )
                     return False, "", True
 
+                def apply_terminal_gate(source, stop_proposal, reason):
+                    """Apply L4 at the last STOP decision point."""
+                    gate = (
+                        terminal_gate_results
+                        if isinstance(terminal_gate_results, dict)
+                        else {}
+                    )
+                    resolved_stop, resolved_reason, blocked = gate_stop_request(
+                        stop_proposal,
+                        reason,
+                        gate,
+                        terminal_gate_decision_effect,
+                    )
+                    if not blocked:
+                        return resolved_stop, resolved_reason, False
+                    payload = {
+                        "source": source,
+                        "original_stop_reason": reason,
+                        "verdict": gate.get("verdict"),
+                        "gate_reason": gate.get("reason"),
+                        "conjuncts": gate.get("conjuncts"),
+                        "j": gate.get("j"),
+                        "n_anchors": gate.get("n_anchors"),
+                        "action_affecting": True,
+                    }
+                    write_navigation_record(
+                        "terminal_gate_rejected",
+                        episode_id=current_episode_id,
+                        step=current_step,
+                        **payload,
+                    )
+                    if harness_enabled and harness_logger is not None:
+                        harness_logger.log_event(
+                            "terminal_gate_rejected",
+                            current_step,
+                            payload,
+                        )
+                    nav_logger.info(
+                        "Terminal gate rejected STOP from {}: {}".format(
+                            source, gate.get("reason")
+                        )
+                    )
+                    return False, "", True
+
+                def resolve_m3_goal_stop(
+                    source, requested, allowed, reason, verifier_result=None,
+                    proactive_policy=None
+                ):
+                    """Make StopCoordinator authoritative without changing gate policy."""
+                    nonlocal m3_stop_decision, m3_preplanner_stop_decided
+                    if not requested:
+                        return None
+                    state_id = "{}:{}:decision_ready".format(
+                        current_episode_id, current_step
+                    )
+                    proposal_id = "{}:{}:{}".format(
+                        current_episode_id, current_step, source
+                    )
+                    proposal = StopProposal(
+                        proposal_id=proposal_id,
+                        source=source,
+                        kind="goal_stop",
+                        reason=str(reason or "STOP requested."),
+                        route_state_id=state_id,
+                        step_id=current_step,
+                    )
+                    evidence_items = build_m3_2_evidence_items(
+                        proposal,
+                        allowed=bool(allowed),
+                        verifier_result=verifier_result,
+                        terminal_gate_result=terminal_gate_results,
+                        progress_update=(
+                            progress_update_contract.to_dict()
+                            if progress_update_contract is not None
+                            else {}
+                        ),
+                        proactive_policy=proactive_policy,
+                    )
+                    decision = stop_coordinator.resolve(
+                        route_state_id=state_id,
+                        step_id=current_step,
+                        proposals=(proposal,),
+                        evidence_items=evidence_items,
+                        movement_candidate_ids=tuple(
+                            str(key) for key in (observe_dict or {}).keys()
+                        ),
+                    )
+                    m3_stop_proposals.append(proposal)
+                    m3_stop_evidence_items.extend(evidence_items)
+                    m3_stop_decision = decision
+                    if source in {"progress_completion", "proactive_visual"}:
+                        m3_preplanner_stop_decided = True
+                    event_payloads = [
+                        ("pipeline_stop_proposal", proposal.to_dict())
+                    ]
+                    event_payloads.extend(
+                        ("pipeline_stop_evidence", item.to_dict())
+                        for item in evidence_items
+                    )
+                    event_payloads.append(
+                        ("pipeline_stop_decision", decision.to_dict())
+                    )
+                    for event_type, payload in event_payloads:
+                        write_navigation_record(
+                            event_type,
+                            episode_id=current_episode_id,
+                            step=current_step,
+                            **payload
+                        )
+                        if harness_enabled and harness_logger is not None:
+                            harness_logger.log_event(
+                                event_type, current_step, payload
+                            )
+                    return decision
+
+                def resolve_m3_forced_termination(source, reason):
+                    """Resolve operational STOP only when no movement remains."""
+                    nonlocal m3_stop_decision
+                    if m3_stop_decision is not None:
+                        if m3_stop_decision.outcome in {
+                            "commit_goal_stop", "commit_forced_termination"
+                        }:
+                            return m3_stop_decision
+                    state_id = "{}:{}:decision_ready".format(
+                        current_episode_id, current_step
+                    )
+                    proposal = StopProposal(
+                        proposal_id="{}:{}:{}".format(
+                            current_episode_id, current_step, source
+                        ),
+                        source=source,
+                        kind="forced_termination",
+                        reason=str(reason),
+                        route_state_id=state_id,
+                        step_id=current_step,
+                    )
+                    m3_stop_proposals.append(proposal)
+                    decision = stop_coordinator.resolve(
+                        route_state_id=state_id,
+                        step_id=current_step,
+                        proposals=tuple(m3_stop_proposals),
+                        evidence_items=tuple(m3_stop_evidence_items),
+                        movement_candidate_ids=(),
+                    )
+                    m3_stop_decision = decision
+                    for event_type, payload in (
+                        ("pipeline_stop_proposal", proposal.to_dict()),
+                        ("pipeline_stop_decision", decision.to_dict()),
+                    ):
+                        write_navigation_record(
+                            event_type, episode_id=current_episode_id,
+                            step=current_step, **payload
+                        )
+                        if harness_enabled and harness_logger is not None:
+                            harness_logger.log_event(
+                                event_type, current_step, payload
+                            )
+                    return decision
+
                 def log_visual_stop_rescued(
                     source,
                     original_stop_reason,
@@ -3076,6 +3403,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             rescued_payload,
                         )
 
+                log_route_state("pre_action")
                 stop_flag, stop_reason = navigator.should_stop(
                     nav_logger,
                     actions,
@@ -3085,9 +3413,20 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     observation,
                     current_step=current_step,
                 )
+                legacy_completion_stop_requested = bool(stop_flag)
                 stop_gate_metadata = dict(
                     getattr(navigator, "last_stop_gate_metadata", {}) or {}
                 )
+                stop_gate_metadata["legacy_completion_requested"] = (
+                    legacy_completion_stop_requested
+                )
+                # ACN route completion alone cannot create a goal-stop proposal.
+                # Terminal evidence is joined below after the current visual frame
+                # has been evaluated.
+                completion_stop_requested = False
+                completion_stop_reason = ""
+                stop_flag, stop_reason = False, ""
+                proactive_stop_requested = False
                 if (
                     stop_gate_metadata.get("rejection_reason")
                     == "weak_final_target_completion_auto_stop"
@@ -3133,10 +3472,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         )
                 completion_verifier_results = record_visual_target_verifier(
                     "completion_gate",
-                    stop_flag,
-                    stop_reason,
+                    True,
+                    "Evaluate current-frame terminal evidence; this is not yet a STOP proposal.",
                     selected_candidate=stop_current_view_candidate_id,
                     stop_evidence_mode="current_pano",
+                )
+                completion_verifier_results = direction_aligned_terminal_result(
+                    completion_verifier_results
                 )
                 # E3 carry-forward: track per-step final_target_visible signal.
                 # Window size 3 — used by stop_evidence_verifier for E3-C abstain.
@@ -3180,78 +3522,324 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 _persistent_visual_confirm = (
                     len(recent_ftv_window) >= 2 and all(recent_ftv_window[-2:])
                 )
-                # ORACLE REMOVED (20260704): PSG previously gated entry on
-                # latest_goal_dist < proactive_stop_dist and the carry-forward branch on
-                # latest_goal_dist < proactive_stop_commit_dist (simulator geodesic goal
-                # distance = GT leakage). Distance conjuncts deleted; entry keys purely
-                # on observable visual arrival evidence. proactive_stop_* kept as toggles.
+                _terminal_candidate = (
+                    completion_verifier_results.get("selected_candidate_verdict") or {}
+                )
+                _terminal_direction_id = _terminal_candidate.get("target_direction_id")
+                _terminal_depth_array = _direction_depth_array(
+                    observations, _terminal_direction_id
+                )
+                _terminal_center_depth_m = _metric_depth_center_median(
+                    _terminal_depth_array,
+                    depth_veto_min, depth_veto_max, depth_veto_normalize,
+                    depth_veto_center_frac,
+                )
+                _terminal_near_surface_depth_m = _metric_depth_near_surface(
+                    _terminal_depth_array,
+                    depth_veto_min, depth_veto_max, depth_veto_normalize,
+                )
+                _terminal_required_terms = [
+                    str(v).strip().lower()
+                    for v in (
+                        completion_verifier_results.get("required_landmark_terms")
+                        or []
+                    )
+                ]
+                _terminal_is_opening = any(
+                    any(token in term for token in (
+                        "archway", "doorway", "door", "entryway", "entry way"
+                    ))
+                    for term in _terminal_required_terms
+                )
+                _terminal_depth_m = (
+                    _terminal_near_surface_depth_m
+                    if _terminal_is_opening
+                    else _terminal_center_depth_m
+                )
+                _terminal_spatial_confirmed = bool(
+                    _terminal_depth_m is not None
+                    and _terminal_depth_m <= depth_veto_dist
+                )
+                terminal_spatial_payload = {
+                    "target_direction_id": _terminal_direction_id,
+                    "local_surface_depth_m": _terminal_depth_m,
+                    "target_depth_m": _terminal_depth_m,
+                    "target_depth_m_deprecated": True,
+                    "center_depth_m": _terminal_center_depth_m,
+                    "near_surface_depth_m": _terminal_near_surface_depth_m,
+                    "distance_estimator": (
+                        "opening_frame_p20" if _terminal_is_opening
+                        else "target_direction_center_median"
+                    ),
+                    "max_target_depth_m": depth_veto_dist,
+                    "distance_satisfied": _terminal_spatial_confirmed,
+                    "source": "rgbd_target_direction",
+                    "distance_semantics": "direction_local_surface_not_instance_mask",
+                    "oracle_free": True,
+                }
+                _weak_generic_terminal = is_weak_generic_terminal(
+                    completion_verifier_results
+                )
+                _weak_generic_route_matured = bool(
+                    episode_forward_move_steps >= 4
+                    and episode_forward_translation_m >= 6.0
+                )
+                terminal_spatial_payload.update({
+                    "weak_generic_terminal": _weak_generic_terminal,
+                    "route_maturity_required": _weak_generic_terminal,
+                    "route_maturity_satisfied": (
+                        _weak_generic_route_matured
+                        if _weak_generic_terminal else True
+                    ),
+                    "non_collision_forward_steps": episode_forward_move_steps,
+                    "actual_displacement_m": episode_forward_translation_m,
+                    "position_source": "simulator_agent_pose",
+                    "min_forward_move_steps": 4,
+                    "min_forward_translation_m": 6.0,
+                })
+                terminal_instance_result = terminal_instance_tracker.update(
+                    step_id=current_step,
+                    position=(positions[0] if positions else ()),
+                    heading=(headings[0] if headings else None),
+                    direction_id=_terminal_direction_id,
+                    depth_m=_terminal_depth_m,
+                    target_terms=_terminal_required_terms,
+                    supporting_landmarks=(
+                        _terminal_candidate.get("visible_landmarks") or []
+                    ),
+                    visually_supported=bool(
+                        completion_verifier_results.get("final_target_visible") is True
+                        and completion_verifier_results.get("arrival_evidence") is True
+                    ),
+                )
+                log_fallback_event(
+                    "terminal_instance_track", current_episode_id, current_step,
+                    terminal_instance_result,
+                )
+                _persistent_visual_confirm = bool(
+                    terminal_instance_result.get("consecutive_observations", 0) >= 2
+                )
+                terminal_spatial_payload["instance_key"] = (
+                    terminal_instance_result.get("instance_key")
+                )
+                terminal_spatial_payload["instance_consecutive_observations"] = (
+                    terminal_instance_result.get("consecutive_observations")
+                )
+                terminal_spatial_payload["same_instance"] = (
+                    terminal_instance_result.get("same_instance")
+                )
+                terminal_spatial_payload["context_overlap"] = (
+                    terminal_instance_result.get("context_overlap")
+                )
+                terminal_spatial_payload["confirmed_instance_switch"] = (
+                    terminal_instance_result.get("confirmed_instance_switch")
+                )
+                _terminal_identity_supported = terminal_target_is_confirmed(
+                    completion_verifier_results,
+                    persistent_visual_confirm=True,
+                    spatial_distance_confirmed=True,
+                    weak_generic_route_matured=_weak_generic_route_matured,
+                )
+                _terminal_direct_confirmed = terminal_target_is_confirmed(
+                    completion_verifier_results,
+                    persistent_visual_confirm=_persistent_visual_confirm,
+                    spatial_distance_confirmed=_terminal_spatial_confirmed,
+                    weak_generic_route_matured=_weak_generic_route_matured,
+                )
+                _route_complete_now = bool(
+                    progress_update_contract is not None
+                    and progress_update_contract.route_progress_complete is True
+                )
+                _weak_generic_close_confirm = weak_generic_close_is_confirmed(
+                    completion_verifier_results,
+                    route_progress_complete=_route_complete_now,
+                    route_maturity_satisfied=_weak_generic_route_matured,
+                    local_surface_depth_m=_terminal_depth_m,
+                    max_depth_m=1.5,
+                )
+                _terminal_direct_confirmed = bool(
+                    _terminal_direct_confirmed or _weak_generic_close_confirm
+                )
+                terminal_spatial_payload["weak_generic_close_confirm"] = (
+                    _weak_generic_close_confirm
+                )
+                terminal_spatial_payload["weak_generic_close_depth_m"] = 1.5
+                log_fallback_event(
+                    "terminal_spatial_evidence", current_episode_id, current_step,
+                    terminal_spatial_payload,
+                )
+                terminal_memory_result = terminal_evidence_memory.update(
+                    step_id=current_step,
+                    position=(positions[0] if positions else ()),
+                    direct_confirmed=_terminal_direct_confirmed,
+                    current_visual_support=_terminal_identity_supported,
+                    instance_key=terminal_instance_result.get("instance_key"),
+                    confirmed_instance_switch=bool(
+                        terminal_instance_result.get("confirmed_instance_switch")
+                    ),
+                    evidence=terminal_spatial_payload,
+                )
+                terminal_target_confirmed = bool(
+                    terminal_memory_result.get("confirmed")
+                )
                 if (
-                    not stop_flag
-                    and proactive_stop_enabled
-                    and (
-                        (
-                            bool(completion_verifier_results.get("final_target_visible"))
-                            and bool(completion_verifier_results.get("arrival_evidence"))
-                        )
-                        or _carry_forward_psg
-                    )
+                    terminal_target_confirmed
+                    and completion_verifier_results.get("verdict") != "allow"
+                    and _terminal_identity_supported
                 ):
-                    # ORACLE REMOVED (20260704): reason strings no longer claim a
-                    # distance threshold (the geodesic gate is gone; PSG now keys on
-                    # visual evidence + the >=2-step persistence guard). Stating a
-                    # distance here would misdescribe stops that commit far from goal.
-                    proactive_reason = (
-                        "Proactive stop: target visible with arrival evidence "
-                        "(persistent visual confirmation)."
-                        if (bool(completion_verifier_results.get("final_target_visible"))
-                            and bool(completion_verifier_results.get("arrival_evidence")))
-                        else
-                        "Proactive stop: carry-forward visual evidence "
-                        "(persistent visual confirmation)."
+                    # A generic-only V2 uncertainty may be resolved only by the
+                    # explicit current-text + RGB-D + persistence/memory policy.
+                    # Preserve the raw verdict for audit; downstream consumes the
+                    # single resolved TerminalEvidence rather than re-running V2.
+                    completion_verifier_results = dict(
+                        completion_verifier_results
                     )
-                    proactive_verifier_results = record_visual_target_verifier(
-                        "proactive_stop_gate",
+                    completion_verifier_results["raw_v2_verdict"] = (
+                        completion_verifier_results.get("verdict")
+                    )
+                    completion_verifier_results["verdict"] = "allow"
+                    completion_verifier_results["verdict_resolution"] = (
+                        "generic_target_text_rgbd_terminal_policy"
+                    )
+                    log_fallback_event(
+                        "terminal_evidence_resolution",
+                        current_episode_id,
+                        current_step,
+                        {
+                            "raw_v2_verdict": completion_verifier_results.get(
+                                "raw_v2_verdict"
+                            ),
+                            "resolved_verdict": "allow",
+                            "policy": completion_verifier_results.get(
+                                "verdict_resolution"
+                            ),
+                        },
+                    )
+                log_fallback_event(
+                    "terminal_evidence_memory",
+                    current_episode_id,
+                    current_step,
+                    terminal_memory_result,
+                )
+                progress_update_contract = progress_provider.apply_terminal_evidence(
+                    progress_update_contract,
+                    terminal_target_confirmed=terminal_target_confirmed,
+                    evidence_refs=(
+                        "visual_target_verifier:{}".format(current_step),
+                        "visual_persistence:{}".format(current_step),
+                        "terminal_spatial_evidence:{}".format(current_step),
+                        "terminal_evidence_memory:{}".format(current_step),
+                    ),
+                )
+                goal_progress_payload = progress_update_contract.to_dict()
+                write_navigation_record(
+                    "goal_progress_update",
+                    episode_id=current_episode_id,
+                    step=current_step,
+                    **goal_progress_payload
+                )
+                if harness_logger is not None:
+                    harness_logger.log_event(
+                        "pipeline_goal_progress_update",
+                        current_step,
+                        goal_progress_payload,
+                    )
+                if progress_update_contract.goal_complete is True:
+                    completion_stop_requested = True
+                    completion_stop_reason = (
+                        "Route progress is complete and the terminal target has "
+                        "persistent visual arrival confirmation."
+                    )
+                    # Reuse the same formal V2 evidence that formed
+                    # terminal_target_confirmed; do not create a second reading.
+                    stop_flag, stop_reason, _ = apply_visual_stop_gate(
+                        "completion_gate",
                         True,
-                        proactive_reason,
-                        selected_candidate=stop_current_view_candidate_id,
-                        stop_evidence_mode="current_pano",
+                        completion_stop_reason,
+                        completion_verifier_results,
                     )
-                    proactive_stop_evidence = record_stop_evidence_verification(
-                        "proactive_stop_gate",
-                        proactive_verifier_results,
-                        stop_gate_metadata,
+                # Proactive is now a diagnostic endgame hint only. It never calls V2
+                # again and cannot independently create or commit a STOP proposal.
+                _route_index = progress_update_contract.current_index
+                _route_total = progress_update_contract.total
+                _route_endgame = bool(
+                    progress_update_contract.route_progress_complete is True
+                    or (
+                        _route_index is not None
+                        and _route_total is not None
+                        and _route_total > 0
+                        and _route_index >= _route_total - 1
                     )
-                    # ORACLE REMOVED (20260704): commit previously required
-                    # _within_commit_zone = latest_goal_dist < proactive_stop_commit_dist
-                    # (simulator geodesic goal distance = GT leakage). Replaced by the
-                    # >=2-step visual persistence guard (temporal consistency in place of
-                    # spatial resolution).
-                    # E3-B commit: carry_forward arrival_evidence (observable) substitutes
-                    # for V2 allow; e3.arrival_override is now itself gated on pure visual
-                    # evidence inside stop_evidence_verifier.
-                    _e3_b_allow = bool(
-                        isinstance(proactive_stop_evidence, dict)
-                        and proactive_stop_evidence.get("allow_stop")
-                        and proactive_stop_evidence.get("e3", {}).get("arrival_override")
+                )
+                proactive_terminal_hint = bool(
+                    proactive_stop_enabled
+                    and _route_endgame
+                    and completion_verifier_results.get("final_target_visible") is True
+                )
+                if proactive_terminal_hint:
+                    log_fallback_event(
+                        "proactive_terminal_hint", current_episode_id, current_step,
+                        {
+                            "route_endgame": _route_endgame,
+                            "shared_v2_verdict": completion_verifier_results.get("verdict"),
+                            "terminal_target_confirmed": terminal_target_confirmed,
+                            "goal_complete": progress_update_contract.goal_complete,
+                            "decision_effect": False,
+                        },
                     )
-                    # v2 depth veto (default OFF): PSG commit (#5) also requires the
-                    # claimed target direction to be within depth threshold. _psg_depth_ok
-                    # is True when disabled/unavailable (fail-open) -> byte-identical off.
-                    _psg_depth_ok, _ = _depth_stop_ok("proactive_stop_gate_commit")
-                    if (
-                        _psg_depth_ok
-                        and (
-                            (_persistent_visual_confirm and visual_target_verifier_allows_stop(proactive_verifier_results))
-                            or _e3_b_allow
-                        )
-                    ):
-                        stop_flag = True
-                        stop_reason = proactive_reason
-                        log_visual_stop_allowed(
-                            "proactive_stop_gate",
-                            stop_reason,
-                            proactive_verifier_results,
-                        )
+                proactive_stop_requested = False
+                proactive_reason = ""
+                proactive_verifier_results = completion_verifier_results
+                _e3_b_allow = False
+                _psg_depth_ok = _terminal_spatial_confirmed
+                stop_flag, stop_reason, _ = apply_terminal_gate(
+                    "completion_gate", stop_flag, stop_reason
+                )
+                preplanner_source = None
+                if stop_flag and proactive_stop_requested:
+                    preplanner_source = "proactive_visual"
+                elif completion_stop_requested:
+                    preplanner_source = "progress_completion"
+                elif proactive_stop_requested:
+                    preplanner_source = "proactive_visual"
+                if preplanner_source is not None:
+                    m3_stop_decision = resolve_m3_goal_stop(
+                        preplanner_source,
+                        True,
+                        bool(stop_flag),
+                        (
+                            proactive_reason
+                            if preplanner_source == "proactive_visual"
+                            else completion_stop_reason
+                        ),
+                        (
+                            proactive_verifier_results
+                            if preplanner_source == "proactive_visual"
+                            else completion_verifier_results
+                        ),
+                        (
+                            {
+                                "persistent_visual_confirm": _persistent_visual_confirm,
+                                "v2_allow": visual_target_verifier_allows_stop(
+                                    proactive_verifier_results
+                                ),
+                                "e3_b_allow": _e3_b_allow,
+                                "depth_ok": _psg_depth_ok,
+                            }
+                            if preplanner_source == "proactive_visual"
+                            else None
+                        ),
+                    )
+                    stop_flag = (
+                        m3_stop_decision.outcome in {
+                            "commit_goal_stop",
+                            "commit_forced_termination",
+                        }
+                    )
+                    if stop_flag:
+                        stop_reason = m3_stop_decision.reason
+                    else:
+                        stop_reason = ""
                 if stop_flag:
                     if phase_aware_scaffolder is not None:
                         phase_aware_context_results[
@@ -3550,7 +4138,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         max_tokens=positive_token_cap(decision_max_tokens),
                         fused_candidate_count=len(fused_pred_thought),
                     )
-                    if next_vp == STOP_CANDIDATE:
+                    if (
+                        next_vp == STOP_CANDIDATE
+                        and not m3_preplanner_stop_decided
+                    ):
                         old_stop_flag, old_stop_reason = navigator.should_stop(
                             nav_logger,
                             actions,
@@ -3588,13 +4179,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         selector_stop_rejection_reason = (
                             "navigator_stop_failed_stop_gate"
                         )
-                        selector_verifier_results = record_visual_target_verifier(
-                            "selector_stop_gate",
-                            True,
-                            old_stop_reason or "Navigator selected STOP.",
-                            selected_candidate=stop_current_view_candidate_id,
-                            stop_evidence_mode="current_pano",
-                        )
+                        # Reuse the immutable per-step TerminalEvidence; selector
+                        # STOP must not trigger a second V2 reading.
+                        selector_verifier_results = dict(completion_verifier_results)
+                        selector_verifier_results["source"] = "selector_stop_gate"
+                        selector_verifier_results["reused_from"] = "completion_gate"
                         selector_stop_evidence_results = (
                             record_stop_evidence_verification(
                                 "selector_stop_gate",
@@ -3602,10 +4191,11 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 old_stop_gate_metadata,
                             )
                         )
-                        selector_visual_rescue_candidate = (
-                            visual_stop_can_rescue_selector_stop(
-                                selector_verifier_results,
-                                old_stop_flag,
+                        selector_visual_rescue_candidate = bool(
+                            progress_update_contract.goal_complete is True
+                            and _terminal_spatial_confirmed
+                            and visual_stop_can_rescue_selector_stop(
+                                selector_verifier_results, old_stop_flag
                             )
                         )
                         u2_rescue_allowed = True
@@ -3634,8 +4224,13 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 "E5: rescue/override STOP blocked, target never "
                                 "visually confirmed this episode."
                             )
-                        if old_stop_flag and visual_target_verifier_allows_stop(
-                            selector_verifier_results
+                        if (
+                            old_stop_flag
+                            and progress_update_contract.goal_complete is True
+                            and _terminal_spatial_confirmed
+                            and visual_target_verifier_allows_stop(
+                                selector_verifier_results
+                            )
                         ):
                             stop_flag = True
                             stop_reason = (
@@ -3742,6 +4337,8 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         # Only fires when stop_evidence_verifier has decision effect.
                         if (
                             not stop_flag
+                            and progress_update_contract.goal_complete is True
+                            and _terminal_spatial_confirmed
                             and stop_evidence_verifier_decision_effect
                             and isinstance(selector_stop_evidence_results, dict)
                             and selector_stop_evidence_results.get("allow_stop")
@@ -3784,6 +4381,31 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 "U2 E3-B carry-forward override: committing STOP "
                                 "despite V2 not_visible rejection."
                             )
+                        stop_flag, stop_reason, _ = apply_terminal_gate(
+                            "selector_stop_gate", stop_flag, stop_reason
+                        )
+                        if m3_stop_decision is None:
+                            m3_stop_decision = resolve_m3_goal_stop(
+                                "selector",
+                                True,
+                                bool(stop_flag),
+                                stop_reason or "Navigator selected STOP.",
+                                selector_verifier_results,
+                            )
+                            stop_flag = (
+                                m3_stop_decision.outcome in {
+                                    "commit_goal_stop",
+                                    "commit_forced_termination",
+                                }
+                            )
+                        else:
+                            # A rejected pre-planner STOP already consumed this
+                            # step's single arbitration. Selector cannot reopen STOP.
+                            stop_flag = False
+                        if stop_flag:
+                            stop_reason = m3_stop_decision.reason
+                        else:
+                            stop_reason = ""
                         if stop_flag:
                             if not stop_reason:
                                 stop_reason = (
@@ -3791,23 +4413,26 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                 )
                         else:
                             nav_logger.info("Navigator selected STOP but stop gate failed; fallback to a movement candidate")
-                            filtered_fused_pred_thought = {
-                                key: value for key, value in fused_pred_thought.items()
-                                if key != STOP_CANDIDATE
-                            }
-                            stop_fallback_start_time = time.perf_counter()
-                            next_vp, thought, error_number = navigator.test_decisions(
-                                nav_logger,
-                                filtered_fused_pred_thought,
-                                selector_observation,
-                                instruction,
-                                error_number,
+                            fallback_results = rank_movement_fallback(
+                                "stop_rejected_fallback",
+                                current_step,
                                 selector_observe_dict,
-                                max_tokens=positive_token_cap(decision_max_tokens),
-                                offer_move_back=offer_move_back,
+                                visual_evidence_results,
+                                instruction,
+                                actions,
+                                landmarks,
+                                source_stage="stop_rejected",
+                                reason="stop_rejected_no_second_selector",
                             )
-                            if next_vp not in (STOP_CANDIDATE, MOVE_BACK_CANDIDATE):
-                                next_vp, _cp_audit = _candidate_prior_override(next_vp)
+                            next_vp = fallback_results.get("selected_candidate")
+                            if next_vp in selector_observe_dict:
+                                thought = selector_observe_dict[next_vp]
+                            if next_vp not in (
+                                None, STOP_CANDIDATE, MOVE_BACK_CANDIDATE
+                            ):
+                                next_vp, _cp_audit = _candidate_prior_override(
+                                    next_vp
+                                )
                                 if _cp_audit is not None:
                                     _cp_audit["path"] = "after_stop_rejection"
                                     record_u_override(
@@ -3822,72 +4447,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                                             extra=_cp_audit,
                                         )
                                     )
-                            record_runtime_latency(
-                                "test_decision_after_stop_rejection",
-                                current_episode_id,
-                                current_step,
-                                time.perf_counter() - stop_fallback_start_time,
-                                category="text_llm",
-                                max_tokens=positive_token_cap(decision_max_tokens),
-                                fused_candidate_count=len(
-                                    filtered_fused_pred_thought
-                                ),
-                            )
-                            test_decision_metadata = dict(
-                                getattr(
-                                    navigator,
-                                    "last_test_decision_metadata",
-                                    {},
-                                )
-                                or {}
-                            )
-                            if (
-                                next_vp == STOP_CANDIDATE
-                                or next_vp not in selector_observe_dict
-                                or test_decision_metadata.get("fallback_used")
-                            ):
-                                nav_logger.info(
-                                    "Stop rejection fallback needs ranked movement candidate; invalid result {}".format(
-                                        next_vp
-                                    )
-                                )
-                                fallback_results = rank_movement_fallback(
-                                    "stop_rejected_fallback",
-                                    current_step,
-                                    selector_observe_dict,
-                                    visual_evidence_results,
-                                    instruction,
-                                    actions,
-                                    landmarks,
-                                    source_stage="stop_rejected",
-                                    reason="stop_rejected_no_valid_movement",
-                                )
-                                fallback_vp = fallback_results.get(
-                                    "selected_candidate"
-                                )
-                                fallback_results[
-                                    "invalid_candidate"
-                                ] = next_vp
-                                fallback_results[
-                                    "decision_test_metadata"
-                                ] = test_decision_metadata
-                                if fallback_vp in selector_observe_dict:
-                                    next_vp = fallback_vp
-                                    thought = selector_observe_dict[fallback_vp]
-                            else:
-                                fallback_results = {
-                                    "fallback_strategy": "decision_test_non_stop",
-                                    "fallback_reason": "stop_rejected_non_stop_candidate",
-                                    "source_stage": "stop_rejected",
-                                    "selected_candidate": next_vp,
-                                    "available_candidates": [
-                                        str(key)
-                                        for key in selector_observe_dict.keys()
-                                    ],
-                                    "decision_test_metadata": (
-                                        test_decision_metadata
-                                    ),
-                                }
+                            fallback_results["second_selector_called"] = False
                             latest_failure_signal = run_harness_tool(
                                 "failure_type_diagnostic",
                                 current_step,
@@ -4008,6 +4568,17 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
             try:
                 termination_reasons = [None for _ in range(envs.num_envs)]
                 env_actions = []
+                _contract_state_id = "{}:{}:decision_ready".format(
+                    current_episode_id, current_step
+                )
+                _contract_decision_id = "{}:{}:decision".format(
+                    current_episode_id, current_step
+                )
+                _contract_command_id = "{}:{}:command".format(
+                    current_episode_id, current_step
+                )
+                forced_termination_source = None
+                backtrack_action_args = None
                 # Backtracking (hunk 4) apply hook: when the navigator selected MOVE_BACK,
                 # emit the reverse move directly (it bypasses radius_dict/distance_dict, which
                 # do not contain the synthetic MOVE_BACK id). Runs before the normal action
@@ -4028,9 +4599,7 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         bt_apply,
                     )
                     if bt_apply.get("applied"):
-                        env_actions.append(
-                            {"action": {"action": 4, "action_args": bt_apply["action_args"]}}
-                        )
+                        backtrack_action_args = dict(bt_apply["action_args"])
                         backtrack_budget_remaining = bt_apply["budget_after"]
                         backtrack_blocked_headings = set(bt_apply["blocked_headings"])
                         backtrack_reverse_emitted = True
@@ -4058,9 +4627,10 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         else:
                             stop_flag = True
                             stop_reason = "Backtrack unavailable and no movement candidates remained."
+                            forced_termination_source = "no_movement_candidate"
                             next_vp = STOP_CANDIDATE
                 if stop_flag:
-                    env_actions.append({"action": {"action": 0, "action_args": None}})
+                    pass
                 elif backtrack_reverse_emitted:
                     # Reverse move already emitted by the apply hook; skip normal builder.
                     pass
@@ -4131,18 +4701,67 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                             stop_reason = (
                                 "No movement candidates remained after fallback."
                             )
+                            forced_termination_source = "empty_action_space"
                             next_vp = STOP_CANDIDATE
                     if stop_flag:
-                        env_actions.append(
-                            {"action": {"action": 0, "action_args": None}}
+                        pass
+
+                if forced_termination_source is not None:
+                    m3_stop_decision = resolve_m3_forced_termination(
+                        forced_termination_source, stop_reason
+                    )
+                if stop_flag:
+                    if m3_stop_decision is None or m3_stop_decision.outcome not in {
+                        "commit_goal_stop", "commit_forced_termination"
+                    }:
+                        raise RuntimeError(
+                            "STOP reached ActionCompiler without committed StopDecision"
                         )
-                    else:
-                        env_actions.append({'action':
-                            {'action': 4,
-                            'action_args':{
-                                'angle': radius_dict[next_vp],
-                                'distance': distance_dict[next_vp],
-                            }}})
+                    resolved_action = ResolvedAction(
+                        action_type="stop",
+                        route_state_id=_contract_state_id,
+                        decision_record_id=_contract_decision_id,
+                        candidate_id=STOP_CANDIDATE,
+                        stop_decision_id=m3_stop_decision.decision_id,
+                    )
+                elif backtrack_reverse_emitted:
+                    resolved_action = ResolvedAction(
+                        action_type="backtrack",
+                        route_state_id=_contract_state_id,
+                        decision_record_id=_contract_decision_id,
+                        candidate_id=MOVE_BACK_CANDIDATE,
+                        action_args=backtrack_action_args,
+                    )
+                else:
+                    resolved_action = ResolvedAction(
+                        action_type="move",
+                        route_state_id=_contract_state_id,
+                        decision_record_id=_contract_decision_id,
+                        candidate_id=str(next_vp),
+                        action_args={
+                            "angle": radius_dict[next_vp],
+                            "distance": distance_dict[next_vp],
+                        },
+                    )
+                _contract_command = action_compiler.compile(
+                    command_id=_contract_command_id,
+                    resolved_action=resolved_action,
+                    stop_decision=m3_stop_decision,
+                )
+                env_actions = [action_compiler.to_env_action(_contract_command)]
+                stop_flag = bool(_contract_command.stop_requested)
+                write_navigation_record(
+                    "pipeline_action_command",
+                    episode_id=current_episode_id,
+                    step=current_step,
+                    **_contract_command.to_dict()
+                )
+                if harness_enabled and harness_logger is not None:
+                    harness_logger.log_event(
+                        "pipeline_action_command",
+                        current_step,
+                        _contract_command.to_dict(),
+                    )
 
                 # Backtracking (hunk 4) capture (rev2 fix #2): record what was actually
                 # sent, keyed off the single grep-verified action-4 emitter (env_actions[0]),
@@ -4183,6 +4802,47 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                 # ENDGAME_TILT_VIEW.ALWAYS_ON_STOP.
                 if stop_flag and tilt_enabled and tilt_always_on_stop:
                     _tilt_observe("committed_stop", force=True)
+                _contract_decision = DecisionRecord(
+                    decision_record_id=_contract_decision_id,
+                    route_state_id=_contract_state_id,
+                    step_id=current_step,
+                    progress_provider=(
+                        progress_update_contract.provider
+                        if progress_update_contract is not None
+                        else "unavailable"
+                    ),
+                    planner_output={
+                        "selected_candidate": next_vp,
+                        "thought": thought,
+                        "stop_reason": stop_reason if stop_flag else None,
+                    },
+                    stop_proposals=tuple(m3_stop_proposals),
+                    override_ledger=tuple(unit_override_records),
+                    final_command=_contract_command,
+                    stop_evidence_items=tuple(m3_stop_evidence_items),
+                    stop_decision=m3_stop_decision,
+                    planner_skipped_reason=(
+                        "committed_preplanner_stop"
+                        if m3_preplanner_stop_decided and stop_flag
+                        else None
+                    ),
+                )
+                _contract_decision_payload = run_harness_tool(
+                    "pipeline_decision_record_contract",
+                    current_step,
+                    None,
+                    _contract_decision.to_dict,
+                )
+                if (
+                    harness_enabled
+                    and harness_logger is not None
+                    and _contract_decision_payload is not None
+                ):
+                    harness_logger.log_event(
+                        "pipeline_decision_record",
+                        current_step,
+                        _contract_decision_payload,
+                    )
                 write_navigation_record(
                     "action_pre_step",
                     episode_id=current_episode_id,
@@ -4203,6 +4863,34 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                     )
                 outputs = envs.step(env_actions)
                 step_output_summary = summarize_step_outputs(outputs)
+                _observable_step_result = {}
+                if step_output_summary:
+                    for _observable_key in ("done", "collision", "steps_taken"):
+                        if _observable_key in step_output_summary[0]:
+                            _observable_step_result[_observable_key] = (
+                                step_output_summary[0][_observable_key]
+                            )
+                _contract_receipt = run_harness_tool(
+                    "pipeline_action_receipt",
+                    current_step,
+                    None,
+                    build_action_receipt,
+                    receipt_id="{}:{}:receipt".format(
+                        current_episode_id, current_step
+                    ),
+                    command_id=_contract_command_id,
+                    episode_id=current_episode_id,
+                    step_id=current_step,
+                    executed_action=env_actions[0],
+                    candidate_id=next_vp,
+                    step_result=_observable_step_result,
+                )
+                if _contract_receipt is not None and harness_logger is not None:
+                    harness_logger.log_event(
+                        "pipeline_action_receipt",
+                        current_step,
+                        _contract_receipt.to_dict(),
+                    )
                 write_navigation_record(
                     "action_post_step",
                     episode_id=current_episode_id,
@@ -4254,11 +4942,78 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         else None,
                     },
                 )
-
                 if not stop_flag:
-                    curr_observe = observe_dict[next_vp]
+                    if (
+                        next_vp != MOVE_BACK_CANDIDATE
+                        and _contract_command.action_code == 4
+                    ):
+                        try:
+                            _post_agent_state = envs.call_at(
+                                0, "get_agent_info", {}
+                            )
+                            _post_position = _post_agent_state.get("position")
+                            _pre_position = positions[0] if positions else None
+                            if _pre_position is not None and _post_position is not None:
+                                _actual_displacement = sum(
+                                    (float(a) - float(b)) ** 2
+                                    for a, b in zip(_post_position, _pre_position)
+                                ) ** 0.5
+                                _collision = bool(
+                                    step_output_summary
+                                    and step_output_summary[0].get("collision")
+                                )
+                                if not _collision and _actual_displacement > 0.05:
+                                    episode_forward_translation_m += _actual_displacement
+                                    episode_forward_move_steps += 1
+                                log_fallback_event(
+                                    "route_maturity_odometry",
+                                    current_episode_id, current_step,
+                                    {
+                                        "actual_displacement_m": _actual_displacement,
+                                        "collision": _collision,
+                                        "counted_forward_step": bool(
+                                            not _collision and _actual_displacement > 0.05
+                                        ),
+                                        "cumulative_actual_displacement_m": (
+                                            episode_forward_translation_m
+                                        ),
+                                        "non_collision_forward_steps": (
+                                            episode_forward_move_steps
+                                        ),
+                                        "position_source": "simulator_agent_pose",
+                                    },
+                                )
+                        except (TypeError, ValueError, KeyError, IndexError):
+                            pass
+                if not stop_flag:
                     nav_logger.info("========== save history ==========")
-                    nav_history = navigator.save_history(nav_logger, current_step, next_vp, thought, curr_observe, nav_history)
+                    if next_vp == MOVE_BACK_CANDIDATE:
+                        # MOVE_BACK is a synthetic control command, not a camera
+                        # candidate. Record it structurally instead of feeding a
+                        # fake observation through save_history's direction parser.
+                        curr_observe = (
+                            "Backtrack executed using the previous reversible movement."
+                        )
+                        nav_history.append({
+                            "step": current_step,
+                            "viewpoint": MOVE_BACK_CANDIDATE,
+                            "observation": curr_observe,
+                            "thought": str(thought or "Backtrack recovery."),
+                            "synthetic_action": True,
+                        })
+                        nav_logger.info("The history at current step is {}".format(nav_history))
+                    elif next_vp in observe_dict:
+                        curr_observe = observe_dict[next_vp]
+                        nav_history = navigator.save_history(
+                            nav_logger, current_step, next_vp, thought,
+                            curr_observe, nav_history
+                        )
+                    else:
+                        raise KeyError(
+                            "selected movement candidate missing observation: {}".format(
+                                next_vp
+                            )
+                        )
                     write_navigation_record(
                         "history_saved",
                         episode_id=current_episode_id,
@@ -4266,8 +5021,23 @@ class BaseVLNCETrainerLLM(BaseILTrainer):
                         selected_candidate=next_vp,
                         thought=thought,
                         current_observation=curr_observe,
+                        synthetic_action=(next_vp == MOVE_BACK_CANDIDATE),
                         nav_history=nav_history,
                     )
+
+                log_route_state(
+                    "post_action",
+                    selected_candidate=next_vp,
+                    stop_requested=stop_flag,
+                    stop_reason=stop_reason,
+                    action_result={
+                        "done": bool(step_output_summary and step_output_summary[0].get("done")),
+                        "collision": (step_output_summary[0].get("collision") if step_output_summary else None),
+                        "steps_taken": (step_output_summary[0].get("steps_taken") if step_output_summary else None),
+                        "stop_committed": bool(stop_flag),
+                    },
+                )
+
 
                 observations, _, dones, infos = [list(x) for x in zip(*outputs)]
                 termination_reasons = [

@@ -103,12 +103,11 @@ class PhaseAwareEvidenceScaffolder:
             if mode == "route_overview" and phase_reason:
                 slot_parts.append("phase_reason={}".format(phase_reason))
             if mode == "recovery":
+                # Never expose simulator goal-distance deltas to the selector. The
+                # recovery label itself comes from observable selector/topology events.
                 failure_type = latest_failure_signal.get("failure_type")
-                non_positive = recent_progress.get("non_positive_gain_count")
                 if failure_type:
                     slot_parts.append("failure={}".format(failure_type))
-                if non_positive is not None:
-                    slot_parts.append("non_positive_gain={}".format(non_positive))
             if visual_summary and phase in self.apply_phases:
                 slot_parts.append(visual_summary)
             summary = _truncate(

@@ -28,6 +28,7 @@ from recognize_anything.ram import get_transform
 
 DEFAULT_LOCAL_QWEN_BASE_URL = "http://127.0.0.1:23333/v1"
 DEFAULT_LOCAL_QWEN_MODEL = "/root/models/Qwen3.5-4B"
+DEFAULT_RAM_TEXT_ENCODER = "/root/models/bert-base-uncased"
 
 
 class llmClient:
@@ -114,9 +115,14 @@ class spatialClient:
                 trust_remote_code=True)
             
             self.ram_transform = get_transform(image_size=224) 
-            self.ram_model = ram(pretrained=self.ram_path, image_size=224, vit='swin_l').eval().to(self.device)
+            self.ram_model = ram(
+                pretrained=self.ram_path,
+                image_size=224,
+                vit='swin_l',
+                text_encoder_type=os.environ.get("OPENNAV_RAM_TEXT_ENCODER", DEFAULT_RAM_TEXT_ENCODER),
+            ).eval().to(self.device)
         except Exception as e:
-            print(f"Error in loading RAM or SpatialBot: {e}")
+            raise RuntimeError(f"Failed to load RAM or SpatialBot: {e}") from e
             
     def ram_img_tagging(self, image):
         ram_img = self.ram_transform(image).unsqueeze(0).to(self.device)
