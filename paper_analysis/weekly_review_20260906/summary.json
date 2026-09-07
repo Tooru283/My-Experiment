@@ -1,0 +1,202 @@
+{
+  "trace": "/Users/moca/Work/Experiment/My-Experiment/logs/navigation_records/ep100/20260902/terminal_track_v3_ep100_20260902_204313_train_navigation_20260902_204331.jsonl",
+  "trace_sha256": "063ca860c6ce02d79aac16df60342e7d0e87c99d049fbc85bf5bb10bc18b6473",
+  "stats": {
+    "steps_taken": 9.7,
+    "distance_to_goal": 7.6843290787935254,
+    "success": 0.2,
+    "oracle_success": 0.38,
+    "path_length": 14.880063797946066,
+    "collisions": 0.06203321735437254,
+    "spl": 0.10978546008566699,
+    "ndtw": 0.3415577296122273
+  },
+  "episodes": 100,
+  "decision_steps": 970,
+  "event_counts": {
+    "runtime_latency": 23011,
+    "episode_start": 100,
+    "u_series_episode_start": 100,
+    "step_start": 970,
+    "backtrack_offer": 970,
+    "observation": 970,
+    "visual_evidence": 970,
+    "visual_evidence_sampling": 970,
+    "visual_evidence_memory": 970,
+    "multimodal_selector_context": 970,
+    "history_review": 970,
+    "completion_estimation": 970,
+    "phase_evidence": 970,
+    "arrival_gate": 970,
+    "route_state": 1940,
+    "stop_current_view_evidence": 970,
+    "visual_target_verifier": 970,
+    "depth_stop_veto": 1046,
+    "stop_verification": 1046,
+    "terminal_instance_track": 970,
+    "terminal_spatial_evidence": 970,
+    "terminal_evidence_memory": 970,
+    "goal_progress_update": 970,
+    "phase_aware_context": 970,
+    "navigator_prompt": 953,
+    "selector_raw": 953,
+    "selector_fused": 953,
+    "selector_final": 970,
+    "pipeline_action_command": 970,
+    "decision_audit": 970,
+    "action_pre_step": 970,
+    "action_post_step": 970,
+    "post_action_progress": 970,
+    "route_maturity_odometry": 922,
+    "history_saved": 953,
+    "completion_gate_weak_final_target": 58,
+    "endgame_tilt_view": 291,
+    "failure_type_diagnostic": 164,
+    "failure_recovery": 164,
+    "selector_empty_prediction_fallback": 88,
+    "proactive_terminal_hint": 126,
+    "unit_override": 587,
+    "terminal_evidence_resolution": 11,
+    "pipeline_stop_proposal": 95,
+    "pipeline_stop_evidence": 380,
+    "pipeline_stop_decision": 95,
+    "stop_decision": 17,
+    "episode_termination": 100,
+    "episode_end": 100,
+    "u_series_episode_end": 100,
+    "selector_stop_gate_metadata": 76,
+    "visual_stop_rejected": 62,
+    "stop_rejected_fallback": 76,
+    "stop_rejected": 76,
+    "backtrack_apply": 31,
+    "selector_fallback": 1
+  },
+  "sets": {
+    "false_goal_stop": [
+      "187",
+      "247",
+      "308",
+      "321",
+      "403",
+      "432",
+      "469",
+      "698",
+      "787",
+      "1056",
+      "1085",
+      "1284"
+    ],
+    "missed_success": [
+      "13",
+      "116",
+      "150",
+      "226",
+      "321",
+      "461",
+      "586",
+      "620",
+      "721",
+      "810",
+      "821",
+      "1056",
+      "1061",
+      "1084",
+      "1092",
+      "1117",
+      "1133",
+      "1139"
+    ],
+    "true_goal_stop": [
+      "11",
+      "191",
+      "244",
+      "259",
+      "513"
+    ],
+    "step_limit_success": [
+      "190",
+      "218",
+      "423",
+      "479",
+      "526",
+      "531",
+      "765",
+      "781",
+      "824",
+      "842",
+      "1071",
+      "1077",
+      "1087",
+      "1142",
+      "1307"
+    ]
+  },
+  "false_stop_missed_overlap": [
+    "321",
+    "1056"
+  ],
+  "report_regression_union_size": 33,
+  "protected_regression_union_size": 48,
+  "near_goal_blocker_groups": {
+    "route_0_terminal_0": [
+      "226",
+      "116",
+      "721",
+      "13",
+      "821",
+      "1084",
+      "1139",
+      "1117"
+    ],
+    "route_1_terminal_0": [
+      "1092",
+      "810",
+      "150",
+      "1056",
+      "586",
+      "1133",
+      "321"
+    ],
+    "route_0_terminal_1": [
+      "1061",
+      "620",
+      "461"
+    ]
+  },
+  "active_route_transitions": {
+    "hold": 95,
+    "advance": 115,
+    "abstain": 603
+  },
+  "already_complete_transitions": {
+    "abstain": 157
+  },
+  "stationary_reverse_order_probe": [
+    {
+      "step": 0,
+      "tag": "sofa",
+      "j": 0,
+      "complete": false
+    },
+    {
+      "step": 1,
+      "tag": "sofa",
+      "j": 0,
+      "complete": false
+    },
+    {
+      "step": 2,
+      "tag": "door",
+      "j": 0,
+      "complete": false
+    },
+    {
+      "step": 3,
+      "tag": "door",
+      "j": 2,
+      "complete": true
+    }
+  ],
+  "probe_meaning": "Synthetic code counterexample, not an online performance estimate.",
+  "distance_meaning": "Offline simulator labels at decision boundaries; not evidence of instruction completion."
+}

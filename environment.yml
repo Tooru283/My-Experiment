@@ -165,7 +165,7 @@ dependencies:
     - braceexpand==0.1.7
     - cachetools==4.2.4
     - click==8.1.7
-    - clip==1.0
+    - clip @ git+https://github.com/openai/CLIP.git@dcba3cb2e2827b402d2701e7e1c7d9fed8a20ef1
     - cloudpathlib==0.18.1
     - cloudpickle==3.0.0
     - cryptography==43.0.0

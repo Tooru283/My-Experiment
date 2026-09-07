@@ -1,0 +1,112 @@
+episode_id,step,distance_before_action_m,success,route_complete,terminal_confirmed,goal_complete,current_target,raw_v2_verdict
+244,6,2.0527901649475098,1,True,False,False,,uncertain
+244,7,1.7804341316223145,1,True,True,True,,uncertain
+218,5,2.4776220321655273,1,False,False,False,take a left in the hallway,reject
+218,6,2.6990373134613037,1,True,False,False,,reject
+218,7,0.9947786927223206,1,True,False,False,,reject
+218,8,2.5513739585876465,1,True,False,False,,reject
+218,9,2.6338555812835693,1,True,False,False,,reject
+218,10,2.575413227081299,1,True,False,False,,reject
+226,8,2.469306230545044,0,False,False,False,take a left into the third entry way on your left,reject
+226,9,2.193310260772705,0,False,False,False,take a left into the third entry way on your left,allow
+1092,3,2.9919934272766113,0,False,False,False,Turn right to walk past stairs,reject
+1092,4,2.3071072101593018,0,True,False,False,,reject
+1092,5,2.3314316272735596,0,True,False,False,,reject
+1092,8,2.8245179653167725,0,True,False,False,,reject
+1092,9,1.9074506759643555,0,True,False,False,,reject
+1092,10,2.356074810028076,0,True,False,False,,reject
+116,5,2.2877249717712402,0,False,False,False,see bathroom,reject
+116,9,2.083604097366333,0,False,False,False,see bathroom,reject
+116,10,2.5974838733673096,0,False,False,False,see bathroom,allow
+513,7,2.8803184032440186,1,False,False,False,Go into the living area with the fireplace,allow
+513,8,1.1350090503692627,1,False,True,False,Go into the living area with the fireplace,allow
+513,9,0.6236489415168762,1,True,True,True,,allow
+11,10,2.424595594406128,1,True,True,True,,uncertain
+1087,3,2.609356641769409,1,False,False,False,Face the indoor grill,reject
+1087,4,1.7911595106124878,1,False,False,False,Face the indoor grill,reject
+1087,5,0.5535145401954651,1,False,False,False,Face the indoor grill,reject
+1087,6,1.8588309288024902,1,False,False,False,Face the indoor grill,reject
+1087,7,0.3650706708431244,1,False,False,False,Face the indoor grill,reject
+1087,8,1.524003505706787,1,False,False,False,Face the indoor grill,uncertain
+1087,9,2.991417646408081,1,False,True,False,Face the indoor grill,uncertain
+1087,10,1.2867610454559326,1,False,False,False,Face the indoor grill,reject
+810,4,2.7885189056396484,0,True,False,False,,reject
+810,5,1.2942887544631958,0,True,False,False,,reject
+810,7,1.5425488948822021,0,True,False,False,,reject
+810,8,0.1598425954580307,0,True,False,False,,reject
+810,9,1.2587497234344482,0,True,False,False,,reject
+721,4,2.80680513381958,0,False,,False,go through the doorway on your left,allow
+721,6,2.898963451385498,0,False,,False,go through the doorway on your left,allow
+13,7,2.2402124404907227,0,False,False,False,passed the stove,allow
+821,6,2.51192045211792,0,False,False,False,Walk by the bathroom,reject
+821,8,2.859424591064453,0,False,False,False,Walk by the bathroom,allow
+1084,5,2.209092617034912,0,False,,False,Exit the bathroom,reject
+1084,6,2.832460403442383,0,False,,False,Exit the bathroom,reject
+1084,9,2.1993725299835205,0,False,,False,Exit the bathroom,reject
+1084,12,1.728048324584961,0,False,,False,Exit the bathroom,reject
+1071,10,2.884700059890747,1,False,False,False,pass through the storage area,reject
+1071,11,2.3817930221557617,1,False,False,False,pass through the storage area,reject
+1071,12,0.5168110728263855,1,False,False,False,pass through the storage area,reject
+1142,8,2.2948293685913086,1,True,False,False,,reject
+1142,9,2.710977554321289,1,True,False,False,,reject
+842,12,2.439316987991333,1,False,False,False,pass the piano,allow
+150,8,2.761087417602539,0,False,,False,walk to the hallway,reject
+150,9,2.8524045944213867,0,True,,True,,reject
+150,10,1.2622398138046265,0,True,,True,,reject
+1061,5,2.289973258972168,0,False,True,False,pass the piano,uncertain
+1061,9,2.925081968307495,0,False,False,False,pass the piano,uncertain
+1061,10,0.6766167283058167,0,False,False,False,pass the piano,uncertain
+1061,11,0.8366793394088745,0,False,False,False,pass the piano,uncertain
+1061,12,2.7118821144104004,0,False,False,False,pass the piano,reject
+1139,5,2.7198610305786133,0,False,False,False,Exit the bedroom,reject
+191,6,2.9124810695648193,1,False,False,False,turn right around couch,reject
+191,7,1.725601077079773,1,False,False,False,turn right around couch,allow
+191,8,0.402927428483963,1,False,False,False,turn left,allow
+191,9,1.9619262218475342,1,False,False,False,turn left,allow
+191,10,1.6497218608856201,1,True,True,True,,allow
+190,6,2.9124810695648193,1,False,False,False,Walk past the kitchen,allow
+190,7,1.725601077079773,1,False,False,False,Walk past the kitchen,allow
+190,8,0.402927428483963,1,False,False,False,Walk past the kitchen,allow
+190,9,1.2795382738113403,1,False,True,False,Walk past the kitchen,allow
+190,10,0.4881206750869751,1,False,False,False,Walk past the kitchen,allow
+259,4,2.0528440475463867,1,True,True,True,,allow
+1307,10,1.9179058074951172,1,False,False,False,Turn right,reject
+1077,9,2.719900608062744,1,False,,False,exit the kitchen,reject
+1077,10,1.6533608436584473,1,False,,False,exit the kitchen,reject
+531,4,2.896571159362793,1,False,False,False,Exit closet,allow
+531,9,1.9313958883285522,1,False,False,False,Exit closet,allow
+531,10,1.3393025398254395,1,False,False,False,Exit closet,allow
+1117,4,2.597092628479004,0,False,,False,Go alongside the pool,reject
+1117,6,2.714616060256958,0,False,,False,Go alongside the pool,reject
+1056,4,1.9922218322753906,0,True,False,False,,uncertain
+586,3,2.323488712310791,0,True,False,False,,reject
+1133,7,2.756678581237793,0,True,False,False,,reject
+824,4,2.6969683170318604,1,False,False,False,Turn around,reject
+824,6,2.419736385345459,1,True,False,False,,reject
+824,7,0.6586935520172119,1,True,False,False,,reject
+824,8,1.7873988151550293,1,True,False,False,,reject
+479,4,2.605947732925415,1,False,False,False,Walk along the carpet,reject
+479,7,2.415904998779297,1,True,False,False,,uncertain
+479,8,1.1575394868850708,1,True,False,False,,reject
+479,9,1.6330626010894775,1,True,False,False,,reject
+479,10,2.0024657249450684,1,True,False,False,,uncertain
+321,4,2.994246482849121,0,False,False,False,enter the bedroom,allow
+321,7,2.993800163269043,0,True,False,False,,allow
+765,3,2.9058754444122314,1,False,True,False,Turn right at the post,allow
+765,4,1.5515466928482056,1,False,True,False,Turn right at the post,allow
+765,6,1.7413520812988281,1,False,True,False,Turn right at the post,allow
+765,8,2.1942410469055176,1,False,False,False,Turn right at the post,allow
+765,9,1.2826298475265503,1,False,False,False,Turn right at the post,allow
+765,10,1.1228156089782715,1,False,False,False,Turn right at the post,allow
+526,9,2.9164083003997803,1,False,True,False,Walk past sisal carpet runner,allow
+526,10,1.667555570602417,1,False,True,False,Walk past sisal carpet runner,allow
+620,4,2.9517910480499268,0,False,True,False,Walk forward along the railing to the balcony,allow
+781,3,1.740638256072998,1,False,,False,move in between bar and table,allow
+781,4,0.44074490666389465,1,False,,False,move in between bar and table,allow
+781,5,1.0593024492263794,1,False,,False,move in between bar and table,reject
+781,6,0.5461477041244507,1,False,,False,move in between bar and table,reject
+781,7,1.5342751741409302,1,False,,False,move in between bar and table,reject
+781,8,1.6644712686538696,1,False,,False,move in between bar and table,reject
+781,9,0.48993128538131714,1,False,,False,move in between bar and table,reject
+781,10,1.2251169681549072,1,False,,False,move in between bar and table,allow
+461,9,2.9799375534057617,0,False,True,False,walk past a wooden cabinet on the right,uncertain
