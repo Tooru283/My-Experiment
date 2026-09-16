@@ -121,6 +121,11 @@ def weak_generic_close_is_confirmed(
         and direction.get("aligned") is True
         and not (raw_text.get("uncorroborated_terms") or [])
         and result.get("arrival_evidence") is True
+        and (
+            not (result.get("terminal_relation_evidence") or {}).get("required")
+            or (result.get("terminal_relation_evidence") or {}).get("satisfied")
+            is True
+        )
         and confidence >= 0.9
         and 0.0 < depth <= float(max_depth_m)
     )
@@ -505,6 +510,9 @@ class ACNL1ProgressProvider:
         initial_goal_complete = (
             bool(route_complete) if not terminal_required else False
         ) if route_complete is not None else None
+        current_evaluation = locator_state.get("last_evaluation") or {}
+        if current_evaluation.get("anchor_index") != current_index:
+            current_evaluation = {}
         update = ProgressUpdate(
             provider=self.name,
             current_index=current_index,
@@ -530,6 +538,35 @@ class ACNL1ProgressProvider:
             display_text=str(display_text or ""),
             authoritative=True,
             shadow=None,
+            current_action={
+                "raw": locator_state.get("current_raw"),
+                "requirements": locator_state.get("current_action") or [],
+                "evaluation": dict(current_evaluation),
+            },
+            verified_actions=tuple(
+                {
+                    "anchor_index": int(item),
+                    "raw": (
+                        plan.get("anchors", [])[int(item)].get("raw")
+                        if isinstance(plan, dict)
+                        and int(item) < len(plan.get("anchors", []))
+                        else None
+                    ),
+                }
+                for item in (locator_state.get("ever_satisfied") or [])
+            ),
+            missing_evidence=tuple(
+                str(item) for item in (
+                    current_evaluation.get(
+                        "missing_evidence"
+                    ) or []
+                )
+            ),
+            completion_events=tuple(
+                dict(item) for item in (
+                    locator_state.get("completion_events") or []
+                )
+            ),
         )
         update.to_dict()
         return update
@@ -555,4 +592,3 @@ class ACNL1ProgressProvider:
         )
         enriched.to_dict()
         return enriched
-

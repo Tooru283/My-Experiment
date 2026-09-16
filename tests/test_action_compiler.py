@@ -123,8 +123,8 @@ class ActionCompilerTest(unittest.TestCase):
     def test_trainer_handles_synthetic_move_back_history(self):
         source = (ROOT / "vlnce_baselines/common/base_il_trainer_llm.py").read_text(encoding="utf-8")
         self.assertIn("if next_vp == MOVE_BACK_CANDIDATE:", source)
-        self.assertIn("synthetic_action\": True", source)
-        self.assertIn("nav_history.append({", source)
+        self.assertIn("action_receipt=previous_action_receipt", source)
+        self.assertIn("Synthetic MOVE_BACK command; no selected camera image.", source)
 
 
 if __name__ == "__main__":

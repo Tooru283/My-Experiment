@@ -171,6 +171,7 @@ class VisualTargetVerifier:
         selected_candidate: Optional[str] = None,
         step_id: Optional[int] = None,
         stop_evidence_mode: str = "selected_candidate",
+        terminal_policy: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         candidates = _candidate_evidence(visual_evidence)
         all_landmark_terms = _landmark_terms(landmarks)
@@ -253,6 +254,20 @@ class VisualTargetVerifier:
         )
         allow_blockers = allow_policy["blockers"]
         allow_warnings = allow_policy["warnings"]
+        terminal_relation_evidence = self._terminal_relation_evidence(
+            terminal_policy, selected_candidate_verdict,
+        )
+        if (
+            stop_proposal
+            and terminal_relation_evidence["required"]
+            and not terminal_relation_evidence["satisfied"]
+        ):
+            allow_blockers.append(
+                "terminal_relation_evidence_missing:{}".format(
+                    ",".join(terminal_relation_evidence["missing_references"])
+                    or "unlocalized_relation"
+                )
+            )
         verdict = self._verdict(
             stop_proposal,
             parse_error,
@@ -308,6 +323,7 @@ class VisualTargetVerifier:
             "contradictions": contradictions,
             "allow_blockers": allow_blockers,
             "allow_warnings": allow_warnings,
+            "terminal_relation_evidence": terminal_relation_evidence,
             "confidence": confidence,
             "reason": self._reason(
                 verdict,
@@ -327,6 +343,66 @@ class VisualTargetVerifier:
                 if isinstance(observation, list)
                 else None,
             },
+        }
+
+    def _terminal_relation_evidence(
+        self,
+        terminal_policy: Optional[Dict[str, Any]],
+        selected_candidate_verdict: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Require every parsed terminal reference in the same current view.
+
+        This does not claim metric relation geometry. The VLM still supplies
+        the relation claim via final_target_visible; this check prevents that
+        claim from silently dropping named reference objects.
+        """
+        policy = terminal_policy if isinstance(terminal_policy, dict) else {}
+        relations = [
+            item for item in (policy.get("relations") or [])
+            if isinstance(item, dict)
+        ]
+        references = _unique(
+            str(item.get("reference") or "").strip()
+            for item in relations
+            if str(item.get("reference") or "").strip()
+        )
+        required = bool(relations)
+        candidate = (
+            selected_candidate_verdict
+            if isinstance(selected_candidate_verdict, dict) else {}
+        )
+        evidence_terms = (
+            _as_list(candidate.get("visible_landmarks"))
+            + _as_list(candidate.get("matched_instruction_terms"))
+        )
+        matched = [
+            reference for reference in references
+            if _term_present(reference, evidence_terms)
+        ]
+        missing = [
+            reference for reference in references if reference not in matched
+        ]
+        # A parsed relation with no resolved reference is deliberately unknown.
+        # Multiple relations may share one reference. Deduplicating its name
+        # must not turn two successfully parsed relations into a missing target.
+        unresolved = any(not str(item.get("reference") or "").strip() for item in relations)
+        return {
+            "required": required,
+            "target_kind": policy.get("target_kind"),
+            "relations": relations,
+            "required_references": references,
+            "matched_references": matched,
+            "missing_references": missing,
+            "unresolved_reference": unresolved,
+            "satisfied": bool(
+                not required or (
+                    not unresolved
+                    and not missing
+                    and candidate.get("final_target_visible") is True
+                )
+            ),
+            "source": "same_current_view_reference_corroboration",
+            "metric_geometry_verified": False,
         }
 
     def _sample_info(self, visual_evidence: Dict[str, Any]) -> Dict[str, Any]:

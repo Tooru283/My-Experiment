@@ -1,6 +1,8 @@
 import re
 import math
 import random
+import json
+import time
 from collections import Counter
 from vlnce_baselines.common.navigator.api import *
 from vlnce_baselines.common.navigator.prompts import *
@@ -12,6 +14,11 @@ from vlnce_baselines.common.opennav_ext.landmark_matching import (
     term_present,
 )
 from vlnce_baselines.common.opennav_ext.backtrack_policy import MOVE_BACK_CANDIDATE
+from vlnce_baselines.common.opennav_ext.navigation_guidance import (
+    format_navigation_feedback,
+    build_navigation_history_item, format_navigation_history,
+)
+from vlnce_baselines.common.opennav_ext.instruction_parsing import parse_actions, parse_landmarks
 
 STOP_CANDIDATE = "STOP"
 STOP_WORDS = ("stop", "wait", "stay", "stand", "pause")
@@ -43,13 +50,43 @@ class Open_Nav():
     # =====================================
     # ===== Instruction Comprehension =====
     # =====================================
-    def get_actions(self, instruction):
-        return self.llm.gpt_infer(ACTION_DETECTION['system'], ACTION_DETECTION['user'].format(instruction))
+    def get_plan(self, instruction):
+        self.last_plan_metadata = {"llm_calls": 0, "stages": []}
+        actions = self._extract_plan_stage(
+            "action_extraction", ACTION_DETECTION,
+            ACTION_DETECTION['user'].format(instruction), parse_actions, instruction,
+        )
+        landmarks = self._extract_plan_stage(
+            "landmark_extraction", LANDMARK_DETECTION,
+            LANDMARK_DETECTION['user'].format(instruction, json.dumps(actions, ensure_ascii=False)),
+            parse_landmarks, instruction,
+        )
+        return "\n".join(actions), "\n".join(landmarks)
 
-    def get_landmarks(self, actions):
-        actions = actions.replace("\n", " ")
-        return self.llm.gpt_infer(LANDMARK_DETECTION['system'], LANDMARK_DETECTION['user'].format(actions))
-    
+    def _extract_plan_stage(self, stage, prompt, user, parser, instruction):
+        # One correction attempt per stage; invalid plans never enter the cache.
+        correction = ""
+        for attempt in range(2):
+            started = time.perf_counter()
+            self.last_plan_metadata["llm_calls"] += 1
+            response = self.llm.gpt_infer(
+                prompt['system'], user + correction, max_tokens=1536, temperature=0,
+            )
+            record = {"stage": stage, "attempt": attempt + 1,
+                      "elapsed_seconds": round(time.perf_counter() - started, 4),
+                      "raw_response": response}
+            self.last_plan_metadata["stages"].append(record)
+            try:
+                parsed = parser(response, instruction)
+            except ValueError as exc:
+                record.update(valid=False, error=str(exc))
+                if attempt == 1:
+                    raise ValueError("{} failed after 2 attempts: {}".format(stage, exc)) from exc
+                correction = "\nPrevious output failed validation: {}\nCorrect it using the original instruction; return only the required JSON.".format(exc)
+            else:
+                record.update(valid=True, parsed=parsed)
+                return parsed
+
     # =============================
     # ===== Visual Perception =====
     # =============================
@@ -88,29 +125,18 @@ class Open_Nav():
     # ===================================
     # ===== Progress Estimation =========
     # ===================================
-    def save_history(self, logger, current_step, next_vp, thought, curr_observe, nav_history): 
-        # ===== get obervation summary =====
-        direction_id = int(curr_observe.split("Direction Viewpoint")[0].replace("Direction","").strip())
-        direction = DIRECTIONS[direction_id]
-        curr_observe = "Scene Description"+curr_observe.split("Scene Description")[1]
-        observation = f"Direction {direction} " + self.llm.gpt_infer(OBSERVATION_SUMMARY['system'], OBSERVATION_SUMMARY['user'].format(curr_observe))
-        # ===== get thought summary =====
-        thought = self.llm.gpt_infer(THOUGHT_SUMMARY['system'], THOUGHT_SUMMARY['user'].format(thought))
-        # ===== get nav history =====
-        nav_history.append({
-            "step": current_step,
-            "viewpoint": next_vp,
-            "observation": observation,
-            "thought": thought
-        })
-        logger.info(f"The history at current step is {nav_history}")
+    def save_history(self, logger, current_step, next_vp, thought, curr_observe,
+                     nav_history, action_receipt=None):
+        nav_history.append(build_navigation_history_item(
+            current_step, next_vp, thought, curr_observe, action_receipt,
+        ))
+        logger.info("The history at current step is %s", nav_history)
         return nav_history
-    
+
     def review_history(self, logger, nav_history):
-        nav_history_str = " -> ".join(["Step "+str(idx+1)+" Observation: "+item["observation"]+" Thought: "+item["thought"] for idx, item in enumerate(nav_history)])
-        logger.info("History: " + nav_history_str)
-        return nav_history_str
-    
+        text = format_navigation_history(nav_history)
+        logger.info("History: " + text)
+        return text
 
     def _normalize_action_text(self, text):
         text = str(text or "").lower()
@@ -563,9 +589,10 @@ class Open_Nav():
         return_prompt=False,
         offer_move_back=False,
         spatial_alert="",
+        progress_feedback=None,
     ):
-        # P1: k>1 draws multiple samples so the (dormant) thought_fusion can arbitrate;
-        # temperature>0 gives diversity. k=1, temperature=0 -> byte-identical to prior behavior.
+        # k=1 by default: one selector request. Optional k>1 samples are grouped
+        # by deterministic vote, with no extra fusion/arbitration model requests.
         break_flag = True
         effective_prediction, thought_list = [], []
         candidate_ids = [str(key) for key in observe_dict.keys()]
@@ -589,7 +616,7 @@ class Open_Nav():
             history_traj,
             estimation,
             observation,
-        ) + move_back_hint + (spatial_alert or "")
+        ) + format_navigation_feedback(progress_feedback) + move_back_hint + (spatial_alert or "")
         # C5 (GTA S_alert): spatial_alert is "" unless MEMORY_DIAGNOSTIC is decision-active,
         # so the assembled prompt stays byte-identical when the switch is off.
         for _ in range(max(1, k)):
@@ -626,108 +653,46 @@ class Open_Nav():
     # ===== Test Decision =====
     # =========================
     def thought_fusion(self, logger, predictions, thoughts, max_tokens=None):
-        matched_dict = dict()
+        # Legacy method name retained for trace/caller compatibility; no model call.
+        # Stable majority order; a tie keeps the first valid sample's order.
+        grouped = {}
         for pred, thought in zip(predictions, thoughts):
-            if pred not in matched_dict.keys():
-                matched_dict[pred] = []
-            matched_dict[pred].append(thought)
+            grouped.setdefault(str(pred), []).append(str(thought or ""))
+        ranked = sorted(grouped, key=lambda key: -len(grouped[key]))
+        fused = {key: grouped[key][0] for key in ranked}
+        logger.info("Deterministic candidate vote counts: %s",
+                    {key: len(grouped[key]) for key in ranked})
+        return fused
 
-        if len(matched_dict) <= 1:
-            skipped_dict = {}
-            for key, value in matched_dict.items():
-                skipped_dict[key] = value[0] if value else ""
-            logger.info("Skip thought fusion because there is no candidate disagreement")
-            return skipped_dict
-
-        for key, value in matched_dict.items():
-            multiple_thoughts = "; ".join(["Thought "+str(idx+1)+": "+thought for idx, thought in enumerate(value)])
-            one_thought = self.llm.gpt_infer(
-                THOUGHT_FUSION['system'],
-                THOUGHT_FUSION['user'].format(multiple_thoughts),
-                max_tokens=max_tokens,
-            )
-            logger.info(f"Pred viewpoint ID: {key} Fused Thought: {one_thought}")
-            matched_dict[key] = one_thought 
-        return matched_dict 
-    
     def test_decisions(
-        self,
-        logger,
-        fused_pred_thought,
-        observation,
-        instruction,
-        error_number,
-        observe_dict,
-        max_tokens=None,
-        offer_move_back=False,
+        self, logger, fused_pred_thought, observation, instruction, error_number,
+        observe_dict, max_tokens=None, offer_move_back=False,
     ):
-        try:
-            valid_candidates = {str(key) for key in observe_dict.keys()}
-            valid_candidates.add(STOP_CANDIDATE)
-            # Backtracking: MOVE_BACK is not an observe_dict key, so keep it in the
-            # valid set when it was offered this step -- otherwise the pop below would
-            # silently drop a navigator-selected backtrack and the mechanism is dead.
-            # offer_move_back=False leaves behavior byte-identical.
-            if offer_move_back:
-                valid_candidates.add(MOVE_BACK_CANDIDATE)
-            for fused_key in list(fused_pred_thought.keys()):
-                if fused_key not in valid_candidates:
-                    fused_pred_thought.pop(fused_key)
-                    
-            if not fused_pred_thought:
-                raise ValueError("Error in fused_thought key")
-                
-            if len(fused_pred_thought.keys()) == 1:
-                for key, value in fused_pred_thought.items():
-                    self.last_test_decision_metadata = {
-                        "fallback_used": False,
-                        "decision_source": "single_fused_candidate",
-                        "selected_candidate": key,
-                        "available_candidates": [str(candidate) for candidate in observe_dict.keys()],
-                    }
-                    return key, value, error_number
-            else:
-                fused_pred_thought_ = "; ".join(["Direction Viewpoint ID: "+key+" Thought: "+value for key, value in fused_pred_thought.items()])
-                next_vp = None
-                for i in range(2): 
-                    logger.info(f"========== {i} retry in test decision==========")
-                    next_vp = self.llm.gpt_infer(
-                        DECISION_TEST['system'],
-                        DECISION_TEST['user'].format(
-                            fused_pred_thought.keys(),
-                            observation,
-                            instruction,
-                            fused_pred_thought_,
-                        ),
-                        max_tokens=max_tokens,
-                    )
-                    logger.info(f"Next predicted action is {next_vp}")
-                    next_vp = self._parse_prediction(next_vp, valid_candidates)
-                    if next_vp in fused_pred_thought:
-                        break
-                if next_vp not in fused_pred_thought:
-                    raise ValueError("Decision test did not return a valid fused candidate")
-        
-            logger.info(f"In test decision the predicted direction: {next_vp}")
-            logger.info(f"In test decision the predicted thought: {fused_pred_thought[next_vp]}")
+        # Input order is the stable vote ranking from thought_fusion. Never let a
+        # second, progress-blind model overwrite the evidence-aware selector.
+        valid = {str(key) for key in observe_dict}
+        valid.add(STOP_CANDIDATE)
+        if offer_move_back:
+            valid.add(MOVE_BACK_CANDIDATE)
+        eligible = {str(key): value for key, value in fused_pred_thought.items()
+                    if str(key) in valid}
+        if eligible:
+            next_vp = next(iter(eligible))
             self.last_test_decision_metadata = {
                 "fallback_used": False,
-                "decision_source": "decision_test_llm",
+                "decision_source": "single_fused_candidate" if len(eligible) == 1
+                else "deterministic_vote",
+                "llm_calls": 0,
                 "selected_candidate": next_vp,
-                "available_candidates": [str(candidate) for candidate in observe_dict.keys()],
-                "fused_candidates": [str(candidate) for candidate in fused_pred_thought.keys()],
+                "available_candidates": [str(key) for key in observe_dict],
+                "fused_candidates": list(eligible),
             }
-            return next_vp, fused_pred_thought[next_vp], error_number
-        except Exception as e:
-            logger.info(f"Error in test decision {e}")
-            error_number += 1
-            logger.info(f"Error number is {error_number}")
-            next_vp, thought, fallback_metadata = self._fallback_candidate(logger, fused_pred_thought, observe_dict)
-            self.last_test_decision_metadata = {
-                "fallback_used": True,
-                "fallback_source": "test_decisions_exception",
-                "error": str(e),
-                "error_number": error_number,
-                **fallback_metadata,
-            }
-            return next_vp, thought, error_number
+            return next_vp, eligible[next_vp], error_number
+
+        error_number += 1
+        next_vp, thought, metadata = self._fallback_candidate(logger, {}, observe_dict)
+        self.last_test_decision_metadata = {
+            **metadata, "fallback_used": True, "fallback_source": "test_decisions_no_valid_candidate",
+            "error_number": error_number, "llm_calls": 0,
+        }
+        return next_vp, thought, error_number

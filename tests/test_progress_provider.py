@@ -61,6 +61,52 @@ class ProgressProviderTest(unittest.TestCase):
         self.assertEqual(update.display_text, "Verified from ACN L1.")
         self.assertIsNone(update.shadow)
 
+    def test_action_evidence_is_exposed_in_progress_contract(self):
+        self.provider.state_reducer.plan = {
+            "anchors": [
+                {"raw": "Exit the bedroom"},
+                {"raw": "Turn right"},
+            ],
+            "terminal_policy": {"present": False},
+        }
+        update = self.provider.update(
+            {
+                "j": 1,
+                "n_anchors": 2,
+                "complete": False,
+                "current_raw": "Turn right",
+                "current_action": [{"type": "turn", "direction": "right"}],
+                "ever_satisfied": [0],
+                "last_evaluation": {
+                    "anchor_index": 1,
+                    "status": "incomplete",
+                    "missing_evidence": ["required_turn_not_reached"],
+                },
+                "completion_events": [
+                    {
+                        "anchor_index": 0,
+                        "status": "completed",
+                        "event_interval": [0, 1],
+                        "confirmed_at": 1,
+                    }
+                ],
+                "degenerate": False,
+            }
+        )
+        self.assertEqual(update.current_action["raw"], "Turn right")
+        self.assertEqual(
+            update.current_action["requirements"],
+            [{"type": "turn", "direction": "right"}],
+        )
+        self.assertEqual(
+            update.verified_actions,
+            ({"anchor_index": 0, "raw": "Exit the bedroom"},),
+        )
+        self.assertEqual(
+            update.missing_evidence, ("required_turn_not_reached",)
+        )
+        self.assertEqual(update.completion_events[0]["event_interval"], [0, 1])
+
     def test_hold_and_advance_are_derived_across_steps(self):
         first = self.provider.update(
             {"j": 0, "n_anchors": 2, "ever_satisfied": [], "degenerate": False}
@@ -367,6 +413,16 @@ class ProgressProviderTest(unittest.TestCase):
             result, route_progress_complete=True,
             route_maturity_satisfied=True, local_surface_depth_m=1.4,
         ))
+        result["aggregate_current_view_corroboration"] = {
+            "uncorroborated_terms": []
+        }
+        result["terminal_relation_evidence"] = {
+            "required": True, "satisfied": False,
+        }
+        self.assertFalse(weak_generic_close_is_confirmed(
+            result, route_progress_complete=True,
+            route_maturity_satisfied=True, local_surface_depth_m=1.4,
+        ))
 
     def test_terminal_instance_tracker_matches_spatial_target(self):
         tracker = TerminalInstanceTracker(max_position_delta_m=0.5)
@@ -425,6 +481,24 @@ class ProgressProviderTest(unittest.TestCase):
         self.assertNotIn("build_legacy_progress_update", source)
         self.assertIn("progress_provider.update(", source)
         self.assertIn('provider="acn_l1"', source)
+
+    def test_instruction_plan_failure_is_episode_local_forced_termination(self):
+        source = (
+            ROOT / "vlnce_baselines/common/base_il_trainer_llm.py"
+        ).read_text(encoding="utf-8")
+        handler = source.split("except ValueError as plan_exc:", 1)[1].split(
+            "if instruction_plan_failure is None:", 1
+        )[0]
+        self.assertNotIn("envs.close()", handler)
+        self.assertNotIn("raise", handler)
+        self.assertIn('failure_scope="episode"', handler)
+        self.assertIn(
+            'forced_termination_source = "instruction_plan_failed"', source
+        )
+        self.assertIn("stop_termination_reason = (", source)
+        self.assertIn(
+            "# A plan-validation failure is an evaluation failure", source
+        )
 
 
 if __name__ == "__main__":

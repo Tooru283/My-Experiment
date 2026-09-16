@@ -10,6 +10,7 @@ from PIL import Image, ImageDraw
 from vlnce_baselines.common.opennav_ext.agent_state import CandidateState
 from vlnce_baselines.common.opennav_ext.visual_evidence_schema import (
     normalize_visual_evidence_parsed,
+    candidate_list_from_parsed,
     visual_evidence_schema_diagnostics,
 )
 
@@ -17,6 +18,31 @@ from vlnce_baselines.common.opennav_ext.visual_evidence_schema import (
 DEFAULT_VISUAL_EVIDENCE_BASE_URL = "http://127.0.0.1:23333/v1"
 DEFAULT_VISUAL_EVIDENCE_MODEL = "/root/models/Qwen3.5-4B"
 STOP_CURRENT_VIEW_CANDIDATE_ID = "__current_view__"
+
+VISUAL_EVIDENCE_SCOPE = """Evidence limits (apply to every output field):
+These are simultaneous RGB views from the CURRENT position, not images from
+future waypoints or before/after an action. The plan describes intent, not observed
+execution. Do not infer completed enter/exit/cross/pass actions from these images.
+Candidate distance is a commanded waypoint movement length, NOT target distance.
+Text descriptions are fallible model outputs. They cannot establish visual facts
+that the image does not support. No calibrated target depth is supplied to you;
+do not certify metres, a 3m success radius, route completion, goal completion or STOP.
+final_target_visible requires an instruction-consistent target, including visible
+identity modifiers and spatial relations, not just any object of the same class.
+For a doorway left of white double doors, the doorway is the target and the doors
+are a reference. If identity/relation is ambiguous, use false and explain briefly.
+arrival_evidence is only a local visual placement cue relative to THAT SAME target,
+not a verified arrival. A distant visible target or a short waypoint is insufficient.
+If final_target_visible is false, arrival_evidence must also be false. Do not merge
+evidence from different same-class objects. Bind target_direction_id to the exact
+label of the supplied image containing that target; use JSON null if uncertain,
+never the text 'null' or 'string|null'. Without a localized target use false for
+arrival_evidence. Missing terms mean not observed HERE, not absent from the world.
+confidence expresses uncertainty in this visual assessment, not a calibrated
+success probability; do not default to a fixed high score. Report ambiguity in
+spatial_notes. Decisions and metric checks belong to downstream code.
+
+"""
 
 
 def _candidate_id(candidate: Any) -> str:
@@ -126,11 +152,67 @@ def _extract_json(text: str) -> Dict[str, Any]:
         raise
 
 
-class VisualEvidenceLogger:
-    """Logging-only Qwen-VL visual evidence extractor.
+def _short_unique_strings(value: Any, limit: int = 5) -> List[str]:
+    """Bound model-generated lists before they enter logs or STOP logic."""
+    if not isinstance(value, list):
+        raise ValueError("expected a string array")
+    result = []
+    seen = set()
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            raise ValueError("expected nonempty strings")
+        text = item.strip()[:120]
+        key = text.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(text)
+        if len(result) >= limit:
+            break
+    return result
 
-    This tool must not alter candidate ranking, selector output, stop decisions,
-    or env actions. It only writes structured visual evidence into trace logs.
+
+def _validated_stop_evidence(parsed: Any) -> Dict[str, Any]:
+    """Validate the single current-view result and compact unbounded fields."""
+    if not isinstance(parsed, dict) or not isinstance(parsed.get("candidates"), list):
+        raise ValueError("STOP evidence requires a JSON object with candidates array")
+    candidates = candidate_list_from_parsed(parsed)
+    if len(candidates) != 1:
+        raise ValueError("STOP evidence requires exactly one candidate")
+    candidate = dict(candidates[0])
+    if str(candidate.get("candidate_id")) != STOP_CURRENT_VIEW_CANDIDATE_ID:
+        raise ValueError("unexpected STOP evidence candidate_id")
+    for key in (
+        "visible_landmarks", "matched_instruction_terms",
+        "missing_instruction_terms",
+    ):
+        candidate[key] = _short_unique_strings(candidate.get(key), limit=5)
+    for key in ("final_target_visible", "arrival_evidence"):
+        if not isinstance(candidate.get(key), bool):
+            raise ValueError("{} must be boolean".format(key))
+    if not candidate["final_target_visible"]:
+        candidate["arrival_evidence"] = False
+    direction = candidate.get("target_direction_id")
+    if direction is not None:
+        try:
+            direction = int(direction)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("target_direction_id must be 0..11 or null") from exc
+        if direction < 0 or direction > 11:
+            raise ValueError("target_direction_id must be 0..11 or null")
+        candidate["target_direction_id"] = direction
+    candidate["spatial_notes"] = str(candidate.get("spatial_notes") or "")[:120]
+    confidence = candidate.get("confidence")
+    if isinstance(confidence, bool) or not isinstance(confidence, (int, float)):
+        raise ValueError("confidence must be numeric")
+    candidate["confidence"] = max(0.0, min(float(confidence), 1.0))
+    return {"candidates": [candidate]}
+
+
+class VisualEvidenceLogger:
+    """Qwen-VL visual evidence producer, with no direct action authority.
+
+    The returned evidence is consumed by downstream verifiers and STOP logic,
+    even when this producer's configuration says LOG_ONLY. It is not ground truth.
     """
 
     def __init__(
@@ -227,21 +309,47 @@ class VisualEvidenceLogger:
                     },
                 },
             ]
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": content}],
-                temperature=0,
-                max_tokens=self.max_tokens,
-            )
-            raw_response = response.choices[0].message.content
+            raw_response = ""
             parse_error = None
             parsed_root_type = None
             parsed: Dict[str, Any] = {}
-            try:
-                parsed = _extract_json(raw_response)
-                parsed_root_type = type(parsed).__name__
-            except Exception as exc:
-                parse_error = "{}: {}".format(type(exc).__name__, exc)
+            attempt_diagnostics = []
+            for attempt in range(2):
+                if attempt:
+                    content[0] = {
+                        "type": "text",
+                        "text": self._build_current_view_retry_prompt(
+                            instruction, actions, landmarks,
+                            current_view_candidate_ids,
+                        ),
+                    }
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[{"role": "user", "content": content}],
+                    temperature=0,
+                    max_tokens=(self.max_tokens if not attempt else min(
+                        max(128, int(self.max_tokens)), 256
+                    )),
+                )
+                raw_response = response.choices[0].message.content
+                try:
+                    extracted = _extract_json(raw_response)
+                    parsed_root_type = type(extracted).__name__
+                    parsed = _validated_stop_evidence(extracted)
+                    parse_error = None
+                    attempt_diagnostics.append({
+                        "attempt": attempt + 1, "valid": True,
+                        "response_chars": len(str(raw_response or "")),
+                    })
+                    break
+                except Exception as exc:
+                    parse_error = "{}: {}".format(type(exc).__name__, exc)
+                    parsed = {}
+                    attempt_diagnostics.append({
+                        "attempt": attempt + 1, "valid": False,
+                        "response_chars": len(str(raw_response or "")),
+                        "error": parse_error,
+                    })
             schema_diagnostics = visual_evidence_schema_diagnostics(parsed)
             parsed = normalize_visual_evidence_parsed(parsed)
 
@@ -274,6 +382,8 @@ class VisualEvidenceLogger:
                 "raw_response": raw_response,
                 "parsed": parsed,
                 "parse_error": parse_error,
+                "retry_count": max(0, len(attempt_diagnostics) - 1),
+                "attempt_diagnostics": attempt_diagnostics,
                 "stop_current_view_evidence": True,
                 "current_view_observation": current_view_observation,
                 "current_view_candidate_ids": current_view_candidate_ids,
@@ -414,7 +524,7 @@ class VisualEvidenceLogger:
         for candidate in candidates:
             candidate_id = _candidate_id(candidate)
             candidate_lines.append(
-                "- candidate_id={}; angle_deg={}; distance={}; text_observation={}".format(
+                "- candidate_id={}; angle_deg={}; waypoint_movement_distance_m={}; text_observation={}".format(
                     candidate_id,
                     getattr(candidate, "angle_deg", None),
                     getattr(candidate, "distance", None),
@@ -425,7 +535,7 @@ class VisualEvidenceLogger:
             )
 
         if self.compact_json:
-            return (
+            return VISUAL_EVIDENCE_SCOPE + (
                 "Extract compact visual evidence for VLN candidate images. "
                 "Do not choose actions or STOP. Use exact candidate_id values.\n"
                 "Instruction: {}\nActions: {}\nLandmarks: {}\n"
@@ -437,7 +547,7 @@ class VisualEvidenceLogger:
                 "missing_instruction_terms with concrete required landmarks "
                 "or objects that are not visible. Prefer terms copied from "
                 "Instruction/Landmarks/Actions. Use [] only when truly none.\n"
-                "Set final_target_visible=true only when the likely final "
+                "Set final_target_visible=true only when the instruction-consistent final "
                 "destination/STOP target is visible. Set arrival_evidence=true "
                 "only when the view appears at or immediately beside that "
                 "target.\n"
@@ -450,7 +560,7 @@ class VisualEvidenceLogger:
                 '"missing_instruction_terms":["string"],'
                 '"final_target_visible":false,'
                 '"arrival_evidence":false,'
-                '"target_direction_id":"string|null",'
+                '"target_direction_id":null,'
                 '"spatial_notes":"<=40 chars",'
                 '"confidence":0.0}}]}}\n'
                 "Keep arrays short: at most 5 visible, 5 matched, 5 missing."
@@ -461,7 +571,7 @@ class VisualEvidenceLogger:
                 "\n".join(candidate_lines),
             )
 
-        return (
+        return VISUAL_EVIDENCE_SCOPE + (
             "You are a visual evidence extraction tool for a VLN navigation "
             "harness. Do not choose an action and do not decide STOP.\n"
             "Use the provided candidate images only as evidence.\n\n"
@@ -481,7 +591,7 @@ class VisualEvidenceLogger:
             '      "missing_instruction_terms": ["string"],\n'
             '      "final_target_visible": false,\n'
             '      "arrival_evidence": false,\n'
-            '      "target_direction_id": "string|null",\n'
+            '      "target_direction_id": null,\n'
             '      "spatial_notes": "short string",\n'
             '      "confidence": 0.0\n'
             "    }}\n"
@@ -504,9 +614,9 @@ class VisualEvidenceLogger:
         current_view_candidate_ids: Iterable[str],
     ) -> str:
         observation_limit = max(2000, int(self.metadata_observation_chars))
-        return (
+        return VISUAL_EVIDENCE_SCOPE + (
             "Extract STOP-only visual evidence for the agent's current "
-            "panoramic observation. Do not choose a movement action. The image "
+            "panoramic observation. Do not choose movement or authorize STOP. The image "
             "is a contact sheet of current camera directions; direction labels "
             "are drawn on the tiles. Treat the whole contact sheet as one "
             "candidate with candidate_id={candidate_id}.\n"
@@ -514,7 +624,7 @@ class VisualEvidenceLogger:
             "Landmarks: {landmarks}\n"
             "Current-view direction ids: {direction_ids}\n"
             "Current-view text observation:\n{observation}\n"
-            "Set final_target_visible=true only when the likely final "
+            "Set final_target_visible=true only when the instruction-consistent final "
             "destination/STOP target is visible in the current panoramic view. "
             "Set arrival_evidence=true only when the current position appears "
             "at or immediately beside that target, not merely when the target "
@@ -530,7 +640,7 @@ class VisualEvidenceLogger:
             '"missing_instruction_terms":["string"],'
             '"final_target_visible":false,'
             '"arrival_evidence":false,'
-            '"target_direction_id":"string|null",'
+            '"target_direction_id":null,'
             '"spatial_notes":"<=40 chars",'
             '"confidence":0.0}}]}}\n'
             "Keep arrays short: at most 5 visible, 5 matched, 5 missing."
@@ -541,4 +651,33 @@ class VisualEvidenceLogger:
             landmarks=landmarks,
             direction_ids=", ".join(str(item) for item in current_view_candidate_ids),
             observation=str(current_view_observation or "")[:observation_limit],
+        )
+
+    def _build_current_view_retry_prompt(
+        self,
+        instruction: str,
+        actions: str,
+        landmarks: str,
+        current_view_candidate_ids: Iterable[str],
+    ) -> str:
+        """Short retry prompt used only after malformed STOP evidence."""
+        return VISUAL_EVIDENCE_SCOPE + (
+            "Your previous STOP-evidence JSON was invalid or too long. Inspect "
+            "the same contact sheet again. Return exactly one minified JSON "
+            "object and nothing else. Use at most 3 distinct short strings in "
+            "each array; never repeat a string. candidate_id must be "
+            "{candidate_id}. target_direction_id must be one of [{direction_ids}] "
+            "or null. Instruction: {instruction}\nActions: {actions}\n"
+            "Landmarks: {landmarks}\nSchema: "
+            '{{"candidates":[{{"candidate_id":"{candidate_id}",'
+            '"visible_landmarks":[],"matched_instruction_terms":[],'
+            '"missing_instruction_terms":[],"final_target_visible":false,'
+            '"arrival_evidence":false,"target_direction_id":null,'
+            '"spatial_notes":"","confidence":0.0}}]}}'
+        ).format(
+            candidate_id=STOP_CURRENT_VIEW_CANDIDATE_ID,
+            direction_ids=", ".join(str(v) for v in current_view_candidate_ids),
+            instruction=str(instruction or "")[:600],
+            actions=str(actions or "")[:600],
+            landmarks=str(landmarks or "")[:400],
         )

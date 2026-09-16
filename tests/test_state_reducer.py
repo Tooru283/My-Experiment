@@ -29,7 +29,9 @@ class FakeProgress:
     def reset_episode(self, anchors):
         self.calls.append(("progress_reset", len(anchors)))
 
-    def update(self, step, position, heading, tags, geometry):
+    def update(
+        self, step, position, heading, tags, geometry, action_receipt=None
+    ):
         self.calls.append(("progress_update", step))
         return {"j": 1, "n_anchors": 1, "complete": True, "ever_satisfied": [0]}
 

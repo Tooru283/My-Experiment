@@ -1,0 +1,45 @@
+{
+  "command_line_overrides": [
+    "SIMULATOR_GPU_IDS",
+    "[0]",
+    "TORCH_GPU_ID",
+    "0",
+    "TORCH_GPU_IDS",
+    "[0]",
+    "EVAL.SPLIT",
+    "val_unseen",
+    "EVAL.EPISODE_COUNT",
+    "1"
+  ],
+  "created_at": "2026-09-09T11:02:14",
+  "evaluation": {
+    "episode_count": 1,
+    "seed": 0,
+    "split": "val_unseen",
+    "task_config": "habitat_extensions/config/vlnce_task.yaml"
+  },
+  "exp_config": "/root/My-Experiment/run_OpenNav.yaml",
+  "exp_config_sha256": "1acc94fef4ae58c503850ceff604511fe270746b35696d8f3c1e047ddeb943b2",
+  "harness": {
+    "action_compiler": "action_compiler.v1",
+    "decision_effect_enabled": true,
+    "geometry_injection": false,
+    "long_action_step_limit": 12,
+    "min_steps_before_allow": 3,
+    "phase_evidence_log_only": true,
+    "progress_locator_log_only": false,
+    "progress_provider": "acn_l1",
+    "short_action_step_limit": 10,
+    "stop_policy": "coordinated_v1",
+    "terminal_gate_log_only": true,
+    "trace_dir": "logs/harness_traces/ep1/20260909/clean_baseline_v1"
+  },
+  "model": {
+    "llm": "Qwen/Qwen3.5-4B",
+    "visual_evidence_base_url": "http://127.0.0.1:23333/v1",
+    "visual_evidence_model": "/root/models/Qwen3.5-4B"
+  },
+  "resolved_config": "/root/My-Experiment/logs/eval_results/ep1/20260909/temporal_stop_fix_ep70_20260909_110209/resolved_config.yaml",
+  "resolved_config_sha256": "efbef3875816b330109afac01b8bb548aee8ff50071d5cff8a36fd8ea973e268",
+  "schema_version": "opennav.run_manifest.v1"
+}

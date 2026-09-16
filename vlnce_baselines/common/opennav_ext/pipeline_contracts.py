@@ -116,6 +116,10 @@ class ProgressUpdate(ContractMixin):
     display_text: str
     authoritative: bool = True
     shadow: Optional[Dict[str, Any]] = None
+    current_action: Optional[Dict[str, Any]] = None
+    verified_actions: Tuple[Dict[str, Any], ...] = ()
+    missing_evidence: Tuple[str, ...] = ()
+    completion_events: Tuple[Dict[str, Any], ...] = ()
     schema_version: str = PIPELINE_CONTRACT_SCHEMA_VERSION
 
 

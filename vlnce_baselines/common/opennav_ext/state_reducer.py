@@ -78,12 +78,14 @@ class RouteStateReducer:
         heading: Any,
         view_tags: Dict[str, Any],
         view_geometry: Dict[str, Any],
+        action_receipt: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         self._require_episode()
         if self.progress_locator is None:
             return {}
         return self.progress_locator.update(
-            step_id, position, heading, view_tags, view_geometry
+            step_id, position, heading, view_tags, view_geometry,
+            action_receipt=action_receipt,
         )
 
     def update_landmarks(

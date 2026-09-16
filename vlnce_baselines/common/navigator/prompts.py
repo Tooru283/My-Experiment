@@ -1,90 +1,29 @@
-# Actions Decompsition
+from vlnce_baselines.common.opennav_ext.navigation_guidance import NAVIGATION_SYSTEM
+from vlnce_baselines.common.opennav_ext.instruction_parsing import ACTION_SYSTEM, LANDMARK_SYSTEM
+
 ACTION_DETECTION = {
-    'system': "You are an action decomposition expert. Your task is to detect all actions in the given navigation instruction. You need to ensure the integrity of each action. Your answer must consist ONLY of a series of labled action phrases without begin sentence.",
-    'user': "Can you decompose actions in the instruction \"{}\"? Actions: "
+    "system": ACTION_SYSTEM,
+    "user": "Original navigation instruction:\n{}\nReturn the actions JSON object.",
 }
 
-# Landmarks Extraction
 LANDMARK_DETECTION = {
-    'system': "You are a landmark extraction expert. Your task is to detect all landmarks in the given navigation instruction. You need to ensure the integrity of each landmarks. Your answer must consist ONLY of a series of labled landmark phrases without other sentences.",
-    'user': "Can you extract landmarks in the instruction \"{}\"? Landmarks: "
+    "system": LANDMARK_SYSTEM,
+    "user": "Original navigation instruction:\n{}\nValidated intended actions:\n{}\n"
+            "Return the landmarks and terminal_target JSON object.",
 }
 
-# Directions in Observation
-DIRECTIONS = ["Front, range(left 15 to right 15)", "Font Left, range(left 15 to left 45)", "Left, range(left 45 to left 75)", "Left, range(left 75 to left 105)", "Rear Left, range(left 105 to left 135)", "Rear Left, range(left 135 to left 165)",
-                    "Back, range(left 165 to right 165)", "Rear Right, range(right 135 to right 165)", "Right, range(right 105 to right 135)", "Right, range(right 75 to right 105)", "Front Right, range(right 45 to right 75)", "Front Right, range(right 15 to right 45)"]
-
-# Summarize Observation
-OBSERVATION_SUMMARY = {
-    'system': "You are a trajectory summary expert. Your task is to simplify environment description as short and clear as possible. \
-                                            You ONLY need to summarize in a single paragraph.",
-    'user': "Given Environment Description \"{}\", Summarization:"
-}
-
-# Summarize Thought
-THOUGHT_SUMMARY = {
-    'system': "You are a trajectory summary expert. Your task is to simplify navigation thought process as short and clear as possible. \
-                                            You ONLY need to summarize the what actions you did and what landmarks you passed in \"Thought\" using a single paragraph. Do NOT include Direction information. ",
-    'user': "Given Thought Process \"{}\", Summarization:"
-}
-
-# Main Navigator
+# Only the selector proposes actions; completion belongs to ACN/terminal checks.
 NAVIGATOR = {
-    'system': "You are a navigation agent who follows instruction to move in an indoor environment with the least action steps. \
-            I will give you one instruction and tell you landmarks. I will also give you navigation history and estimation of executed actions for reference. \
-            You can observe current environment by scene descriptions, scene objects and possible existing landmarks in different directions around you. \
-            Each direction may include a [Waypoint distance: X m] tag giving the sensor-measured distance to that direction's waypoint; trust this measured distance over any distances mentioned in the scene descriptions, which are only rough estimates. \
-            Each direction contains direction viewpoint ids you can move to. Your task is to predict moving to which direction viewpoint. \
-            In each prediction, direction 0 always represents your current orientation. Direction 1 represents the direction that is 30 degrees to the left of direction 0, Direction 2 represents the direction that is 60 degrees to the left of direction 0, Direction 3 represents the direction that is 90 degrees to the left of direction 0, Direction 4 represents the direction that is 120 degrees to the left of direction 0, Direction 5 represents the direction that is 150 degrees to the left of direction 0, Direction 6 represents the direction that is 180 degrees to the left of direction 0, Direction 7 represents the direction that is 150 degrees to the right of direction 0, Direction 8 represents the direction that is 120 degrees to the right of direction 0, Direction 9 represents the direction that is 90 degrees to the right of direction viewpoint ID 0, Direction 10 represents the direction that is 60 degrees to the right of direction 0, Direction 11 represents the direction that is 30 degrees to the right of direction 0 \
-            Note that environment direction that contains more landmarks mentioned in the instruction is usually the better choice for you. \
-            If you are required to go up stairs, you need to move to direction with higher position. If you are required to go down stairs, you need to move to direction with lower position. \
-            You are encouraged to move to new viewpoints to explore environment while avoid revisiting accessed viewpoints in non-essential situations. \
-            If you feel struggling to find the landmark or execute the action, you can try to execute the subsequent action and find the subsequent landmark. \
-            Your answer includes two parts: \"Thought\" and \"Prediction\". In the \"Thought\", you should think as detailed as possible following procedures: \
-            (1) The viewpoint ID you predicted must be one of the Direction Viewpoint ID in Candidate Viewpoint IDs List, or STOP when the instruction has been completed. The Candidate Viewpoint IDs List show the Direction Viewpoint ID that you should go. This means that there should be only a number or STOP after \"Prediction\" without any other words or characters . \
-            (2) Check whether the latest executed action has been completed by comparing current environment and landmark in the latest executed action. \
-            (3) Determine the action you should execute and landmark you should reach now. If the latest executed action have not been completed, \
-            you should continue to execute it. Otherwise, you should execute the next action in the given instruction. \
-            (4) Analyze which direction in the current environment is most suitable to execute the action you decide and explain your reason. \
-            (5) Predict moving to which direction viewpoint based on your thought process, or predict STOP if the current position already satisfies the final stop/wait requirement. \
-            (6) The \"Thought\" you predicted should be a single paragraph. \
-            (7) If you believe you have completed the instruction, predict STOP in the \"Prediction\". \
-            (8) If you want to make a left turn, you usually need to select a viewpoint ID between 1 and 5. If you want to make a right turn, you usually need to select a viewpoint ID between 7 and 11. However, the viewpoint ID you predict must be within the Current Environment.\
-            (9) Your output after \"Prediction\" must be one of the numbers in Candidate Viewpoint IDs List or STOP without any other words. \
-            Then, please make decision on the next viewpoint in the \"Prediction\". \
-            Your decision is very important, must make it very carefully. \
-            You need to double check the output in \"Prediction:\". The output must be in the Candidate Viewpoint IDs or STOP without any other words. \
-            You also need to double check the output in \"Thought\". The output must be a single paragraph",
-    'user': "Candidate Viewpoint IDs List: [{}] Step {} Instruction: {} ({}) Landmarks: {} Navigation History: {} \
-            Estimation of Executed Actions: {} Current Environment: {} -> Thought: ... Prediction: ... \
-            Your output after \"Prediction\" must be one of the numbers in Candidate Viewpoint IDs List or STOP without any other words. \
-            Your output after \"Thought\" must be a single paragraph about why you choose this viewpoint id. "
+    "system": NAVIGATION_SYSTEM,
+    "user": "Candidate Viewpoint IDs List: [{}]\nStep: {}\nInstruction: {}\n"
+            "Parsed intended actions (not completed actions): {}\nLandmarks: {}\n"
+            "Navigation History: {}\nVerified Route Progress: {}\n"
+            "Current Environment: {}\nRespond with Thought: ... and Prediction: ...",
 }
 
-# Backtracking (SmartWay MOVE_BACK) — appended to the navigator user prompt only when the
-# trainer offers a backtrack this step (BacktrackPolicy.available). Off by default, so the
-# base prompt is byte-identical. Wording is deliberately neutral (see the STOP-bias lesson):
-# MOVE_BACK is one available option, not an encouraged one.
 MOVE_BACK_PROMPT_LINE = (
-    " One extra option MOVE_BACK is available this step: predict MOVE_BACK only if the "
-    "current path looks like a dead-end or a wrong branch and returning to the previous "
-    "position to try a different direction is clearly better than any listed viewpoint. "
-    "MOVE_BACK is neither preferred nor discouraged; choose it only when the listed "
-    "viewpoints and STOP are all worse. In that case your output after \"Prediction\" must "
-    "be one of the Candidate Viewpoint IDs List, STOP, or MOVE_BACK, without any other words."
+    "\nMOVE_BACK is available this step: choose it only when returning along the "
+    "previous reversible movement to try another branch is more useful than the "
+    "listed waypoints. It is not a completion claim. Use exactly MOVE_BACK as the "
+    "Prediction value if chosen."
 )
-
-# Thought Fusion
-THOUGHT_FUSION = {
-    'system': "You are a thought fusion expert. Your task is to fuse given thought processes \
-                    into one thought. You need to reserve key information related to actions, landmarks, direction changes. You should only answer fused thought without other words.",
-    'user': "Can you help me fuse the thoughts leading to the same movement direction? The thoughts are :{}, Fused thought: "
-}
-
-# Test Decision
-DECISION_TEST = {
-    'system': "You are a decision testing expert. Your task is to evaluate the feasibility of each movement \
-                        prediction based on thought process and environment. Then, you will make a final decision about direction viewpoint ID or STOP without other words. \
-                            The answer should only be a number within the candidate list, or STOP.",
-    'user': "The candidate list: {}. Can you help me make a final decision? The Observation: {}, Navigation Instruction: {}, {}, Final Decision: "
-}

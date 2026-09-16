@@ -95,6 +95,16 @@ OPENNAV_HARNESS:
     METADATA_OBSERVATION_CHARS: 300
     COMPACT_JSON: True
 
+  # After a plausible STOP is rejected for insufficient persistence, keep the
+  # agent near the candidate terminal pose while collecting the next frame.
+  TERMINAL_RECHECK:
+    ENABLED: True
+    LOG_ONLY: false
+    MAX_HOLDS: 2
+    MAX_DEPTH_M: 3.0
+    # One Habitat forward primitive; avoids the undefined zero-distance action.
+    STEP_DISTANCE_M: 0.25
+
   # V2: decision-effect active — gates STOP based on visual verification.
   VISUAL_TARGET_VERIFIER:
     ENABLED: True
@@ -147,8 +157,9 @@ OPENNAV_HARNESS:
   # Token caps tuned for the local Qwen3.5-4B runtime.
   LLM_RUNTIME:
     NAVIGATOR_MAX_TOKENS: 1024
-    THOUGHT_FUSION_MAX_TOKENS: 256
-    DECISION_MAX_TOKENS: 64
+    # Retained config keys; fusion and final candidate validation are deterministic.
+    THOUGHT_FUSION_MAX_TOKENS: 0
+    DECISION_MAX_TOKENS: 0
 
   # The previous 8/10 hard limit cut off many near-goal episodes. Keep the
   # evaluation bounded, but leave enough room for recovery after a wrong turn.
@@ -186,14 +197,14 @@ OPENNAV_HARNESS:
   # Backtracking and endgame-tilt settings follow below. Completion progress is
   # provided exclusively by OPENNAV_HARNESS.PIPELINE.PROGRESS_PROVIDER=acn_l1.
 
-  # Decision-active. MIN_PROB_GAP 0.00 = defer to the prior on every disagreement
-  # (~59% intervention). Out-of-fold scan (GroupKFold-5 by episode, 5 seeds):
-  #   0.00 43.8+-.6 | 0.05 44.2+-.8 | 0.10 42.5+-.4 | 0.20 39.2+-.6 | LLM alone 36.7
-  # 0.00 and 0.05 tie within noise, both beat the old 0.10 default by more than the
-  # seed spread. See default.py for the two caveats that ride along.
+  # EP100 20260909: decision-active MIN_PROB_GAP=0 overrode 512/750 normal
+  # navigation steps. Its oracle-only post-run diagnostic was negative and is not
+  # a causal estimate, so the next run keeps scores for paired analysis but removes
+  # this prior from the control path. Do not interpret the probability gap as a
+  # calibrated target-arrival probability.
   CANDIDATE_PRIOR:
     ENABLED: True
-    LOG_ONLY: False
+    LOG_ONLY: True
     MIN_PROB_GAP: 0.00
 
   ENDGAME_TILT_VIEW:

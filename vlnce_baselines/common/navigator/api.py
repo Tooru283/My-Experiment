@@ -158,7 +158,12 @@ class spatialClient:
     
     def observe_view(self, logger, current_step, direction_idx, direction_image):
         img_tags = self.ram_img_tagging(direction_image['rgb'])
-        spatial_scene_description_prompt = "What objects are in the image, and how far are these objects from the camera, calculate the result in meter."
+        spatial_scene_description_prompt = (
+            "Describe visible objects, openings and their relative layout in this current RGB-D view. "
+            "Be concise; preserve distinguishing appearance and left/right/front relationships. "
+            "Use qualitative near/far cues when supported. Do not invent exact distances in metres "
+            "or claim that the agent has entered, passed, reached or completed a navigation target."
+        )
         spatial_scene_description = self.spatialbot_description(direction_image, spatial_scene_description_prompt)
         view_observation = f"Scene Description: {spatial_scene_description} Scene Objects: {img_tags}; "
         observe_result = f"Direction {direction_idx} Direction Viewpoint ID: {direction_idx} in Step ID: {current_step} Elevation: Eye Level "  + view_observation

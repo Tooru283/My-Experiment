@@ -79,6 +79,7 @@ from vlnce_baselines.common.opennav_ext.progress_provider import (
     terminal_target_is_confirmed,
 )
 
+from vlnce_baselines.common.opennav_ext.terminal_recheck import TerminalRecheck
 from vlnce_baselines.common.opennav_ext.state_reducer import (
     RouteStateReducer,
     STATE_REDUCER_SCHEMA_VERSION,
@@ -140,6 +141,7 @@ __all__ = [
     "VisualEvidenceLogger",
     "STOP_CURRENT_VIEW_CANDIDATE_ID",
     "VisualEvidenceMemory",
+    "TerminalRecheck",
     "VisualEvidenceFallbackRanker",
     "VisualTargetVerifier",
     "build_candidate_records",
